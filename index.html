@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Split</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none;}
@@ -129,6 +130,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 .pay-icon{font-size:56px;margin-bottom:12px;}
 .pay-title{font-size:22px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;text-align:center;}
 .pay-sub{font-size:13px;color:rgba(255,255,255,0.55);font-family:‘Georgia’,serif;text-align:center;margin-bottom:24px;line-height:1.5;}
+
+/* GOOGLE AUTH */
+#googleSignInBtn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1a1a1a;border:none;border-radius:50px;padding:13px 20px;font-size:13px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,0.4);font-family:‘Georgia’,serif;width:100%;transition:transform .1s,box-shadow .1s;}
+#googleSignInBtn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,0.4);}
+#googleSignInBtn img{width:20px;height:20px;}
+.auth-divider{font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:3px;text-transform:uppercase;font-family:‘Georgia’,serif;text-align:center;margin:8px 0;}
+#accountBtn{position:fixed;top:14px;right:16px;z-index:25;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:50px;padding:6px 14px;font-size:11px;color:rgba(255,255,255,0.7);font-family:‘Georgia’,serif;cursor:pointer;letter-spacing:1px;}
+#accountBtn.hidden{display:none!important;}
+/* SIGN IN SCREEN */
+#signInScreen{position:fixed;inset:0;z-index:45;background:rgba(0,0,0,0.94);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
+#signInScreen.hidden{display:none!important;}
+.si-title{font-size:22px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;text-align:center;}
+.si-sub{font-size:13px;color:rgba(255,255,255,0.5);font-family:‘Georgia’,serif;text-align:center;margin-bottom:28px;line-height:1.6;max-width:260px;}
+.si-card{width:100%;max-width:296px;display:flex;flex-direction:column;gap:10px;}
+.si-skip{font-size:11px;color:rgba(255,255,255,0.28);font-family:‘Georgia’,serif;text-align:center;margin-top:12px;cursor:pointer;letter-spacing:1px;}
+.si-skip:active{color:rgba(255,255,255,0.5);}
 </style>
 
 </head>
@@ -231,6 +248,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
     </div>
     <div style="height:8px"></div>
     <button class="btn ghost" id="goSkinBtn">🎨 Customize</button>
+    <div id="goSoftSignIn" style="display:none;margin-top:10px;">
+      <div style="font-size:10px;color:rgba(255,255,255,0.35);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:8px;">Save scores - Leaderboard - Friends</div>
+      <div id="goGoogleBtn" onclick="openSignIn('soft',true)" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:50px;padding:11px 0;cursor:pointer;font-size:12px;font-weight:700;font-family:'Georgia',serif;letter-spacing:1px;color:#fff;">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:16px;height:16px;" alt="G">
+        Sign in with Google
+      </div>
+    </div>
   </div>
 </div>
 
@@ -268,6 +292,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
   <div class="pay-sub">Something went wrong.<br>No charge was made.</div>
   <button class="btn" id="payFailRetryBtn" style="max-width:260px;margin-bottom:12px;">Try Again</button>
   <button class="btn ghost" id="payFailHomeBtn" style="max-width:260px;">Back to Home</button>
+</div>
+
+<button id="accountBtn" class="hidden"></button>
+
+<!-- SIGN IN SCREEN -->
+
+<div id="signInScreen" class="hidden">
+  <div class="si-title" id="siTitle">Sign In</div>
+  <div class="si-sub" id="siSub">Save your scores, climb the leaderboard, and play with friends.</div>
+  <div class="si-card">
+    <div id="googleSignInBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+      Continue with Google
+    </div>
+    <div class="auth-divider" id="siDivider">or</div>
+    <div id="siSkipWrap"><div class="si-skip" id="siSkipBtn">Skip for now</div></div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -1277,6 +1318,58 @@ var CENTER_ZONE=0.12;
 
 // Username - local for now
 var username=localStorage.getItem('splitUsername')||'';
+var googleUser=null;
+// Replace with your Google Client ID from Google Cloud Console
+var GOOGLE_CLIENT_ID='891714790052-grii2vvlncnp3aep9svquecdsf3to556.apps.googleusercontent.com';
+
+// Called by Google after successful sign in
+function handleGoogleSignIn(response){
+  var parts=response.credential.split('.');
+  var payload=JSON.parse(atob(parts[1]));
+  var email=payload.email;
+  var gName=(payload.given_name||payload.name||email.split('@')[0]).slice(0,12);
+  googleUser={email:email,name:gName,token:response.credential};
+  if(!username){username=gName;localStorage.setItem('splitUsername',gName);}
+  fetch(BACKEND_URL+'/google-auth',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:response.credential,username:username})
+  }).then(function(r){return r.json();})
+  .then(function(d){
+    if(d.paid){localStorage.setItem('splitPaid','true');localStorage.setItem('splitPaidTier',d.tier||'standard');}
+    if(d.games_played){gamesPlayed=d.games_played;localStorage.setItem('splitGamesPlayed',String(gamesPlayed));}
+    updateAccountBtn();
+    onSignInComplete();
+  }).catch(function(){updateAccountBtn();onSignInComplete();});
+}
+
+var signInContext='';
+function onSignInComplete(){
+  document.getElementById('signInScreen').classList.add('hidden');
+  if(signInContext==='gate'){
+    if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
+    else{initGame();}
+  }
+}
+
+function openSignIn(context,skippable){
+  signInContext=context||'soft';
+  document.getElementById('siTitle').textContent=context==='gate'?'Keep Playing':'Save Your Progress';
+  document.getElementById('siSub').textContent='Save your scores, climb the leaderboard, and play with friends.';
+  document.getElementById('siSkipWrap').style.display=skippable?'block':'none';
+  document.getElementById('siDivider').style.display=skippable?'block':'none';
+  document.getElementById('signInScreen').classList.remove('hidden');
+  if(window.google&&window.google.accounts){
+    window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleSignIn,auto_select:false});
+    window.google.accounts.id.renderButton(document.getElementById('googleSignInBtn'),{theme:'outline',size:'large',width:260,text:'continue_with'});
+  }
+}
+
+function updateAccountBtn(){
+  var btn=document.getElementById('accountBtn');
+  if(username){btn.textContent=username.slice(0,1).toUpperCase()+' '+username;btn.classList.remove('hidden');}
+  else{btn.textContent='Sign In';btn.classList.remove('hidden');}
+}
 
 // Run timer
 var runStartTime=0,runElapsed=0;
@@ -1292,31 +1385,16 @@ function isPaid(){return localStorage.getItem('splitPaid')==='true';}
 function incrementGameCount(){
   gamesPlayed++;
   localStorage.setItem('splitGamesPlayed',String(gamesPlayed));
-  // Also track server-side so it can't be bypassed by clearing localStorage
   if(username){
-    fetch(BACKEND_URL+'/track-game',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:username})
-    }).catch(function(){});// silent fail - localStorage is fallback
+    fetch(BACKEND_URL+'/track-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:username})}).catch(function(){});
   }
 }
 
 function shouldShowPaywall(){return !isPaid()&&gamesPlayed>=FREE_GAMES;}
 
-function needsUsername(){return !username;}
+// Guests play freely - no gate before game starts
+function checkUsernameBeforePlay(next){next();}
 
-// Show username prompt if not set
-function checkUsernameBeforePlay(next){
-  if(needsUsername()){
-    document.getElementById('usernameModal').classList.remove('hidden');
-    // Store callback to run after username is set
-    window._afterUsername=next;
-    setTimeout(function(){document.getElementById('usernameInput').focus();},80);
-  } else {
-    next();
-  }
-}
 
 // Tutorial
 var hasSeenTutorial=localStorage.getItem('splitTutSeen')==='true';
@@ -1377,10 +1455,13 @@ function showGO(){
   var hs=getHS();
   runElapsed=Date.now()-runStartTime;
   document.getElementById('goScore').textContent=score;
-  document.getElementById('goTime').textContent=formatTime(runElapsed)+' - '+(username||'Anonymous');
+  document.getElementById('goTime').textContent=formatTime(runElapsed)+' - '+(username||'Guest');
   document.getElementById('goBest').textContent=hs.score>0?'Best: '+hs.score+(hs.name?' - '+hs.name:''):'Best: --';
   document.getElementById('goMedal').textContent=score>=30?ICONS.trophy:score>=20?ICONS.gold:score>=12?ICONS.silver:score>=6?ICONS.bronze:ICONS.star;
   document.getElementById('goScreen').classList.remove('hidden');
+  // Show soft sign in prompt if not yet signed in (after game 1)
+  var softDiv=document.getElementById('goSoftSignIn');
+  if(softDiv){softDiv.style.display=(!googleUser&&gamesPlayed>=1)?'block':'none';}
 }
 
 function doGameOver(){
@@ -1392,14 +1473,26 @@ function doGameOver(){
 
   setTimeout(function(){
     stopRec(function(){
-      // Check paywall first
+      // Hard gate at FREE_GAMES - must sign in then pay
       if(shouldShowPaywall()){
-        document.getElementById('paywallScreen').classList.remove('hidden');
+        if(!googleUser){
+          openSignIn('gate',false);
+        } else {
+          document.getElementById('paywallScreen').classList.remove('hidden');
+        }
         return;
       }
-      // Save high score automatically using username
+      // Save score locally
       var isNew=score>getHS().score;
-      if(isNew){setHS(score,username||'Anonymous');}
+      if(isNew){setHS(score,username||'Guest');}
+      // Submit to backend if signed in
+      if(googleUser&&username){
+        fetch(BACKEND_URL+'/submit-score',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({username:username,score:score,run_time_ms:runElapsed,level:LEVELS[activeLevel].id})
+        }).catch(function(){});
+      }
       showGO();
     });
   },1800);
@@ -1730,6 +1823,34 @@ document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stop
 // Skin + name
 document.getElementById('skinDoneBtn').addEventListener('click',closeSkins);
 updateMusicBtns();
+
+// Auth listeners
+document.getElementById('accountBtn').addEventListener('click',function(){
+  if(googleUser){toast('Signed in as '+username);}
+  else{openSignIn('account',true);}
+});
+
+document.getElementById('siSkipBtn').addEventListener('click',function(){
+  document.getElementById('signInScreen').classList.add('hidden');
+  if(signInContext==='gate'){
+    document.getElementById('startScreen').classList.remove('hidden');
+    STATE='start';
+  }
+});
+
+document.getElementById('goGoogleBtn').addEventListener('click',function(){
+  openSignIn('soft',true);
+});
+
+updateAccountBtn();
+
+// Auto sign in returning users silently
+window.addEventListener('load',function(){
+  if(window.google&&window.google.accounts){
+    window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleSignIn,auto_select:true});
+    window.google.accounts.id.prompt(function(){});
+  }
+});
 
 // -----------------------------------
 //  START SCREEN ORBS
