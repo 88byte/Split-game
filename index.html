@@ -77,6 +77,54 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
 #nameInput{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.18);border-radius:12px;color:#fff;font-size:18px;font-weight:700;padding:11px 14px;text-align:center;width:100%;font-family:‘Georgia’,serif;outline:none;letter-spacing:2px;}
 #nameInput:focus{border-color:rgba(255,255,255,0.5);}
 #nameInput::placeholder{color:rgba(255,255,255,0.18);font-size:13px;font-weight:400;letter-spacing:1px;}
+/* RUN TIMER in HUD */
+#hudTimer{font-size:16px;font-weight:700;color:rgba(255,255,255,0.45);font-family:‘Georgia’,serif;letter-spacing:1px;margin-top:6px;}
+
+/* PULSE BANNER */
+#pulseBanner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:15;pointer-events:none;text-align:center;opacity:0;transition:opacity 0.4s;}
+#pulseBanner.show{opacity:1;}
+#pulseBannerText{font-size:28px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:6px;text-transform:uppercase;text-shadow:0 0 30px rgba(255,255,255,0.4);}
+#pulseBannerSub{font-size:11px;color:rgba(255,255,255,0.38);letter-spacing:4px;text-transform:uppercase;font-family:‘Georgia’,serif;margin-top:4px;}
+
+/* TUTORIAL */
+#tutScreen{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,0.82);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:60px;}
+#tutScreen.hidden{display:none!important;}
+.tut-card{background:rgba(6,8,14,0.96);border:1.5px solid rgba(255,255,255,0.1);border-radius:22px;padding:22px 24px 18px;text-align:center;width:calc(100% - 48px);max-width:296px;}
+.tut-step{font-size:9px;color:rgba(255,255,255,0.25);letter-spacing:4px;text-transform:uppercase;font-family:‘Georgia’,serif;margin-bottom:8px;}
+.tut-icon{font-size:36px;margin-bottom:8px;}
+.tut-title{font-size:17px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:1px;margin-bottom:5px;}
+.tut-desc{font-size:12px;color:rgba(255,255,255,0.45);font-family:‘Georgia’,serif;line-height:1.5;margin-bottom:16px;}
+.tut-dots{display:flex;gap:6px;justify-content:center;margin-bottom:14px;}
+.tut-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.tut-dot.active{background:#fff;}
+
+/* PAYWALL */
+#paywallScreen{position:fixed;inset:0;z-index:45;background:rgba(0,0,0,0.92);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+#paywallScreen.hidden{display:none!important;}
+.pw-title{font-size:32px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:4px;text-transform:uppercase;margin-bottom:4px;text-align:center;}
+.pw-sub{font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:3px;text-transform:uppercase;font-family:‘Georgia’,serif;margin-bottom:24px;text-align:center;}
+.pw-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:296px;}
+.pw-card{border-radius:18px;padding:18px 20px;cursor:pointer;transition:transform .1s;}
+.pw-card:active{transform:scale(0.97);}
+.pw-card.standard{background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.14);}
+.pw-card.premium{background:linear-gradient(135deg,rgba(120,80,255,0.35),rgba(0,180,255,0.25));border:1.5px solid rgba(150,100,255,0.5);}
+.pw-card-name{font-size:14px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:2px;text-transform:uppercase;}
+.pw-card-desc{font-size:11px;color:rgba(255,255,255,0.45);font-family:‘Georgia’,serif;margin:3px 0 10px;}
+.pw-card-price{font-size:26px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;}
+.pw-card-price span{font-size:12px;font-weight:400;color:rgba(255,255,255,0.4);}
+.pw-badge{display:inline-block;background:rgba(120,80,255,0.6);color:#fff;font-size:8px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:2px 8px;border-radius:10px;font-family:‘Georgia’,serif;margin-bottom:6px;}
+.pw-free{font-size:11px;color:rgba(255,255,255,0.22);font-family:‘Georgia’,serif;text-align:center;margin-top:14px;cursor:pointer;}
+.pw-free:active{color:rgba(255,255,255,0.5);}
+
+/* USERNAME MODAL */
+#usernameModal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.9);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;}
+#usernameModal.hidden{display:none!important;}
+#usernameModal .card{display:flex;flex-direction:column;align-items:center;gap:9px;max-width:278px;}
+#usernameModal h3{font-size:16px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:2px;text-transform:uppercase;}
+#usernameModal p{font-size:11px;color:rgba(255,255,255,0.35);font-family:‘Georgia’,serif;}
+#usernameInput{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.18);border-radius:12px;color:#fff;font-size:18px;font-weight:700;padding:11px 14px;text-align:center;width:100%;font-family:‘Georgia’,serif;outline:none;letter-spacing:2px;}
+#usernameInput:focus{border-color:rgba(255,255,255,0.5);}
+#usernameInput::placeholder{color:rgba(255,255,255,0.18);font-size:13px;font-weight:400;letter-spacing:1px;}
 #toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.13);border-radius:20px;padding:9px 16px;font-size:11px;color:rgba(255,255,255,0.7);font-family:‘Georgia’,serif;pointer-events:none;opacity:0;transition:opacity .3s;z-index:100;white-space:nowrap;}
 #toast.show{opacity:1;}
 </style>
@@ -84,7 +132,59 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hud" class="hidden"><div id="hudScore">0</div></div>
+<div id="hud" class="hidden">
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div id="hudScore">0</div>
+    <div id="hudTimer">0:00</div>
+  </div>
+</div>
+<div id="pulseBanner"><div id="pulseBannerText"></div><div id="pulseBannerSub"></div></div>
+
+<!-- TUTORIAL -->
+
+<div id="tutScreen" class="hidden">
+  <div class="tut-card">
+    <div class="tut-step" id="tutStep">Step 1 of 4</div>
+    <div class="tut-icon" id="tutIcon">👇</div>
+    <div class="tut-title" id="tutTitle">Hold to Split</div>
+    <div class="tut-desc" id="tutDesc">Press and hold anywhere on screen. Your orb splits into two.</div>
+    <div class="tut-dots" id="tutDots"></div>
+    <button class="btn" id="tutNextBtn">Next →</button>
+  </div>
+</div>
+
+<!-- PAYWALL -->
+
+<div id="paywallScreen" class="hidden">
+  <div class="pw-title">Split Pass</div>
+  <div class="pw-sub">You've used your 10 free games</div>
+  <div class="pw-cards">
+    <div class="pw-card standard" id="pwStandardBtn">
+      <div class="pw-card-name">Split Pass</div>
+      <div class="pw-card-desc">Unlimited play · All levels · All skins</div>
+      <div class="pw-card-price">$2.99 <span>one time</span></div>
+    </div>
+    <div class="pw-card premium" id="pwPremiumBtn">
+      <div class="pw-badge">⚡ Founders Only</div>
+      <div class="pw-card-name">Origin Pass</div>
+      <div class="pw-card-desc">Everything in Split Pass · Exclusive Origin skin · Limited to first 1000</div>
+      <div class="pw-card-price">$5.99 <span>one time · forever</span></div>
+    </div>
+  </div>
+  <div class="pw-free" id="pwRestoreBtn">Restore purchase</div>
+</div>
+
+<!-- USERNAME MODAL -->
+
+<div id="usernameModal" class="hidden">
+  <div class="card">
+    <div style="font-size:30px">👤</div>
+    <h3>Choose a name</h3>
+    <p>This appears on the leaderboard</p>
+    <input id="usernameInput" type="text" maxlength="12" placeholder="Your name..." autocomplete="off" spellcheck="false">
+    <button class="btn" id="usernameSaveBtn">Let's Go</button>
+  </div>
+</div>
 
 <!-- START -->
 
@@ -115,16 +215,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
     <div id="goMedal" style="font-size:34px;margin-bottom:4px">💫</div>
     <div class="score-lbl">Score</div>
     <div class="score-big" id="goScore">0</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.3);font-family:'Georgia',serif;margin:4px 0 0;" id="goTime"></div>
     <div class="divider"></div>
     <div class="best-row" id="goBest">Best: —</div>
     <div class="btn-row">
       <button class="btn" id="retryBtn">↺ Again</button>
-      <button class="btn ghost" id="homeBtn">⌂ Home</button>
+      <button class="btn ghost" id="shareBtn">⬆ Share Clip</button>
     </div>
     <div style="height:8px"></div>
     <div class="btn-row">
+      <button class="btn ghost" id="homeBtn">⌂ Home</button>
       <button class="btn ghost musicToggleBtn" id="goMusicBtn">🎵 Music On</button>
-      <button class="btn ghost" id="shareBtn">↑ Share</button>
     </div>
     <div style="height:8px"></div>
     <button class="btn ghost" id="goSkinBtn">🎨 Customize</button>
@@ -329,28 +430,26 @@ function setHS(s,n){localStorage.setItem('splitScoreMod',s);localStorage.setItem
 var bgAudio=null,lofiOn=false,lofiTmr=null,lofiCI=0,lofiBN=0,lofiCN=0;
 var AC=null;
 var musicEnabled=localStorage.getItem('splitMusicOn')!=='false';
-var audioReady=false;
+var bgAudioInited=false;
 
 function getAC(){if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}return AC;}
 
-// Pre-load audio immediately on page load (no play yet — just buffer it)
-(function(){
-  var url='https://www.dropbox.com/scl/fi/7rfis7s9tj55z86iau2t5/ES_Lofi-on-the-Bass-Daniel-Fridell.mp3?rlkey=unngv2l76q9fisfmj8f2hfm7n&st=5avwvmb4&raw=1';
-  bgAudio=new Audio();
-  bgAudio.loop=true;
-  bgAudio.volume=0.38;
-  bgAudio.preload='auto';
-  bgAudio.src=url;
-  bgAudio.oncanplaythrough=function(){audioReady=true;};
-  bgAudio.onerror=function(){bgAudio=null;};
-})();
+function initBgAudio(){
+  if(bgAudioInited)return;bgAudioInited=true;
+  try{
+    var url='https://www.dropbox.com/scl/fi/7rfis7s9tj55z86iau2t5/ES_Lofi-on-the-Bass-Daniel-Fridell.mp3?rlkey=unngv2l76q9fisfmj8f2hfm7n&st=5avwvmb4&raw=1';
+    bgAudio=new Audio();
+    bgAudio.loop=true;bgAudio.volume=0.38;
+    bgAudio.src=url;
+    bgAudio.onerror=function(){bgAudio=null;};
+  }catch(e){bgAudio=null;}
+}
 
 function startMusic(){
   if(!musicEnabled)return;
   var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
+  initBgAudio();
   if(bgAudio){
-    // Direct play — called from user gesture so iOS allows it
-    bgAudio.currentTime=bgAudio.currentTime||0;
     var p=bgAudio.play();
     if(p&&p.catch)p.catch(function(){bgAudio=null;_startLofi();});
   } else {
@@ -384,20 +483,62 @@ function _stopLofi(){lofiOn=false;if(lofiTmr){clearTimeout(lofiTmr);lofiTmr=null
 // ═══════════════════════════════════
 //  DIFFICULTY
 // ═══════════════════════════════════
+//  PULSE DIFFICULTY SYSTEM
+//  Each Pulse = 20 obstacles
+//  Last 7 of each Pulse = breathing room
+//  Speed caps at Pulse 3, never increases after
+// ═══════════════════════════════════
 var score=0;
-function sf(){return Math.min(1,score/60);}
-function ss(t){return t*t*(3-2*t);}
-function baseSpd(){
-  // Start at a comfortable but noticeable speed, ramp meaningfully after score 15
-  var e=clamp(score/15,0,1),m=clamp((score-15)/20,0,1),l=clamp((score-35)/25,0,1);
-  return W*(0.0110+e*0.0028+m*0.0055+l*0.0072);
+var PULSE_LEN=20, BREATHE_START=13; // breathe for last 7 of each pulse
+var pulseNum=0, withinPulse=0, isBreathing=false;
+
+function updatePulse(){
+  pulseNum=Math.floor(score/PULSE_LEN);
+  withinPulse=score%PULSE_LEN;
+  isBreathing=withinPulse>=BREATHE_START;
 }
-function baseGapH(){return Math.max(GAP_BASE*(1-clamp((score-8)/40,0,1)*0.42),DOT_R*2.8);}
-function baseSpacing(){return Math.max(W*(0.66-(0.66-0.30)*ss(sf())),minG());}
+
+// Speed: caps at pulse 3 (score 60), breathing phases drop to 65% of peak
+var SPD_CAP=3; // pulse number where speed stops increasing
+function baseSpd(){
+  var pn=Math.min(pulseNum,SPD_CAP);
+  // Ramp: 0.011 → 0.020 over pulses 0-3
+  var peak=W*(0.011+pn*(0.009/SPD_CAP));
+  // Breathe phases slow down noticeably
+  return isBreathing?peak*0.65:peak;
+}
+
+// Gap: comfortable minimum, breathe phases open wider
+function baseGapH(){
+  var pn=Math.min(pulseNum,SPD_CAP);
+  // Shrink per pulse, but hard floor
+  var tight=GAP_BASE*(1-pn*0.08);
+  var minGap=Math.max(DOT_R*3.4, tight); // never too tight
+  return isBreathing?minGap*1.35:minGap;
+}
+
+// Spacing: breathe phases get much more room
+function baseSpacing(){
+  var base=isBreathing?W*0.72:Math.max(W*(0.62-Math.min(pulseNum,SPD_CAP)*0.08),W*0.32);
+  return Math.max(base,minG());
+}
+
 function minG(){return OBS_W+DOT_R*8;}
-function pairChance(){return clamp(0.04+(score/42)*0.46,0.04,0.50);}
-function tripleChance(){return clamp((score-20)/65,0,0.22);}
-function movingChance(){return clamp((score-10)/55,0,0.26);}
+
+// Pairs/triples: never during breathe
+function pairChance(){
+  if(isBreathing)return 0;
+  return clamp(0.06+(pulseNum/4)*0.42,0.06,0.48);
+}
+function tripleChance(){
+  if(isBreathing||pulseNum<2)return 0;
+  return clamp((pulseNum-2)/6,0,0.22);
+}
+function movingChance(){return 0;} // disabled per earlier decision
+
+// Pulse names — on theme
+var PULSE_NAMES=['Pulse 1','Pulse 2','Pulse 3','Pulse 4','Pulse 5','Pulse 6','Pulse 7','Pulse 8'];
+var lastShownPulse=-1;
 
 // ═══════════════════════════════════
 //  PARTICLES
@@ -747,7 +888,7 @@ function checkHit(){
 function inGap(y,gap,r){return y-r>=gap.top&&y+r<=gap.bot;}
 
 // ═══════════════════════════════════
-//  GAME STATE
+//  USER + GAME STATE
 // ═══════════════════════════════════
 var STATE='start',bgFlash=0,swapFlash=0;
 var dotTopY=0,dotBotY=0,prevTopY=0,prevBotY=0;
@@ -755,6 +896,45 @@ var targetTopY=0,targetBotY=0;
 var isHolding=false,fingerY=0;
 var isSwapped=false,fingerAboveCenter=true;
 var CENTER_ZONE=0.12;
+
+// Username — local for now
+var username=localStorage.getItem('splitUsername')||'';
+
+// Run timer
+var runStartTime=0,runElapsed=0;
+function formatTime(ms){var s=Math.floor(ms/1000),m=Math.floor(s/60);s=s%60;return m+':'+(s<10?'0':'')+s;}
+function updateTimerHUD(){document.getElementById('hudTimer').textContent=formatTime(Date.now()-runStartTime);}
+
+// Game count + paywall
+var FREE_GAMES=10;
+var gamesPlayed=parseInt(localStorage.getItem('splitGamesPlayed')||'0');
+var isPaid=localStorage.getItem('splitPaid')==='true';
+function incrementGameCount(){gamesPlayed++;localStorage.setItem('splitGamesPlayed',gamesPlayed);}
+function shouldShowPaywall(){return !isPaid&&gamesPlayed>=FREE_GAMES;}
+
+// Tutorial
+var hasSeenTutorial=localStorage.getItem('splitTutSeen')==='true';
+var tutStep=0;
+var TUT_STEPS=[
+  {icon:'👇',title:'Hold to Split',desc:'Press and hold anywhere. Your orb splits into two — top and bottom.'},
+  {icon:'↕',title:'Drag to Aim',desc:'Slide your finger up or down to set how far apart the orbs split.'},
+  {icon:'🎨',title:'Match the Color',desc:'Each gap glows with the color your orb must match. Get your orbs through the right gaps.'},
+  {icon:'🔄',title:'Cross to Swap',desc:'Drag your finger past the center line to swap which color goes where.'},
+];
+
+// Tutorial control
+function showTutStep(i){
+  tutStep=i;
+  document.getElementById('tutStep').textContent='Step '+(i+1)+' of '+TUT_STEPS.length;
+  document.getElementById('tutIcon').textContent=TUT_STEPS[i].icon;
+  document.getElementById('tutTitle').textContent=TUT_STEPS[i].title;
+  document.getElementById('tutDesc').textContent=TUT_STEPS[i].desc;
+  document.getElementById('tutNextBtn').textContent=i<TUT_STEPS.length-1?'Next →':'Play';
+  var dots=document.getElementById('tutDots');dots.innerHTML='';
+  TUT_STEPS.forEach(function(_,j){var d=document.createElement('div');d.className='tut-dot'+(j===i?' active':'');dots.appendChild(d);});
+}
+function openTutorial(){document.getElementById('tutScreen').classList.remove('hidden');showTutStep(0);}
+function closeTutorial(){document.getElementById('tutScreen').classList.add('hidden');localStorage.setItem('splitTutSeen','true');hasSeenTutorial=true;}
 
 function applyFingerY(fy){
   var dist=Math.abs(fy-DOT_MID),cz=H*CENTER_ZONE;
@@ -776,32 +956,56 @@ function initGame(){
   isHolding=false;fingerY=H*0.5;isSwapped=false;fingerAboveCenter=true;bgFlash=0;swapFlash=0;
   dotTopY=DOT_MID;dotBotY=DOT_MID;prevTopY=DOT_MID;prevBotY=DOT_MID;targetTopY=DOT_MID;targetBotY=DOT_MID;
   pTrail=[];pFX=[];activeFX=null;deathFX=null;obstacles=[];lastType='';score=0;
+  pulseNum=0;withinPulse=0;isBreathing=false;lastShownPulse=-1;
+  runStartTime=Date.now();runElapsed=0;
   nextX=spawnFrom(W+W*rnd(0.14,0.24));
   document.getElementById('hudScore').textContent='0';
+  document.getElementById('hudTimer').textContent='0:00';
   document.getElementById('hud').classList.remove('hidden');
+  startRec();
   STATE='playing';
 }
+
 function showGO(){
   var hs=getHS();
+  runElapsed=Date.now()-runStartTime;
   document.getElementById('goScore').textContent=score;
+  document.getElementById('goTime').textContent=formatTime(runElapsed)+' · '+(username||'Anonymous');
   document.getElementById('goBest').textContent=hs.score>0?'Best: '+hs.score+(hs.name?' · '+hs.name:''):'Best: —';
   document.getElementById('goMedal').textContent=score>=30?'🏆':score>=20?'🥇':score>=12?'🥈':score>=6?'🥉':'💫';
   document.getElementById('goScreen').classList.remove('hidden');
 }
+
 function doGameOver(){
   STATE='dead';isHolding=false;
+  runElapsed=Date.now()-runStartTime;
   triggerDeathFX(DOT_X,(dotTopY+dotBotY)*0.5);
   document.getElementById('hud').classList.add('hidden');
-  // Wait for death animation to finish (~1.8s) before showing game over
-  var isNew=score>getHS().score;
+  incrementGameCount();
+
   setTimeout(function(){
-    if(isNew){
-      document.getElementById('nameInput').value='';
-      document.getElementById('nameModal').classList.remove('hidden');
-      setTimeout(function(){document.getElementById('nameInput').focus();},80);
-    } else {
-      showGO();
-    }
+    stopRec(function(){
+      // Check paywall first
+      if(shouldShowPaywall()){
+        document.getElementById('paywallScreen').classList.remove('hidden');
+        return;
+      }
+      // Check if username needed
+      if(!username){
+        document.getElementById('usernameModal').classList.remove('hidden');
+        setTimeout(function(){document.getElementById('usernameInput').focus();},80);
+        return;
+      }
+      // New high score?
+      var isNew=score>getHS().score;
+      if(isNew){
+        document.getElementById('nameInput').value='';
+        document.getElementById('nameModal').classList.remove('hidden');
+        setTimeout(function(){document.getElementById('nameInput').focus();},80);
+      } else {
+        showGO();
+      }
+    });
   },1800);
 }
 
@@ -814,7 +1018,14 @@ function isOnCanvas(el){while(el&&el!==document.body){if(el===canvas)return true
 function onDown(e){
   var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
   if(!isOnCanvas(e.target))return;
-  if(STATE==='start'){document.getElementById('startScreen').classList.add('hidden');startMusic();initGame();}
+  if(STATE==='start'){
+    document.getElementById('startScreen').classList.add('hidden');
+    startMusic();
+    if(!hasSeenTutorial){openTutorial();}
+    else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
+    else{initGame();}
+    return;
+  }
   if(STATE==='playing'){
     isHolding=true;fingerY=getDocY(e);
     isSwapped=fingerY>DOT_MID;fingerAboveCenter=fingerY<DOT_MID;
@@ -836,12 +1047,58 @@ document.addEventListener('mousemove',onMove);
 document.addEventListener('mouseup',  onUp);
 
 // ═══════════════════════════════════
-//  RECORDING + SHARE
+//  RECORDING — rolling 15s buffer
 // ═══════════════════════════════════
 var recorder=null,recChunks=[],recBlob=null;
-function startRec(){recChunks=[];recBlob=null;if(!canvas.captureStream||!window.MediaRecorder)return;try{var st=canvas.captureStream(60);var mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';recorder=new MediaRecorder(st,{mimeType:mime});recorder.ondataavailable=function(e){if(e.data&&e.data.size>0)recChunks.push(e.data);};recorder.start();}catch(e){recorder=null;}}
-function stopRec(cb){if(!recorder){if(cb)cb(null);return;}recorder.onstop=function(){recBlob=new Blob(recChunks,{type:'video/webm'});if(cb)cb(recBlob);};try{recorder.stop();}catch(e){if(cb)cb(null);}recorder=null;}
-function shareRun(){var txt='I scored '+score+' in Split!';if(navigator.share){navigator.share({title:'Split',text:txt,url:location.href}).catch(function(){toast('Score: '+score);});}else{if(navigator.clipboard)navigator.clipboard.writeText(txt);toast('Copied!');}}
+var REC_MAX_MS=15000;
+
+function startRec(){
+  recChunks=[];recBlob=null;
+  if(!canvas.captureStream||!window.MediaRecorder)return;
+  try{
+    var st=canvas.captureStream(30); // 30fps saves space
+    var mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
+    recorder=new MediaRecorder(st,{mimeType:mime});
+    recorder.ondataavailable=function(e){
+      if(e.data&&e.data.size>0){
+        recChunks.push({data:e.data,time:Date.now()});
+        // Trim to last 15 seconds
+        var cutoff=Date.now()-REC_MAX_MS;
+        recChunks=recChunks.filter(function(c){return c.time>=cutoff;});
+      }
+    };
+    recorder.start(1000); // chunk every second for rolling buffer
+  }catch(e){recorder=null;}
+}
+
+function stopRec(cb){
+  if(!recorder){if(cb)cb(null);return;}
+  recorder.onstop=function(){
+    var chunks=recChunks.map(function(c){return c.data;});
+    recBlob=new Blob(chunks,{type:'video/webm'});
+    if(cb)cb(recBlob);
+  };
+  try{recorder.stop();}catch(e){if(cb)cb(null);}
+  recorder=null;
+}
+
+function shareRun(){
+  var name=username||'Anonymous';
+  var txt=name+' scored '+score+' in '+formatTime(runElapsed)+' on Split · split.game';
+  if(recBlob&&navigator.share&&navigator.canShare){
+    var f=new File([recBlob],'split-'+score+'.webm',{type:'video/webm'});
+    if(navigator.canShare({files:[f]})){
+      navigator.share({title:'Split',text:txt,files:[f]}).catch(function(){shareURL(txt);});
+      return;
+    }
+  }
+  shareURL(txt);
+}
+function shareURL(txt){
+  if(navigator.share){navigator.share({title:'Split',text:txt,url:'https://split.game'}).catch(function(){copyTxt(txt);});return;}
+  copyTxt(txt);
+}
+function copyTxt(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('Copied!');});else toast('Score: '+score);}
 function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2500);}
 
 // ═══════════════════════════════════
@@ -962,27 +1219,89 @@ document.querySelectorAll('.sk-tab').forEach(function(tab){
 });
 
 var audioContextResumed=false;
-function ensureAudio(){
-  // Resume AudioContext on first user gesture (iOS requirement)
-  var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
-}
+function ensureAudio(){var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();}
 
+// Tutorial buttons
+document.getElementById('tutNextBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  if(tutStep<TUT_STEPS.length-1){showTutStep(tutStep+1);}
+  else{
+    closeTutorial();
+    if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
+    else{initGame();}
+  }
+});
+
+// Paywall buttons
+document.getElementById('pwStandardBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  // TODO: integrate Stripe — for now mark as paid for testing
+  isPaid=true;localStorage.setItem('splitPaid','true');
+  document.getElementById('paywallScreen').classList.add('hidden');
+  initGame();
+  toast('Welcome to Split Pass!');
+});
+document.getElementById('pwPremiumBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  isPaid=true;localStorage.setItem('splitPaid','true');
+  document.getElementById('paywallScreen').classList.add('hidden');
+  initGame();
+  toast('Welcome to Origin Pass!');
+});
+document.getElementById('pwRestoreBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  toast('Restore coming soon — contact support@split.game');
+});
+
+// Username modal
+document.getElementById('usernameSaveBtn').addEventListener('click',function(){
+  var val=(document.getElementById('usernameInput').value||'').trim().slice(0,12);
+  if(!val)return;
+  username=val;localStorage.setItem('splitUsername',val);
+  document.getElementById('usernameModal').classList.add('hidden');
+  var isNew=score>getHS().score;
+  if(isNew){document.getElementById('nameInput').value=val;document.getElementById('nameModal').classList.remove('hidden');setTimeout(function(){document.getElementById('nameInput').focus();},80);}
+  else showGO();
+});
+document.getElementById('usernameInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('usernameSaveBtn').click();});
+
+// Start screen
 document.getElementById('startBtn').addEventListener('click',function(e){
   e.stopPropagation();
   document.getElementById('startScreen').classList.add('hidden');
-  ensureAudio();
-  startMusic(); // called directly from user gesture — iOS allows play() here
-  initGame();
+  ensureAudio();startMusic();
+  if(!hasSeenTutorial){openTutorial();}
+  else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
+  else{initGame();}
 });
 document.getElementById('startSkinBtn').addEventListener('click',function(e){e.stopPropagation();openSkins('start');});
 document.getElementById('startMusicBtn').addEventListener('click',function(e){e.stopPropagation();ensureAudio();toggleMusic();});
-document.getElementById('retryBtn').addEventListener('click',function(e){e.stopPropagation();document.getElementById('goScreen').classList.add('hidden');initGame();});
-document.getElementById('homeBtn').addEventListener('click',function(e){e.stopPropagation();document.getElementById('goScreen').classList.add('hidden');document.getElementById('startScreen').classList.remove('hidden');STATE='start';});
+
+// Game over screen
+document.getElementById('retryBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  document.getElementById('goScreen').classList.add('hidden');
+  if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
+  else{initGame();}
+});
+document.getElementById('homeBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  document.getElementById('goScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+  STATE='start';
+});
 document.getElementById('shareBtn').addEventListener('click',function(e){e.stopPropagation();shareRun();});
 document.getElementById('goMusicBtn').addEventListener('click',function(e){e.stopPropagation();ensureAudio();toggleMusic();});
 document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stopPropagation();document.getElementById('goScreen').classList.add('hidden');openSkins('gameover');});
+
+// Skin + name
 document.getElementById('skinDoneBtn').addEventListener('click',closeSkins);
-document.getElementById('nameSaveBtn').addEventListener('click',function(){var name=(document.getElementById('nameInput').value||'').trim().slice(0,12)||'Anonymous';setHS(score,name);document.getElementById('nameModal').classList.add('hidden');showGO();});
+document.getElementById('nameSaveBtn').addEventListener('click',function(){
+  var name=(document.getElementById('nameInput').value||'').trim().slice(0,12)||username||'Anonymous';
+  setHS(score,name);
+  document.getElementById('nameModal').classList.add('hidden');
+  showGO();
+});
 document.getElementById('nameInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('nameSaveBtn').click();});
 updateMusicBtns();
 
@@ -1021,6 +1340,34 @@ function loop(){
   var isMerged=spread<DOT_R*2.5;
 
   if(STATE==='playing'){
+    // Update timer HUD every frame
+    updateTimerHUD();
+
+    // Update pulse state
+    var prevPulse=pulseNum;
+    updatePulse();
+
+    // Show pulse banner when a new pulse starts (not pulse 0)
+    if(pulseNum>0&&pulseNum!==lastShownPulse&&withinPulse===0){
+      lastShownPulse=pulseNum;
+      var bn=document.getElementById('pulseBanner');
+      var bt=document.getElementById('pulseBannerText');
+      var bs=document.getElementById('pulseBannerSub');
+      bt.textContent=PULSE_NAMES[Math.min(pulseNum,PULSE_NAMES.length-1)];
+      bs.textContent=isBreathing?'Breathe...':'Here we go';
+      bn.classList.add('show');
+      setTimeout(function(){bn.classList.remove('show');},1800);
+    }
+    // Show breathing banner
+    if(isBreathing&&withinPulse===BREATHE_START&&lastShownPulse!==-(pulseNum+0.5)){
+      lastShownPulse=-(pulseNum+0.5);
+      var bn2=document.getElementById('pulseBanner');
+      document.getElementById('pulseBannerText').textContent='Breathe';
+      document.getElementById('pulseBannerSub').textContent='Next pulse incoming';
+      bn2.classList.add('show');
+      setTimeout(function(){bn2.classList.remove('show');},1600);
+    }
+
     var rightmost=-Infinity;for(var i=0;i<obstacles.length;i++)if(obstacles[i].x>rightmost)rightmost=obstacles[i].x;
     if(rightmost<W)nextX=spawnFrom(Math.max(W+80,rightmost+Math.max(baseSpacing()*rnd(0.82,1.20),minG())));
     var mg=minG();obstacles.sort(function(a,b){return b.x-a.x;});
