@@ -250,6 +250,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
     <div class="btn-row" style="width:100%;">
       <button class="btn ghost musicToggleBtn" id="startMusicBtn">Music On</button>
       <button class="btn ghost" id="startSkinBtn">Customize</button>
+      <button class="btn ghost" id="startLbBtn" style="margin-top:4px;width:100%;">Leaderboard</button>
     </div>
   </div>
 </div>
@@ -288,28 +289,39 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 <!-- GAME OVER -->
 
 <div class="screen hidden" id="goScreen">
-  <div class="card">
-    <div id="goMedal" style="font-size:34px;margin-bottom:4px">💫</div>
-    <div class="score-lbl">Score</div>
-    <div class="score-big" id="goScore">0</div>
-    <div style="font-size:12px;color:rgba(255,255,255,0.3);font-family:'Georgia',serif;margin:4px 0 0;" id="goTime"></div>
-    <div class="divider"></div>
-    <div class="best-row" id="goBest">Best: --</div>
-    <div class="btn-row">
-      <button class="btn" id="retryBtn">↺ Again</button>
-      <button class="btn ghost" id="shareBtn">⬆ Share Clip</button>
+  <div class="card" style="padding:20px 20px 16px;">
+    <!-- Score section -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2px;">
+      <div id="goMedal" style="font-size:26px;line-height:1;">💫</div>
+      <div class="score-big" id="goScore" style="font-size:56px;">0</div>
     </div>
-    <div style="height:8px"></div>
-    <div class="btn-row">
-      <button class="btn ghost" id="homeBtn">⌂ Home</button>
-      <button class="btn ghost musicToggleBtn" id="goMusicBtn">🎵 Music On</button>
+    <div style="font-size:10px;color:rgba(255,255,255,0.3);font-family:'Georgia',serif;text-align:center;margin-bottom:2px;" id="goTime"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="best-row" id="goBest" style="margin:0;font-size:12px;">Best: --</div>
+      <div id="goRank" style="font-size:12px;color:rgba(255,255,255,0.45);font-family:'Georgia',serif;"></div>
     </div>
-    <div style="height:8px"></div>
-    <button class="btn ghost" id="goSkinBtn">🎨 Customize</button>
+    <div class="divider" style="margin:0 0 10px;"></div>
+    <!-- Primary actions -->
+    <div class="btn-row" style="margin-bottom:8px;">
+      <button class="btn" id="retryBtn" style="font-size:12px;">Again</button>
+      <button class="btn ghost" id="goLbBtn" style="font-size:12px;">Leaderboard</button>
+    </div>
+    <!-- Secondary actions -->
+    <div class="btn-row" style="margin-bottom:8px;">
+      <button class="btn ghost" id="goLevelBtn" style="font-size:11px;" id="goLevelBtn">Level</button>
+      <button class="btn ghost" id="goSkinBtn" style="font-size:11px;">Customize</button>
+      <button class="btn ghost" id="shareBtn" style="font-size:11px;">Share</button>
+    </div>
+    <!-- Bottom row -->
+    <div class="btn-row">
+      <button class="btn ghost" id="homeBtn" style="font-size:11px;">Home</button>
+      <button class="btn ghost musicToggleBtn" id="goMusicBtn" style="font-size:11px;">Music On</button>
+    </div>
+    <!-- Sign in prompt - only shown when not signed in -->
     <div id="goSoftSignIn" style="display:none;margin-top:10px;">
-      <div style="font-size:10px;color:rgba(255,255,255,0.35);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:8px;">Save scores - Leaderboard - Friends</div>
-      <div id="goGoogleBtn" onclick="openSignIn('soft',true)" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:50px;padding:11px 0;cursor:pointer;font-size:12px;font-weight:700;font-family:'Georgia',serif;letter-spacing:1px;color:#fff;">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:16px;height:16px;" alt="G">
+      <div style="font-size:9px;color:rgba(255,255,255,0.3);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:7px;">Save scores · Leaderboard · Friends</div>
+      <div id="goGoogleBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);border-radius:50px;padding:10px 0;cursor:pointer;font-size:11px;font-weight:700;font-family:'Georgia',serif;letter-spacing:1px;color:#fff;">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:14px;height:14px;filter:brightness(10);" alt="G">
         Sign in with Google
       </div>
     </div>
@@ -382,6 +394,25 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
     <button class="btn ghost" id="acctSignOutBtn" style="color:rgba(255,100,100,0.8);border-color:rgba(255,100,100,0.3);">Sign Out</button>
   </div>
   <div style="font-size:10px;color:rgba(255,255,255,0.18);font-family:'Georgia',serif;text-align:center;margin-top:16px;cursor:pointer;" id="acctCloseBtn">Close</div>
+</div>
+
+<!-- LEADERBOARD SCREEN -->
+
+<div id="lbScreen" class="hidden" style="position:fixed;inset:0;z-index:35;background:rgba(5,7,12,0.98);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);">
+  <div style="padding:16px 18px 0;text-align:center;flex-shrink:0;">
+    <div style="font-size:15px;font-weight:900;color:#fff;font-family:'Georgia',serif;letter-spacing:5px;text-transform:uppercase;">Leaderboard</div>
+  </div>
+  <!-- Toggle tabs -->
+  <div style="display:flex;gap:0;padding:10px 18px 0;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;">
+    <button class="sk-tab active" id="lbWorldTab" style="flex:1;">World</button>
+    <button class="sk-tab" id="lbFriendsTab" style="flex:1;">Friends</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px;">
+    <div id="lbList" style="max-width:360px;margin:0 auto;"></div>
+  </div>
+  <div style="padding:8px 16px 24px;max-width:360px;margin:0 auto;width:100%;">
+    <button class="btn ghost" id="lbCloseBtn">Close</button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -1269,7 +1300,13 @@ function drawDeathFX(){
   deathFX.t+=0.016;deathFX.life=Math.max(0,deathFX.life-0.025);
   var d=deathFX,al=d.life;
 
-  if(d.di===1){// Nova
+  if(d.di===0){// Scatter - particles already emitted, just draw expanding ring
+    ctx.save();ctx.globalAlpha=al*0.6;
+    var sr2=(1-al)*DOT_R*6;
+    ctx.beginPath();ctx.arc(d.x,d.y,sr2,0,Math.PI*2);
+    ctx.strokeStyle=rgba(d.col,al);ctx.lineWidth=2.5;ctx.stroke();
+    ctx.restore();
+  } else if(d.di===1){// Nova
     var nr=(1-al)*H*0.35;ctx.save();ctx.globalAlpha=al*0.75;ctx.beginPath();ctx.arc(d.x,d.y,nr,0,Math.PI*2);ctx.strokeStyle=rgba(d.col,1);ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.arc(d.x,d.y,nr*0.55,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,'+(al*0.5)+')';ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
   } else if(d.di===2){// Ink
     var ir2=(1-al)*DOT_R*5;ctx.save();ctx.globalAlpha=al*0.65;var ig2=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,ir2);ig2.addColorStop(0,rgba(d.col,0.85));ig2.addColorStop(0.6,rgba(d.col,0.4));ig2.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=ig2;ctx.beginPath();ctx.arc(d.x,d.y,ir2,0,Math.PI*2);ctx.fill();ctx.restore();
@@ -1555,13 +1592,26 @@ function showGO(){
   var hs=getHS();
   runElapsed=Date.now()-runStartTime;
   document.getElementById('goScore').textContent=score;
-  document.getElementById('goTime').textContent=formatTime(runElapsed)+' - '+(username||'Guest');
-  document.getElementById('goBest').textContent=hs.score>0?'Best: '+hs.score+(hs.name?' - '+hs.name:''):'Best: --';
+  document.getElementById('goTime').textContent=formatTime(runElapsed)+(username?' · '+username:'');
+  document.getElementById('goBest').textContent=hs.score>0?'Best: '+hs.score:'Best: --';
   document.getElementById('goMedal').textContent=score>=30?ICONS.trophy:score>=20?ICONS.gold:score>=12?ICONS.silver:score>=6?ICONS.bronze:ICONS.star;
   document.getElementById('goScreen').classList.remove('hidden');
-  // Show soft sign in prompt if not yet signed in (after game 1)
+  // Soft sign in only when not signed in
   var softDiv=document.getElementById('goSoftSignIn');
   if(softDiv){softDiv.style.display=(!googleUser&&gamesPlayed>=1)?'block':'none';}
+  // Fetch rank if signed in
+  var rankEl=document.getElementById('goRank');
+  if(rankEl){
+    if(googleUser&&username){
+      rankEl.textContent='Fetching rank...';
+      fetch(BACKEND_URL+'/rank/'+encodeURIComponent(username))
+        .then(function(r){return r.json();})
+        .then(function(d){rankEl.textContent=d.rank?'#'+d.rank+' Global':'';})
+        .catch(function(){rankEl.textContent='';});
+    } else {
+      rankEl.textContent='';
+    }
+  }
 }
 
 function doGameOver(){
@@ -1717,7 +1767,17 @@ var previewCtx=previewCanvas.getContext('2d');
 var previewT=0,previewRAF=null;
 
 function openSkins(from){skinFrom=from;buildSkinGrid();document.getElementById('skinScreen').classList.remove('hidden');startPreviewAnim();}
-function closeSkins(){saveSkin();document.getElementById('skinScreen').classList.add('hidden');stopPreviewAnim();if(skinFrom==='start')document.getElementById('startScreen').classList.remove('hidden');else document.getElementById('goScreen').classList.remove('hidden');}
+function closeSkins(){
+  saveSkin();
+  document.getElementById('skinScreen').classList.add('hidden');
+  stopPreviewAnim();
+  if(skinFrom==='start'||skinFrom==='account'){
+    document.getElementById('startScreen').classList.remove('hidden');
+  } else if(skinFrom==='gameover'){
+    document.getElementById('goScreen').classList.remove('hidden');
+  }
+  // Don't touch any other screens
+}
 function stopPreviewAnim(){if(previewRAF){cancelAnimationFrame(previewRAF);previewRAF=null;}}
 
 function startPreviewAnim(){
@@ -1910,6 +1970,47 @@ document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stop
 
 // Skin + name
 document.getElementById('skinDoneBtn').addEventListener('click',closeSkins);
+// Game over new buttons
+document.getElementById('goLbBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  document.getElementById('goScreen').classList.add('hidden');
+  openLeaderboard();
+});
+document.getElementById('goLevelBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  document.getElementById('goScreen').classList.add('hidden');
+  showLevelScreenFromGO();
+});
+document.getElementById('goGoogleBtn').addEventListener('click',function(){
+  openSignIn('soft',true);
+});
+document.getElementById('startLbBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  openLeaderboard();
+});
+
+// Leaderboard screen
+document.getElementById('lbCloseBtn').addEventListener('click',function(){
+  document.getElementById('lbScreen').classList.add('hidden');
+  // Return to wherever we came from
+  if(STATE==='dead'){document.getElementById('goScreen').classList.remove('hidden');}
+  else{document.getElementById('startScreen').classList.remove('hidden');}
+});
+document.getElementById('lbWorldTab').addEventListener('click',function(){
+  lbTab='world';
+  this.classList.add('active');
+  document.getElementById('lbFriendsTab').classList.remove('active');
+  loadLeaderboard();
+});
+document.getElementById('lbFriendsTab').addEventListener('click',function(){
+  lbTab='friends';
+  this.classList.add('active');
+  document.getElementById('lbWorldTab').classList.remove('active');
+  // Friends coming soon
+  document.getElementById('lbList').innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-family:\'Georgia\',serif;font-size:13px;letter-spacing:2px;">Friends coming soon</div>';
+});
+
+
 // Mode screen buttons
 document.getElementById('startBtn').addEventListener('click',function(e){
   e.stopPropagation();
@@ -1936,7 +2037,12 @@ document.getElementById('modeBackBtn').addEventListener('click',function(e){
 document.getElementById('levelBackBtn').addEventListener('click',function(e){
   e.stopPropagation();
   document.getElementById('levelSelectScreen').classList.add('hidden');
-  document.getElementById('modeScreen').classList.remove('hidden');
+  if(window._afterLevelSelect==='gameover'){
+    window._afterLevelSelect=null;
+    document.getElementById('goScreen').classList.remove('hidden');
+  } else {
+    document.getElementById('modeScreen').classList.remove('hidden');
+  }
 });
 
 // Account menu buttons
@@ -2128,6 +2234,13 @@ function showModeScreen(){
   startMenuMusic();
 }
 
+function showLevelScreenFromGO(){
+  // Show level select, return to GO screen after selection
+  var origFn=window._afterLevelSelect;
+  window._afterLevelSelect='gameover';
+  showLevelScreen();
+}
+
 function showLevelScreen(){
   document.getElementById('modeScreen').classList.add('hidden');
   document.getElementById('levelSelectScreen').classList.remove('hidden');
@@ -2149,8 +2262,12 @@ function buildLevelSelectList(){
         btn.addEventListener('click',function(){
           activeLevel=idx;saveLevel();
           document.getElementById('levelSelectScreen').classList.add('hidden');
-          // Go straight to game
-          checkAndStartGame();
+          if(window._afterLevelSelect==='gameover'){
+            window._afterLevelSelect=null;
+            document.getElementById('goScreen').classList.remove('hidden');
+          } else {
+            checkAndStartGame();
+          }
         });
       })(i);
     } else {
@@ -2181,6 +2298,40 @@ function openAccountMenu(){
   drawAcctOrb();
   document.getElementById('accountMenu').classList.remove('hidden');
 }
+
+
+// -----------------------------------
+//  LEADERBOARD
+// -----------------------------------
+var lbTab='world';
+function openLeaderboard(){
+  document.getElementById('lbScreen').classList.remove('hidden');
+  lbTab='world';
+  document.getElementById('lbWorldTab').classList.add('active');
+  document.getElementById('lbFriendsTab').classList.remove('active');
+  loadLeaderboard();
+}
+function loadLeaderboard(){
+  var list=document.getElementById('lbList');
+  list.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-family:Georgia,serif;font-size:13px;letter-spacing:2px;">Loading...</div>';
+  fetch(BACKEND_URL+'/leaderboard')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var rows=d.leaderboard||[];
+      if(!rows.length){list.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-family:Georgia,serif;font-size:13px;">No scores yet</div>';return;}
+      list.innerHTML=rows.map(function(r,i){
+        var isMe=r.username===username;
+        var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+        return '<div style="display:flex;align-items:center;padding:11px 4px;border-bottom:1px solid rgba(255,255,255,0.05);'+(isMe?'background:rgba(255,255,255,0.04);border-radius:8px;padding:11px 8px;':'')+'">'
+          +'<div style="width:30px;font-size:13px;color:rgba(255,255,255,0.3);font-family:Georgia,serif;">'+(medal||(i+1))+'</div>'
+          +'<div style="flex:1;font-size:13px;font-weight:'+(isMe?'900':'400')+';color:'+(isMe?'#fff':'rgba(255,255,255,0.7)')+';font-family:Georgia,serif;">'+esc(r.username)+'</div>'
+          +'<div style="font-size:15px;font-weight:900;color:#fff;font-family:Georgia,serif;">'+r.score+'</div>'
+          +'</div>';
+      }).join('');
+    })
+    .catch(function(){list.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-family:Georgia,serif;font-size:13px;">Could not load scores</div>';});
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // -----------------------------------
 //  MAIN LOOP
@@ -2248,19 +2399,21 @@ function loop(){
   drawConnector(dotTopY,dotBotY);
   drawActiveFX();drawDeathFX();
 
-  var isOriginSkin=(skinState.colors===COLOR_SETS.length-1); // last color set is Origin
-  if(isMerged){drawOrb(DOT_X,(dotTopY+dotBotY)*0.5,DOT_R,cs.m,true);}
-  else{
-    var sr=DOT_R*(0.9+splitProg*0.1);
-    var topCol=isSwapped?cs.t:cs.b;
-    var botCol=isSwapped?cs.b:cs.t;
-    if(isOriginSkin){
-      // Amoeba shape for Origin split orbs
-      drawAmoebaOrb(DOT_X,dotTopY,sr,topCol);
-      drawAmoebaOrb(DOT_X,dotBotY,sr,botCol);
-    } else {
-      drawOrb(DOT_X,dotTopY,sr,topCol,false);
-      drawOrb(DOT_X,dotBotY,sr,botCol,false);
+  // Only draw orb when alive - hide during death animation
+  if(STATE!=='dead'){
+    var isOriginSkin=(skinState.colors===COLOR_SETS.length-1);
+    if(isMerged){drawOrb(DOT_X,(dotTopY+dotBotY)*0.5,DOT_R,cs.m,true);}
+    else{
+      var sr=DOT_R*(0.9+splitProg*0.1);
+      var topCol=isSwapped?cs.t:cs.b;
+      var botCol=isSwapped?cs.b:cs.t;
+      if(isOriginSkin){
+        drawAmoebaOrb(DOT_X,dotTopY,sr,topCol);
+        drawAmoebaOrb(DOT_X,dotBotY,sr,botCol);
+      } else {
+        drawOrb(DOT_X,dotTopY,sr,topCol,false);
+        drawOrb(DOT_X,dotBotY,sr,botCol,false);
+      }
     }
   }
 
