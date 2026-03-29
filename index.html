@@ -13,7 +13,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 #hud{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;padding-top:16px;pointer-events:none;z-index:5;}
 #hud.hidden{display:none;}
 #hudScore{font-size:56px;font-weight:900;color:#fff;font-family:'Georgia',serif;letter-spacing:-2px;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,0.6);}
-.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;}
+.screen{position:fixed;inset:0;z-index:28;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;}
 .screen.hidden{display:none!important;}
 #startScreen.hidden{display:none!important;}
 .card{background:rgba(6,8,14,0.95);border:1.5px solid rgba(255,255,255,0.08);border-radius:22px;padding:24px 22px 20px;text-align:center;width:100%;max-width:296px;box-shadow:0 24px 60px rgba(0,0,0,0.85);backdrop-filter:blur(16px);}
@@ -231,7 +231,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
       <div class="pw-card-price">$5.99 <span>one time - forever</span></div>
     </div>
   </div>
-  <div style="font-size:10px;color:rgba(255,255,255,0.18);font-family:'Georgia',serif;text-align:center;margin-top:16px;letter-spacing:1px;">All sales final - No refunds</div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.18);font-family:'Georgia',serif;text-align:center;margin-top:16px;letter-spacing:1px;">All sales final · No refunds · <a href="/privacy" style="color:rgba(255,255,255,0.3);text-decoration:underline;">Privacy Policy</a></div>
+  <div style="margin-top:8px;text-align:center;"><a href="/privacy" style="font-size:9px;color:rgba(255,255,255,0.15);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-decoration:none;">Privacy Policy</a></div>
 </div>
 
 <!-- USERNAME MODAL -->
@@ -300,7 +301,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 ```
 <!-- Score -->
 <div style="text-align:center;margin-bottom:16px;">
-  <div id="goMedal" style="font-size:26px;margin-bottom:6px;">💫</div>
+  <div id="goMedal" style="font-size:26px;margin-bottom:6px;"></div>
   <div class="score-big" id="goScore">0</div>
   <div id="goTime" style="font-size:10px;color:rgba(255,255,255,0.25);font-family:'Georgia',serif;margin-top:4px;letter-spacing:1px;"></div>
 </div>
@@ -395,7 +396,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 <!-- ACCOUNT MENU -->
 
 <div id="accountMenu" class="hidden">
-  <div class="acct-avatar"><canvas id="acctOrbCanvas" width="60" height="60"></canvas></div>
+  <div class="acct-avatar"><canvas id="acctOrbCanvas" width="80" height="80" style="width:72px;height:72px;border-radius:50%;display:block;"></canvas></div>
   <div class="acct-name" id="acctName"></div>
   <div class="acct-email" id="acctEmail"></div>
   <div class="acct-card">
@@ -405,6 +406,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
     <button class="btn ghost" id="acctSignOutBtn" style="color:rgba(255,100,100,0.8);border-color:rgba(255,100,100,0.3);">Sign Out</button>
   </div>
   <div style="font-size:10px;color:rgba(255,255,255,0.18);font-family:'Georgia',serif;text-align:center;margin-top:16px;cursor:pointer;" id="acctCloseBtn">Close</div>
+  <div style="margin-top:10px;text-align:center;"><a href="/privacy" style="font-size:9px;color:rgba(255,255,255,0.15);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-decoration:none;">Privacy Policy</a></div>
 </div>
 
 <!-- LEADERBOARD SCREEN -->
@@ -1492,7 +1494,10 @@ function handleGoogleSignIn(response){
   var email=payload.email;
   var gName=(payload.given_name||payload.name||email.split('@')[0]).slice(0,12);
   googleUser={email:email,name:gName,token:response.credential};
-  if(!username){username=gName;localStorage.setItem('splitUsername',gName);}
+  // Use saved username from localStorage, fall back to Google name
+  var savedName=localStorage.getItem('splitUsername');
+  if(savedName){username=savedName;}
+  else{username=gName;localStorage.setItem('splitUsername',gName);}
   fetch(BACKEND_URL+'/google-auth',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -2093,12 +2098,10 @@ document.getElementById('acctCustomizeBtn').addEventListener('click',function(){
   openSkins('start');
 });
 document.getElementById('acctSignOutBtn').addEventListener('click',function(){
-  googleUser=null;username='';
-  localStorage.removeItem('splitUsername');
-  localStorage.removeItem('splitPaid');
-  localStorage.removeItem('splitPaidTier');
-  localStorage.removeItem('splitGamesPlayed');
-  gamesPlayed=0;
+  // Keep username and paid status in localStorage so they restore on next sign in
+  // Only clear the Google session
+  googleUser=null;
+  stopAcctOrb();
   document.getElementById('accountMenu').classList.add('hidden');
   updateAccountBtn();
   toast('Signed out');
@@ -2115,18 +2118,28 @@ document.getElementById('acctSaveUsernameBtn').addEventListener('click',function
   }).then(function(r){return r.json();})
   .then(function(d){
     if(d.available){
+      var old=username;
       username=val;
       localStorage.setItem('splitUsername',val);
       document.getElementById('acctName').textContent=val;
       document.getElementById('acctUsernameInput').value='';
       document.getElementById('acctUsernameInput').placeholder=val;
       updateAccountBtn();
+      // Update in Supabase
+      fetch(BACKEND_URL+'/update-username',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          old_username:old,
+          new_username:val,
+          email:googleUser?googleUser.email:''
+        })
+      }).catch(function(){});
       toast('Username updated');
     } else {
       toast('Username taken - try another');
     }
   }).catch(function(){
-    // Offline - just update locally
     username=val;localStorage.setItem('splitUsername',val);
     updateAccountBtn();toast('Username updated');
   });
@@ -2255,17 +2268,17 @@ function drawAcctOrb(){
   var savedCtx=ctx,savedGT=GT;
   var loop=function(){
     acctOrbT+=0.02;GT=acctOrbT;ctx=actx;
-    actx.clearRect(0,0,60,60);
-    actx.fillStyle='rgba(6,8,14,1)';actx.fillRect(0,0,60,60);
+    actx.clearRect(0,0,72,72);
+    actx.fillStyle='rgba(6,8,14,1)';actx.fillRect(0,0,72,72);
     var cs=CS();
     // Draw split state preview
     var prog=(Math.sin(acctOrbT*0.7)+1)*0.5;
     var spread=prog*22;
     if(spread<5){
-      drawOrb(30,30,14,cs.m,true);
+      drawOrb(36,36,17,cs.m,true);
     } else {
-      drawOrb(30,30-spread*0.5,10,cs.t,false);
-      drawOrb(30,30+spread*0.5,10,cs.b,false);
+      drawOrb(36,36-spread*0.6,12,cs.t,false);
+      drawOrb(36,36+spread*0.6,12,cs.b,false);
     }
     ctx=savedCtx;GT=savedGT;
     if(document.getElementById('accountMenu')&&!document.getElementById('accountMenu').classList.contains('hidden')){
@@ -2471,7 +2484,6 @@ function loop(){
   GT+=0.016;requestAnimationFrame(loop);
 }
 
-loop();
 </script>
 
 </body>
