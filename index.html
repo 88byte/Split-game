@@ -77,6 +77,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
 #pulseBanner.show{opacity:1;}
 #pulseBannerText{font-size:28px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:6px;text-transform:uppercase;text-shadow:0 0 30px rgba(255,255,255,0.4);}
 #pulseBannerSub{font-size:11px;color:rgba(255,255,255,0.38);letter-spacing:4px;text-transform:uppercase;font-family:‘Georgia’,serif;margin-top:4px;}
+#pulseCountdown{font-size:96px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;line-height:1;text-shadow:0 0 60px rgba(255,255,255,0.5);margin-top:8px;}
+.sk-card.locked{opacity:0.45;cursor:default;}
+.sk-card.locked::after{content:‘🔒’;position:absolute;top:6px;left:6px;font-size:12px;}
 
 /* TUTORIAL */
 #tutScreen{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,0.82);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:60px;}
@@ -130,7 +133,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
     <div id="hudTimer">0:00</div>
   </div>
 </div>
-<div id="pulseBanner"><div id="pulseBannerText"></div><div id="pulseBannerSub"></div></div>
+<div id="pulseBanner"><div id="pulseBannerText"></div><div id="pulseBannerSub"></div><div id="pulseCountdown"></div></div>
 
 <!-- TUTORIAL -->
 
@@ -153,17 +156,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
   <div class="pw-cards">
     <div class="pw-card standard" id="pwStandardBtn">
       <div class="pw-card-name">Split Pass</div>
-      <div class="pw-card-desc">Unlimited play · All levels · All skins</div>
+      <div class="pw-card-desc">Unlimited play - All levels - All skins</div>
       <div class="pw-card-price">$2.99 <span>one time</span></div>
     </div>
     <div class="pw-card premium" id="pwPremiumBtn">
-      <div class="pw-badge">⚡ Founders Only</div>
+      <div class="pw-badge">Founders Only</div>
       <div class="pw-card-name">Origin Pass</div>
-      <div class="pw-card-desc">Everything in Split Pass · Exclusive Origin skin · Limited to first 1000</div>
-      <div class="pw-card-price">$5.99 <span>one time · forever</span></div>
+      <div class="pw-card-desc">Everything in Split Pass - Exclusive Origin skin + map - Limited to first 1000</div>
+      <div class="pw-card-price">$5.99 <span>one time - forever</span></div>
     </div>
   </div>
-  <div class="pw-free" id="pwRestoreBtn">Restore purchase</div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.18);font-family:'Georgia',serif;text-align:center;margin-top:16px;letter-spacing:1px;">All sales final - No refunds</div>
 </div>
 
 <!-- USERNAME MODAL -->
@@ -262,16 +265,16 @@ function rgba(h,a){var c=hexRGB(h);return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+'
 function hslToHex(h,s,l){h/=360;s/=100;l/=100;var r,g,b;if(s===0){r=g=b=l;}else{var q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;r=hue2rgb(p,q,h+1/3);g=hue2rgb(p,q,h);b=hue2rgb(p,q,h-1/3);}return '#'+[r,g,b].map(function(x){return Math.round(x*255).toString(16).padStart(2,'0');}).join('');}
 function hue2rgb(p,q,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;}
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  LEVELS
 //  Each level defines background + obstacle styling
 //  Add a new level = add an object here
-// ═══════════════════════════════════
+// -----------------------------------
 var LEVELS=[
   {
     id:'dark',
     name:'Dark Space',
-    icon:'🌑',
+    icon:'dark',
     panelDark:'rgba(7,9,20,0.97)',
     panelMid:'rgba(11,14,32,0.97)',
     panelEdge:'rgba(80,90,200,0.40)',
@@ -294,7 +297,7 @@ var LEVELS=[
   {
     id:'prismatic',
     name:'Prismatic',
-    icon:'🌈',
+    icon:'prism',
     panelDark:'rgba(4,4,12,0.84)',
     panelMid:'rgba(8,8,20,0.84)',
     panelEdge:'rgba(200,200,255,0.35)',
@@ -342,7 +345,7 @@ var LEVELS=[
       ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
     },
     drawGapExtras:function(ctx2,x,gR,gG,gB,gt){
-      // Prismatic shimmer on gap — cycling hue overlay
+      // Prismatic shimmer on gap - cycling hue overlay
       var shimHue=(gt*30)%360;
       var shimC=hexRGB(hslToHex(shimHue,90,70));
       ctx2.save();ctx2.globalAlpha=0.18;
@@ -350,48 +353,109 @@ var LEVELS=[
       ctx2.fillRect(x-OBS_W/2-1,0,OBS_W+2,H); // will be clipped by gap drawing
       ctx2.restore();
     }
+  },
+  {
+    id:'founders',
+    name:'Origin',
+    icon:'crown',
+    founders:true,
+    panelDark:'rgba(0,0,0,0.97)',
+    panelMid:'rgba(5,5,5,0.97)',
+    panelEdge:'rgba(0,255,200,0.9)',
+    panelSheen:'rgba(0,255,180,0.3)',
+    drawBG:function(gt){
+      ctx.fillStyle='#000000';ctx.fillRect(0,0,W,H);
+      // Perspective grid - horizontal lines converging to vanishing point
+      var vx=W*0.5,vy=H*0.42;
+      var hue=(gt*8)%360;
+      var gc=hexRGB(hslToHex(hue,100,55));
+      var gc2=hexRGB(hslToHex((hue+120)%360,100,55));
+      ctx.lineWidth=0.8;
+      // Horizontal grid lines
+      for(var i=0;i<14;i++){
+        var yp=vy+Math.pow(i/13,1.8)*(H-vy);
+        var alpha=0.08+i*0.04;
+        var col=i<7?gc:gc2;
+        ctx.strokeStyle='rgba('+col[0]+','+col[1]+','+col[2]+','+alpha+')';
+        ctx.beginPath();ctx.moveTo(0,yp);ctx.lineTo(W,yp);ctx.stroke();
+      }
+      // Vertical grid lines converging to vanishing point
+      var vlines=12;
+      for(var j=0;j<=vlines;j++){
+        var xb=W*j/vlines;
+        var alpha2=0.06+Math.abs(j-vlines/2)*(0.06/vlines*2);
+        ctx.strokeStyle='rgba('+gc[0]+','+gc[1]+','+gc[2]+','+alpha2+')';
+        ctx.beginPath();ctx.moveTo(xb,H);ctx.lineTo(vx+(xb-vx)*0.05,vy);ctx.stroke();
+      }
+      // Scanlines
+      ctx.fillStyle='rgba(0,0,0,0.18)';
+      for(var sl=0;sl<H;sl+=3)ctx.fillRect(0,sl,W,1);
+      // Vignette
+      var vg=ctx.createRadialGradient(W/2,H/2,H*0.1,W/2,H/2,H*0.85);
+      vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.72)');
+      ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+      // Top glow line
+      var tg=ctx.createLinearGradient(0,vy-2,0,vy+2);
+      tg.addColorStop(0,'rgba(0,0,0,0)');
+      tg.addColorStop(0.5,'rgba('+gc[0]+','+gc[1]+','+gc[2]+',0.6)');
+      tg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=tg;ctx.fillRect(0,vy-2,W,4);
+    },
+    drawGapExtras:function(ctx2,x,gR,gG,gB,gt){
+      // Sharp neon inner lines on gap walls
+      ctx2.save();ctx2.globalAlpha=0.6;
+      ctx2.strokeStyle='rgba('+gR+','+gG+','+gB+',1)';
+      ctx2.lineWidth=1;
+      ctx2.strokeRect(x-OBS_W/2+2,0,OBS_W-4,0); // visual only
+      ctx2.restore();
+    }
   }
 ];
+
 var activeLevel=0;
 
-// ═══════════════════════════════════
-//  SKIN DATA — four independent pickers
-// ═══════════════════════════════════
+// -----------------------------------
+//  SKIN DATA - four independent pickers
+// -----------------------------------
 var COLOR_SETS=[
-  {name:'Classic',  icon:'⚪', m:'#ffffff',t:'#ff4444',b:'#4499ff'},
-  {name:'Fire Ice',  icon:'🔥', m:'#ffffff',t:'#ff7700',b:'#00eeff'},
-  {name:'Toxic',     icon:'☢', m:'#ccff44',t:'#88ff00',b:'#cc44ff'},
-  {name:'Void',      icon:'🔮', m:'#ddaaff',t:'#ff0044',b:'#44ffcc'},
-  {name:'Gold',      icon:'✨', m:'#ffdd00',t:'#ff9944',b:'#aaddff'},
-  {name:'Neon',      icon:'💜', m:'#ffff00',t:'#ff00ff',b:'#00ffff'},
-  {name:'Blood Moon',icon:'🌑', m:'#ffbbaa',t:'#ff2200',b:'#aa00ff'},
+  {name:'Classic',   icon:'o',   m:'#ffffff',t:'#ff4444',b:'#4499ff'},
+  {name:'Fire Ice',  icon:'~',   m:'#ffffff',t:'#ff7700',b:'#00eeff'},
+  {name:'Toxic',     icon:'*',   m:'#ccff44',t:'#88ff00',b:'#cc44ff'},
+  {name:'Void',      icon:'@',   m:'#ddaaff',t:'#ff0044',b:'#44ffcc'},
+  {name:'Gold',      icon:'+',   m:'#ffdd00',t:'#ff9944',b:'#aaddff'},
+  {name:'Neon',      icon:'!',   m:'#ffff00',t:'#ff00ff',b:'#00ffff'},
+  {name:'Blood Moon',icon:'#',   m:'#ffbbaa',t:'#ff2200',b:'#aa00ff'},
+  {name:'Origin',    icon:'W',   m:'#c8a000',t:'#ffffff',b:'#111111',founders:true},
 ];
 var BODIES=[
-  {name:'Glass',    icon:'🫧'},
-  {name:'Galaxy',   icon:'🌌'},
-  {name:'Plasma',   icon:'🌡'},
-  {name:'Void',     icon:'🕳'},
-  {name:'Crystal',  icon:'💎'},
-  {name:'Ghost',    icon:'👻'},
-  {name:'Neon',     icon:'⚡'},
+  {name:'Glass',    icon:'()'},
+  {name:'Galaxy',   icon:'**'},
+  {name:'Plasma',   icon:'~~'},
+  {name:'Void',     icon:'00'},
+  {name:'Crystal',  icon:'<>'},
+  {name:'Ghost',    icon:'..'},
+  {name:'Neon',     icon:'!!'},
+  {name:'Origin',   icon:'WW', founders:true},
 ];
 var FX_TYPES=[
-  {name:'Burst',    icon:'💥'},
-  {name:'Lightning',icon:'⚡'},
-  {name:'Melt',     icon:'💧'},
-  {name:'Implode',  icon:'🌀'},
-  {name:'Ripple',   icon:'〰'},
-  {name:'Smoke',    icon:'💨'},
-  {name:'Spark',    icon:'✨'},
+  {name:'Burst',    icon:'OO'},
+  {name:'Lightning',icon:'//'},
+  {name:'Melt',     icon:'vv'},
+  {name:'Implode',  icon:'>>'},
+  {name:'Ripple',   icon:'~~'},
+  {name:'Smoke',    icon:',,'},
+  {name:'Spark',    icon:'**'},
+  {name:'Origin',   icon:'##', founders:true},
 ];
 var DEATH_TYPES=[
-  {name:'Scatter',  icon:'🌟'},
-  {name:'Nova',     icon:'💫'},
-  {name:'Ink',      icon:'🖤'},
-  {name:'Glitch',   icon:'📺'},
-  {name:'Shards',   icon:'🔷'},
-  {name:'Dissolve', icon:'🌫'},
-  {name:'Electric', icon:'🌩'},
+  {name:'Scatter',  icon:'xx'},
+  {name:'Nova',     icon:'()'},
+  {name:'Ink',      icon:'@@'},
+  {name:'Glitch',   icon:'||'},
+  {name:'Shards',   icon:'<<'},
+  {name:'Dissolve', icon:'..'},
+  {name:'Electric', icon:'^^'},
+  {name:'Origin',   icon:'WW', founders:true},
 ];
 
 var skinState={colors:0,body:0,fx:0,death:0};
@@ -402,15 +466,15 @@ function saveLevel(){localStorage.setItem('splitLvl',activeLevel);}
 loadSkin();loadLevel();
 function CS(){return COLOR_SETS[skinState.colors];}
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  HIGH SCORE
-// ═══════════════════════════════════
+// -----------------------------------
 function getHS(){return{score:parseInt(localStorage.getItem('splitScoreMod')||'0'),name:localStorage.getItem('splitNameMod')||''};}
 function setHS(s,n){localStorage.setItem('splitScoreMod',s);localStorage.setItem('splitNameMod',n);}
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  AUDIO
-// ═══════════════════════════════════
+// -----------------------------------
 var bgAudio=null,lofiOn=false,lofiTmr=null,lofiCI=0,lofiBN=0,lofiCN=0;
 var AC=null;
 var musicEnabled=localStorage.getItem('splitMusicOn')!=='false';
@@ -451,7 +515,7 @@ function toggleMusic(){
   if(musicEnabled)startMusic(); else stopMusic();
 }
 function updateMusicBtns(){
-  var label=musicEnabled?'🎵 Music On':'🔇 Music Off';
+  var label=musicEnabled?'>> Music On':'|| Music Off';
   document.querySelectorAll('.musicToggleBtn').forEach(function(b){b.textContent=label;});
 }
 
@@ -464,14 +528,14 @@ function lofiTick(){var ac=getAC();if(!ac||!lofiOn)return;var LFB=LFB_VAR();var 
 function _startLofi(){var ac=getAC();if(!ac)return;if(ac.state==='suspended')ac.resume();lofiOn=true;lofiCI=0;var LFB=LFB_VAR();lofiCN=ac.currentTime+0.25;lofiBN=ac.currentTime+0.25;lofiTick();}
 function _stopLofi(){lofiOn=false;if(lofiTmr){clearTimeout(lofiTmr);lofiTmr=null;}}
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  DIFFICULTY
-// ═══════════════════════════════════
+// -----------------------------------
 //  PULSE DIFFICULTY SYSTEM
 //  Each Pulse = 20 obstacles
 //  Last 7 of each Pulse = breathing room
 //  Speed caps at Pulse 3, never increases after
-// ═══════════════════════════════════
+// -----------------------------------
 var score=0;
 var PULSE_LEN=20, BREATHE_START=13; // breathe for last 7 of each pulse
 var pulseNum=0, withinPulse=0, isBreathing=false;
@@ -520,13 +584,134 @@ function tripleChance(){
 }
 function movingChance(){return 0;} // disabled per earlier decision
 
-// Pulse names — on theme
+// Founders orb body renderer (index 7)
+function drawFoundersBody(ctx2,x,y,r,t){
+  ctx2.save();ctx2.beginPath();ctx2.arc(x,y,r,0,Math.PI*2);ctx2.clip();
+  // Black void interior
+  ctx2.fillStyle='rgba(0,0,0,0.9)';ctx2.fillRect(x-r,y-r,r*2,r*2);
+  // White plasma blobs
+  wbds=[{ox:0.25,oy:-0.2,sz:0.42},{ox:-0.22,oy:0.18,sz:0.38},{ox:0.05,oy:0.28,sz:0.35}];
+  wbds.forEach(function(b,bi){
+    var bx=x+Math.cos(t*0.55+bi*2.1)*r*0.3+b.ox*r;
+    var by2=y+Math.sin(t*0.48+bi*1.8)*r*0.25+b.oy*r;
+    var bg2=ctx2.createRadialGradient(bx,by2,0,bx,by2,r*b.sz);
+    bg2.addColorStop(0,'rgba(255,255,255,0.55)');
+    bg2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx2.fillStyle=bg2;ctx2.fillRect(x-r,y-r,r*2,r*2);
+  });
+  // Gold accretion ring
+  ctx2.save();ctx2.translate(x,y);ctx2.rotate(t*0.4);
+  ctx2.beginPath();ctx2.ellipse(0,0,r*0.75,r*0.20,0,0,Math.PI*2);
+  ctx2.strokeStyle='rgba(200,160,0,0.9)';ctx2.lineWidth=2;
+  ctx2.shadowColor='#c8a000';ctx2.shadowBlur=8;ctx2.stroke();
+  ctx2.restore();
+  // Core glow
+  var cg=ctx2.createRadialGradient(x,y,0,x,y,r*0.2);
+  cg.addColorStop(0,'rgba(200,160,0,0.9)');cg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx2.fillStyle=cg;ctx2.fillRect(x-r,y-r,r*2,r*2);
+  ctx2.restore();
+}
+
+// Draw golden crown on merged orb top (founders only)
+function drawCrown(x,y,r){
+  var cr=r*0.55;
+  var cy=y-r*0.85;
+  ctx.save();
+  ctx.fillStyle='#c8a000';
+  ctx.strokeStyle='rgba(255,220,80,0.8)';
+  ctx.lineWidth=1;
+  // Crown base
+  ctx.beginPath();
+  ctx.moveTo(x-cr,cy+cr*0.5);
+  ctx.lineTo(x+cr,cy+cr*0.5);
+  ctx.lineTo(x+cr*0.7,cy-cr*0.3);
+  ctx.lineTo(x+cr*0.35,cy+cr*0.1);
+  ctx.lineTo(x,cy-cr*0.55);
+  ctx.lineTo(x-cr*0.35,cy+cr*0.1);
+  ctx.lineTo(x-cr*0.7,cy-cr*0.3);
+  ctx.closePath();
+  ctx.fill();ctx.stroke();
+  // Crown gems
+  ctx.fillStyle='rgba(255,240,120,0.9)';
+  ctx.beginPath();ctx.arc(x,cy-cr*0.52,cr*0.12,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+cr*0.68,cy-cr*0.28,cr*0.09,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x-cr*0.68,cy-cr*0.28,cr*0.09,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+// -----------------------------------
+//  BREATHING BREAK - time-driven
+// -----------------------------------
+var BREATHE_DURATION=8000; // 8 seconds total
+var COUNTDOWN_START=5000;  // countdown starts at 5s mark (3 seconds left)
+var breatheStartTime=0;
+var isInBreak=false;       // true during the timed break
+var scoreFrozen=false;
+var breakTimer=null;
+var countdownTimer=null;
+
+function startBreak(){
+  if(isInBreak)return;
+  isInBreak=true;
+  scoreFrozen=true;
+  breatheStartTime=Date.now();
+
+  // Clear all obstacles immediately
+  obstacles=[];
+
+  // Show breathe banner
+  var bn=document.getElementById('pulseBanner');
+  document.getElementById('pulseBannerText').textContent='Breathe';
+  document.getElementById('pulseBannerSub').textContent=PULSE_NAMES[Math.min(pulseNum,PULSE_NAMES.length-1)]+' Complete';
+  document.getElementById('pulseCountdown').textContent='';
+  bn.classList.add('show');
+
+  // After 5s start countdown
+  breakTimer=setTimeout(function(){
+    var count=3;
+    document.getElementById('pulseBannerText').textContent='Get Ready';
+    document.getElementById('pulseBannerSub').textContent='';
+    document.getElementById('pulseCountdown').textContent=count;
+    countdownTimer=setInterval(function(){
+      count--;
+      if(count>0){
+        document.getElementById('pulseCountdown').textContent=count;
+      } else {
+        clearInterval(countdownTimer);
+        document.getElementById('pulseCountdown').textContent='';
+        // 1 second after 1 completes, start next pulse
+        setTimeout(function(){
+          document.getElementById('pulseBanner').classList.remove('show');
+          isInBreak=false;
+          scoreFrozen=false;
+          // Show next pulse banner briefly
+          pulseNum++;
+          withinPulse=0;
+          lastShownPulse=pulseNum;
+          document.getElementById('pulseBannerText').textContent=PULSE_NAMES[Math.min(pulseNum,PULSE_NAMES.length-1)];
+          document.getElementById('pulseBannerSub').textContent='';
+          document.getElementById('pulseBanner').classList.add('show');
+          setTimeout(function(){document.getElementById('pulseBanner').classList.remove('show');},1500);
+        },1000);
+      }
+    },1000);
+  },COUNTDOWN_START);
+}
+
+function cancelBreak(){
+  isInBreak=false;scoreFrozen=false;
+  if(breakTimer){clearTimeout(breakTimer);breakTimer=null;}
+  if(countdownTimer){clearInterval(countdownTimer);countdownTimer=null;}
+  document.getElementById('pulseBanner').classList.remove('show');
+  document.getElementById('pulseCountdown').textContent='';
+}
+
 var PULSE_NAMES=['Pulse 1','Pulse 2','Pulse 3','Pulse 4','Pulse 5','Pulse 6','Pulse 7','Pulse 8'];
 var lastShownPulse=-1;
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  PARTICLES
-// ═══════════════════════════════════
+// -----------------------------------
 function Pt(x,y,vx,vy,sz,dc,r,g,b){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.sz=sz;this.life=1;this.dc=dc;this.r=r;this.g=g;this.b=b;}
 Pt.prototype.tick=function(){this.x+=this.vx;this.y+=this.vy;this.vx*=0.91;this.vy*=0.91;this.life-=this.dc;};
 Pt.prototype.draw=function(ctx2,al){
@@ -540,7 +725,7 @@ Pt.prototype.draw=function(ctx2,al){
 };
 var pTrail=[],pFX=[];
 
-// FX-based trail emitter — style depends on skinState.fx
+// FX-based trail emitter - style depends on skinState.fx
 function emitT(x,y,vx,vy,hex,n){
   var c=hexRGB(hex),fi=skinState.fx;
 
@@ -600,9 +785,9 @@ function emitFX(x,y,hex,n,spMin,spMax){var c=hexRGB(hex);for(var i=0;i<n;i++){va
 function tickArr(a){for(var i=a.length-1;i>=0;i--){a[i].tick();if(a[i].life<=0)a.splice(i,1);}}
 function drawArr(a,al){for(var i=0;i<a.length;i++)a[i].draw(ctx,al);}
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  BODY RENDERER
-// ═══════════════════════════════════
+// -----------------------------------
 function drawBody(ctx2,x,y,r,bodyIdx,hexColor,t){
   ctx2.save();ctx2.beginPath();ctx2.arc(x,y,r,0,Math.PI*2);ctx2.clip();
 
@@ -636,19 +821,22 @@ function drawBody(ctx2,x,y,r,bodyIdx,hexColor,t){
 
   } else if(bodyIdx===6){// Neon
     var ng=ctx2.createRadialGradient(x,y,0,x,y,r);ng.addColorStop(0,'rgba(255,255,255,0.5)');ng.addColorStop(0.4,rgba(hexColor,0.6));ng.addColorStop(1,rgba(hexColor,0.15));ctx2.fillStyle=ng;ctx2.fillRect(x-r,y-r,r*2,r*2);
+  } else if(bodyIdx===7){// Origin (founders)
+    drawFoundersBody(ctx2,x,y,r,t);
   }
   ctx2.restore();
 }
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  ORB DRAW
-// ═══════════════════════════════════
+// -----------------------------------
 var GT=0;
-function drawOrb(x,y,r,hexColor){
+function drawOrb(x,y,r,hexColor,isMergedOrb){
   var bi=skinState.body;
+  var isFounders=(bi===7);
   var pr=r*(1+Math.sin(GT*2.2)*0.04);
-  var glA=bi===6?0.42:bi===5?0.18:0.28;
-  var shellA=bi===5?0.22:bi===3?0.28:bi===1?0.32:0.52;
+  var glA=bi===6?0.42:bi===5?0.18:isFounders?0.35:0.28;
+  var shellA=bi===5?0.22:bi===3?0.28:bi===1?0.32:isFounders?0.3:0.52;
 
   var og=ctx.createRadialGradient(x,y,pr*0.4,x,y,pr*(bi===6?5.5:4.2));
   og.addColorStop(0,rgba(hexColor,glA));og.addColorStop(1,'rgba(0,0,0,0)');
@@ -658,22 +846,25 @@ function drawOrb(x,y,r,hexColor){
   ctx.strokeStyle=rgba(hexColor,0.13);ctx.lineWidth=1.4;ctx.stroke();
 
   var bg=ctx.createRadialGradient(x-pr*0.28,y-pr*0.3,0,x,y,pr);
-  bg.addColorStop(0,bi===3?'rgba(0,0,0,0.92)':hexColor);bg.addColorStop(1,darken(hexColor,0.45));
+  bg.addColorStop(0,(bi===3||isFounders)?'rgba(0,0,0,0.92)':hexColor);bg.addColorStop(1,darken(hexColor,0.45));
   ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);
   ctx.globalAlpha=shellA;ctx.fillStyle=bg;ctx.fill();ctx.globalAlpha=1;
 
   drawBody(ctx,x,y,pr*0.88,bi,hexColor,GT);
 
-  var specA=bi===5?0.38:bi===3?0.28:0.62;
+  var specA=bi===5?0.38:bi===3?0.28:isFounders?0.22:0.62;
   var sg=ctx.createRadialGradient(x-pr*0.34,y-pr*0.42,0,x,y,pr*0.68);
   sg.addColorStop(0,'rgba(255,255,255,'+specA+')');sg.addColorStop(0.3,'rgba(255,255,255,0.07)');sg.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=sg;ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);ctx.fill();
   ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.09)';ctx.lineWidth=1;ctx.stroke();
+
+  // Draw crown on merged orb when using founders skin
+  if(isFounders&&isMergedOrb)drawCrown(x,y,pr);
 }
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  CONNECTOR
-// ═══════════════════════════════════
+// -----------------------------------
 function drawConnector(topY,botY){
   var spread=botY-topY;if(spread<DOT_R*1.5)return;
   var cs=CS(),prog=clamp(spread/(H*0.5),0,1);
@@ -686,9 +877,9 @@ function drawConnector(topY,botY){
   ctx.beginPath();ctx.moveTo(DOT_X,topY);ctx.lineTo(DOT_X,botY);ctx.strokeStyle=g;ctx.lineWidth=1.8;ctx.stroke();ctx.restore();
 }
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  FX SYSTEM
-// ═══════════════════════════════════
+// -----------------------------------
 var activeFX=null;
 function triggerFX(topY,botY){
   var cs=CS(),c1=isSwapped?cs.t:cs.b,c2=isSwapped?cs.b:cs.t;
@@ -758,12 +949,12 @@ function drawDeathFX(){
   if(d.life<=0&&pFX.filter(function(p){return p.life>0;}).length===0)deathFX=null;
 }
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  OBSTACLES
-// ═══════════════════════════════════
+// -----------------------------------
 var obstacles=[],lastType='',nextX=0;
 function pickSF(){
-  // How extreme split positions get — increases with pulse number
+  // How extreme split positions get - increases with pulse number
   var pf=Math.min(pulseNum,SPD_CAP)/SPD_CAP; // 0 to 1
   var lo=Math.max(0.15,0.30-pf*0.11);
   var hi=Math.min(0.43,0.40-pf*0.04);
@@ -788,7 +979,7 @@ function spawnFrom(x){
 }
 function getGaps(o){
   var cs=CS(),gH=o.gapH;
-  // FIX: both gaps share same osc — unit movement
+  // FIX: both gaps share same osc - unit movement
   var osc=o.moveAmp>0?(Math.sin(GT*o.moveSpd+o.movePhase)*o.moveAmp):0;
   if(o.type==='merge'){var cy=H*0.5;return[{top:cy-gH/2,bot:cy+gH/2,color:cs.m}];}
   var tc=H*o.sf+osc,bc=H*(1-o.sf)+osc;
@@ -824,7 +1015,7 @@ function drawWall(o){
     ctx.fillRect(x-OBS_W/2-1,gb-1.5,OBS_W+2,3);
 
     if(isPrismatic){
-      // Very faint interior tint — just enough to hint the color, gap reads as open
+      // Very faint interior tint - just enough to hint the color, gap reads as open
       var igt=ctx.createLinearGradient(x-OBS_W/2,0,x+OBS_W/2,0);
       igt.addColorStop(0,'rgba('+gR+','+gG+','+gB+',0.01)');
       igt.addColorStop(0.5,'rgba('+gR+','+gG+','+gB+',0.03)');
@@ -862,9 +1053,9 @@ function drawAntic(){
   if(prev<H){var gc3=hexRGB(sorted[0].color);ctx.fillStyle='rgba('+gc3[0]+','+gc3[1]+','+gc3[2]+',1)';ctx.fillRect(W-sw,prev,sw,H-prev);}ctx.restore();
 }
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  COLLISION
-// ═══════════════════════════════════
+// -----------------------------------
 function checkHit(){
   var cs=CS(),topColor=isSwapped?cs.t:cs.b,botColor=isSwapped?cs.b:cs.t;
   var r=DOT_R*0.60,spread=Math.abs(dotTopY-dotBotY),isMerged=spread<DOT_R*2.5;
@@ -877,9 +1068,9 @@ function checkHit(){
 }
 function inGap(y,gap,r){return y-r>=gap.top&&y+r<=gap.bot;}
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  USER + GAME STATE
-// ═══════════════════════════════════
+// -----------------------------------
 var STATE='start',bgFlash=0,swapFlash=0;
 var dotTopY=0,dotBotY=0,prevTopY=0,prevBotY=0;
 var targetTopY=0,targetBotY=0;
@@ -887,7 +1078,7 @@ var isHolding=false,fingerY=0;
 var isSwapped=false,fingerAboveCenter=true;
 var CENTER_ZONE=0.12;
 
-// Username — local for now
+// Username - local for now
 var username=localStorage.getItem('splitUsername')||'';
 
 // Run timer
@@ -906,10 +1097,10 @@ function shouldShowPaywall(){return !isPaid&&gamesPlayed>=FREE_GAMES;}
 var hasSeenTutorial=localStorage.getItem('splitTutSeen')==='true';
 var tutStep=0;
 var TUT_STEPS=[
-  {icon:'👇',title:'Hold to Split',desc:'Press and hold anywhere. Your orb splits into two - top and bottom.'},
-  {icon:'↕',title:'Drag to Aim',desc:'Slide your finger up or down to set how far apart the orbs split.'},
-  {icon:'🎨',title:'Match the Color',desc:'Each gap glows with the color your orb must match. Get your orbs through the right gaps.'},
-  {icon:'🔄',title:'Cross to Swap',desc:'Drag your finger past the center line to swap which color goes where.'},
+  {icon:'hold',title:'Hold to Split',desc:'Press and hold anywhere. Your orb splits into two - top and bottom.'},
+  {icon:'drag',title:'Drag to Aim',desc:'Slide your finger up or down to set how far apart the orbs split.'},
+  {icon:'color',title:'Match the Color',desc:'Each gap glows with the color your orb must match. Get your orbs through the right gaps.'},
+  {icon:'swap',title:'Cross to Swap',desc:'Drag your finger past the center line to swap which color goes where.'},
 ];
 
 // Tutorial control
@@ -947,6 +1138,7 @@ function initGame(){
   dotTopY=DOT_MID;dotBotY=DOT_MID;prevTopY=DOT_MID;prevBotY=DOT_MID;targetTopY=DOT_MID;targetBotY=DOT_MID;
   pTrail=[];pFX=[];activeFX=null;deathFX=null;obstacles=[];lastType='';score=0;
   pulseNum=0;withinPulse=0;isBreathing=false;lastShownPulse=-1;
+  cancelBreak();
   runStartTime=Date.now();runElapsed=0;
   nextX=spawnFrom(W+W*rnd(0.14,0.24));
   document.getElementById('hudScore').textContent='0';
@@ -962,7 +1154,7 @@ function showGO(){
   document.getElementById('goScore').textContent=score;
   document.getElementById('goTime').textContent=formatTime(runElapsed)+' - '+(username||'Anonymous');
   document.getElementById('goBest').textContent=hs.score>0?'Best: '+hs.score+(hs.name?' - '+hs.name:''):'Best: --';
-  document.getElementById('goMedal').textContent=score>=30?'🏆':score>=20?'🥇':score>=12?'🥈':score>=6?'🥉':'💫';
+  document.getElementById('goMedal').textContent=score>=30?'[*]':score>=20?'[1]':score>=12?'[2]':score>=6?'[3]':'[~]';
   document.getElementById('goScreen').classList.remove('hidden');
 }
 
@@ -988,9 +1180,9 @@ function doGameOver(){
   },1800);
 }
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  INPUT
-// ═══════════════════════════════════
+// -----------------------------------
 function getDocY(e){var rect=canvas.getBoundingClientRect(),sy=H/rect.height,cy=e.touches&&e.touches[0]?e.touches[0].clientY:e.clientY;return(cy-rect.top)*sy;}
 function isOnCanvas(el){while(el&&el!==document.body){if(el===canvas)return true;el=el.parentElement;}return false;}
 
@@ -1025,9 +1217,9 @@ canvas.addEventListener('mousedown',  onDown);
 document.addEventListener('mousemove',onMove);
 document.addEventListener('mouseup',  onUp);
 
-// ═══════════════════════════════════
-//  RECORDING — rolling 15s buffer
-// ═══════════════════════════════════
+// -----------------------------------
+//  RECORDING - rolling 15s buffer
+// -----------------------------------
 var recorder=null,recChunks=[],recBlob=null;
 var REC_MAX_MS=15000;
 
@@ -1080,23 +1272,30 @@ function shareURL(txt){
 function copyTxt(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('Copied!');});else toast('Score: '+score);}
 function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2500);}
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  LEVEL SELECTOR (start screen)
-// ═══════════════════════════════════
+// -----------------------------------
 function buildLevelRow(){
   var row=document.getElementById('levelRow');row.innerHTML='';
   LEVELS.forEach(function(lv,i){
-    var btn=document.createElement('div');btn.className='level-btn'+(i===activeLevel?' active':'');
-    btn.innerHTML='<span class="level-icon">'+lv.icon+'</span><span class="level-name">'+lv.name+'</span>';
-    btn.addEventListener('click',function(){activeLevel=i;saveLevel();document.querySelectorAll('.level-btn').forEach(function(b,j){b.classList.toggle('active',j===i);});});
+    var isLocked=lv.founders&&!isPaid; // founders level requires any paid tier... wait, origin pass only
+    var isOriginLocked=lv.founders&&localStorage.getItem('splitPaidTier')!=='origin';
+    var locked=lv.founders&&localStorage.getItem('splitPaidTier')!=='origin';
+    var btn=document.createElement('div');
+    btn.className='level-btn'+(i===activeLevel&&!locked?' active':'');
+    btn.innerHTML='<span class="level-icon">'+(locked?'[L]':lv.icon)+'</span><span class="level-name">'+lv.name+(locked?' - Origin':'')+'</span>';
+    btn.addEventListener('click',function(){
+      if(locked){toast('Origin Pass exclusive - upgrade to unlock');return;}
+      activeLevel=i;saveLevel();document.querySelectorAll('.level-btn').forEach(function(b,j){b.classList.toggle('active',j===i);});
+    });
     row.appendChild(btn);
   });
 }
 buildLevelRow();
 
-// ═══════════════════════════════════
-//  SKIN PICKER — 4 tabs, live preview
-// ═══════════════════════════════════
+// -----------------------------------
+//  SKIN PICKER - 4 tabs, live preview
+// -----------------------------------
 var skinFrom='start',skinTab='colors';
 var previewCanvas=document.getElementById('skinPreviewCanvas');
 var previewCtx=previewCanvas.getContext('2d');
@@ -1161,10 +1360,14 @@ function buildSkinGrid(){
   else if(skinTab==='fx'){items=FX_TYPES;activeKey='fx';}
   else{items=DEATH_TYPES;activeKey='death';}
 
-  items.forEach(function(item,i){
-    var card=document.createElement('div');card.className='sk-card'+(i===skinState[activeKey]?' active':'');
+  var isOrigin=localStorage.getItem('splitPaidTier')==='origin';
 
-    if(skinTab==='colors'){
+  items.forEach(function(item,i){
+    var locked=item.founders&&!isOrigin;
+    var card=document.createElement('div');
+    card.className='sk-card'+(i===skinState[activeKey]&&!locked?' active':'')+(locked?' locked':'');
+
+    if(skinTab==='colors'&&item.m){
       var prev=document.createElement('div');prev.className='color-preview';
       var md=document.createElement('div');md.className='cp-dot-m';md.style.cssText='background:'+item.m+';box-shadow:0 0 10px '+rgba(item.m,0.6)+';';prev.appendChild(md);
       var cr=document.createElement('div');cr.className='cp-row';
@@ -1174,15 +1377,16 @@ function buildSkinGrid(){
     } else {
       var ic=document.createElement('div');ic.className='sk-card-icon';ic.textContent=item.icon;card.appendChild(ic);
     }
-    var chk=document.createElement('div');chk.className='sk-check';chk.textContent='✓';card.appendChild(chk);
-    var nm=document.createElement('div');nm.className='sk-card-name';nm.textContent=item.name;card.appendChild(nm);
+    var chk=document.createElement('div');chk.className='sk-check';chk.textContent='v';card.appendChild(chk);
+    var nm=document.createElement('div');nm.className='sk-card-name';nm.textContent=item.name+(locked?' (Origin)':'');card.appendChild(nm);
 
-    (function(idx,key){
+    (function(idx,key,lk){
       card.addEventListener('click',function(){
+        if(lk){toast('Origin Pass exclusive');return;}
         skinState[key]=idx;
         document.querySelectorAll('.sk-card').forEach(function(c,j){c.classList.toggle('active',j===idx);});
       });
-    })(i,activeKey);
+    })(i,activeKey,locked);
     grid.appendChild(card);
   });
 }
@@ -1220,22 +1424,19 @@ document.getElementById('tutNextBtn').addEventListener('click',function(e){
 // Paywall buttons
 document.getElementById('pwStandardBtn').addEventListener('click',function(e){
   e.stopPropagation();
-  // TODO: integrate Stripe — for now mark as paid for testing
-  isPaid=true;localStorage.setItem('splitPaid','true');
+  isPaid=true;localStorage.setItem('splitPaid','true');localStorage.setItem('splitPaidTier','standard');
   document.getElementById('paywallScreen').classList.add('hidden');
+  buildLevelRow();
   initGame();
   toast('Welcome to Split Pass!');
 });
 document.getElementById('pwPremiumBtn').addEventListener('click',function(e){
   e.stopPropagation();
-  isPaid=true;localStorage.setItem('splitPaid','true');
+  isPaid=true;localStorage.setItem('splitPaid','true');localStorage.setItem('splitPaidTier','origin');
   document.getElementById('paywallScreen').classList.add('hidden');
+  buildLevelRow();
   initGame();
-  toast('Welcome to Origin Pass!');
-});
-document.getElementById('pwRestoreBtn').addEventListener('click',function(e){
-  e.stopPropagation();
-  toast('Restore coming soon - contact support@split.game');
+  toast('Welcome to Origin Pass! Origin skin and map unlocked.');
 });
 
 // Username modal
@@ -1283,9 +1484,9 @@ document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stop
 document.getElementById('skinDoneBtn').addEventListener('click',closeSkins);
 updateMusicBtns();
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  START SCREEN ORBS
-// ═══════════════════════════════════
+// -----------------------------------
 var stT=0,sDY=0,sBY=0;
 function drawStartOrbs(){
   var cs=CS();stT+=0.018;var prog=(Math.sin(stT*0.72)+1)*0.5,bob=Math.sin(stT*0.9)*H*0.04;
@@ -1293,13 +1494,13 @@ function drawStartOrbs(){
   sDY=lerp(sDY,lerp(DOT_MID,H*0.26,prog)+bob,0.12);sBY=lerp(sBY,lerp(DOT_MID,H*0.74,prog)+bob,0.12);
   emitT(W*0.5,sDY,0,0,cs.m,1);emitT(W*0.5,sDY,0,0,cs.t,1);emitT(W*0.5,sBY,0,0,cs.b,1);
   tickArr(pTrail);drawArr(pTrail,0.42);
-  if(prog<0.5)drawOrb(W*0.5,sDY,DOT_R,cs.m);
-  else{drawOrb(W*0.5,sDY,DOT_R,cs.t);drawOrb(W*0.5,sBY,DOT_R,cs.b);}
+  if(prog<0.5)drawOrb(W*0.5,sDY,DOT_R,cs.m,true);
+  else{drawOrb(W*0.5,sDY,DOT_R,cs.t,false);drawOrb(W*0.5,sBY,DOT_R,cs.b,false);}
 }
 
-// ═══════════════════════════════════
+// -----------------------------------
 //  MAIN LOOP
-// ═══════════════════════════════════
+// -----------------------------------
 function loop(){
   LEVELS[activeLevel].drawBG(GT);
   if(bgFlash>0){ctx.fillStyle='rgba(255,255,255,'+(bgFlash*0.05)+')';ctx.fillRect(0,0,W,H);bgFlash=Math.max(0,bgFlash-0.08);}
@@ -1321,45 +1522,37 @@ function loop(){
     // Update timer HUD every frame
     updateTimerHUD();
 
-    // Update pulse state
-    var prevPulse=pulseNum;
-    updatePulse();
+    // Update pulse state only when not in a break
+    if(!isInBreak){
+      updatePulse();
 
-    // Show pulse banner when a new pulse starts (not pulse 0)
-    if(pulseNum>0&&pulseNum!==lastShownPulse&&withinPulse===0){
-      lastShownPulse=pulseNum;
-      var bn=document.getElementById('pulseBanner');
-      var bt=document.getElementById('pulseBannerText');
-      var bs=document.getElementById('pulseBannerSub');
-      bt.textContent=PULSE_NAMES[Math.min(pulseNum,PULSE_NAMES.length-1)];
-      bs.textContent=isBreathing?'Breathe...':'Here we go';
-      bn.classList.add('show');
-      setTimeout(function(){bn.classList.remove('show');},1800);
-    }
-    // Show breathing banner
-    if(isBreathing&&withinPulse===BREATHE_START&&lastShownPulse!==-(pulseNum+0.5)){
-      lastShownPulse=-(pulseNum+0.5);
-      var bn2=document.getElementById('pulseBanner');
-      document.getElementById('pulseBannerText').textContent='Breathe';
-      document.getElementById('pulseBannerSub').textContent='Next pulse incoming';
-      bn2.classList.add('show');
-      setTimeout(function(){bn2.classList.remove('show');},1600);
+      // Trigger break when we hit BREATHE_START within a pulse
+      if(withinPulse===BREATHE_START&&lastShownPulse!==-(pulseNum*100)){
+        lastShownPulse=-(pulseNum*100);
+        startBreak();
+      }
     }
 
-    var rightmost=-Infinity;for(var i=0;i<obstacles.length;i++)if(obstacles[i].x>rightmost)rightmost=obstacles[i].x;
-    if(rightmost<W)nextX=spawnFrom(Math.max(W+80,rightmost+Math.max(baseSpacing()*rnd(0.82,1.20),minG())));
+    // Only spawn + move obstacles when not in break
+    if(!isInBreak){
+      var rightmost=-Infinity;for(var i=0;i<obstacles.length;i++)if(obstacles[i].x>rightmost)rightmost=obstacles[i].x;
+      if(rightmost<W)nextX=spawnFrom(Math.max(W+80,rightmost+Math.max(baseSpacing()*rnd(0.82,1.20),minG())));
+    }
+
     var mg=minG();obstacles.sort(function(a,b){return b.x-a.x;});
     for(var oi=0;oi<obstacles.length;oi++){
       obstacles[oi].x-=obstacles[oi].spd;obstacles[oi].alpha=Math.min(1,obstacles[oi].alpha+0.07);
       if(oi>0&&obstacles[oi-1].x-obstacles[oi].x<mg)obstacles[oi].x=obstacles[oi-1].x-mg;
       if(obstacles[oi].cl>0)obstacles[oi].cl=Math.max(0,obstacles[oi].cl-0.07);
-      if(!obstacles[oi].passed&&obstacles[oi].x<DOT_X-DOT_R*0.5){
+      // Only score points when not frozen
+      if(!scoreFrozen&&!obstacles[oi].passed&&obstacles[oi].x<DOT_X-DOT_R*0.5){
         obstacles[oi].passed=true;score++;document.getElementById('hudScore').textContent=score;obstacles[oi].cl=1;
         getGaps(obstacles[oi]).forEach(function(gap){var gm=(gap.top+gap.bot)*0.5;for(var p=0;p<5;p++){var pa=(Math.PI*2*p/5),ps=1.5+Math.random()*2;var gc=hexRGB(gap.color);pFX.push(new Pt(obstacles[oi].x+(Math.random()-0.5)*OBS_W,gm,Math.cos(pa)*ps,Math.sin(pa)*ps,DOT_R*0.16,0.05,gc[0],gc[1],gc[2]));}});
       }
     }
     for(var ri=obstacles.length-1;ri>=0;ri--)if(obstacles[ri].x<-OBS_W-20)obstacles.splice(ri,1);
-    if(checkHit())doGameOver();
+    // No collision during break
+    if(!isInBreak&&checkHit())doGameOver();
   }
 
   drawAntic();for(var wi=0;wi<obstacles.length;wi++)drawWall(obstacles[wi]);
@@ -1373,8 +1566,8 @@ function loop(){
   drawConnector(dotTopY,dotBotY);
   drawActiveFX();drawDeathFX();
 
-  if(isMerged){drawOrb(DOT_X,(dotTopY+dotBotY)*0.5,DOT_R,cs.m);}
-  else{var sr=DOT_R*(0.9+splitProg*0.1);drawOrb(DOT_X,dotTopY,sr,isSwapped?cs.t:cs.b);drawOrb(DOT_X,dotBotY,sr,isSwapped?cs.b:cs.t);}
+  if(isMerged){drawOrb(DOT_X,(dotTopY+dotBotY)*0.5,DOT_R,cs.m,true);}
+  else{var sr=DOT_R*(0.9+splitProg*0.1);drawOrb(DOT_X,dotTopY,sr,isSwapped?cs.t:cs.b,false);drawOrb(DOT_X,dotBotY,sr,isSwapped?cs.b:cs.t,false);}
 
   GT+=0.016;requestAnimationFrame(loop);
 }
