@@ -330,24 +330,25 @@ var ICONS=(function(){
 // -----------------------------------
 //  STRIPE CHECKOUT
 // -----------------------------------
-var STRIPE_PK='pk_live_51TGCS46Y0qc5ka7Cd4nY5Kv0d3xdWOH52NVwIRSWDducRd1UlXqpACW0S1KphdEsPOTfTG9tgGEzaUK15eKrJqTP00eJAKAPli';
-var BACKEND_URL='split-backend-production-18a8.up.railway.app'; // update once deployed
+var STRIPE_PK='pk_live_51TGCS46Y@qc5ka7Cd4nY5Kv0d3xdWOH52NVwIRSWDducRd1UlXqpACW0S1KphdEsPOTfTG9tgGEzaUK15eKrJqTP00eJAKAPli';
+var BACKEND_URL='https://split-backend-production-18a8.up.railway.app'; // update once deployed
 
 function stripeCheckout(tier){
-  // Calls Railway backend which creates Stripe Checkout session
   fetch(BACKEND_URL+'/create-checkout-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({tier:tier,username:username||'Anonymous'})
   }).then(function(r){return r.json();})
   .then(function(d){
-    if(d.url)window.location.href=d.url;
-    else toast('Payment unavailable - try again');
-  }).catch(function(){
-    // Backend not yet live - use test mode locally
-    localStorage.setItem('splitPaid','true');
-    localStorage.setItem('splitPaidTier',tier);
-    showPaySuccess(tier);
+    if(d.url){
+      window.location.href=d.url;
+    } else {
+      toast('Payment unavailable - try again');
+    }
+  }).catch(function(e){
+    console.error('Checkout error:',e);
+    document.getElementById('paywallScreen').classList.add('hidden');
+    document.getElementById('payFailModal').classList.remove('hidden');
   });
 }
 
@@ -627,7 +628,15 @@ function toggleMusic(){
 // Payment modal buttons
 document.getElementById('paySuccessBtn').addEventListener('click',function(){
   document.getElementById('paySuccessModal').classList.add('hidden');
+  // Reset all game state fully before showing start screen
+  pTrail=[];pFX=[];activeFX=null;deathFX=null;
+  obstacles=[];score=0;
+  cancelBreak();
   buildLevelRow();
+  sDY=0;sBY=0; // reset start screen orb positions
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('goScreen').classList.add('hidden');
+  document.getElementById('paywallScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   STATE='start';
 });
@@ -1277,9 +1286,37 @@ function updateTimerHUD(){document.getElementById('hudTimer').textContent=format
 // Game count + paywall
 var FREE_GAMES=10;
 var gamesPlayed=parseInt(localStorage.getItem('splitGamesPlayed')||'0');
+
 function isPaid(){return localStorage.getItem('splitPaid')==='true';}
-function incrementGameCount(){gamesPlayed++;localStorage.setItem('splitGamesPlayed',String(gamesPlayed));}
+
+function incrementGameCount(){
+  gamesPlayed++;
+  localStorage.setItem('splitGamesPlayed',String(gamesPlayed));
+  // Also track server-side so it can't be bypassed by clearing localStorage
+  if(username){
+    fetch(BACKEND_URL+'/track-game',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:username})
+    }).catch(function(){});// silent fail - localStorage is fallback
+  }
+}
+
 function shouldShowPaywall(){return !isPaid()&&gamesPlayed>=FREE_GAMES;}
+
+function needsUsername(){return !username;}
+
+// Show username prompt if not set
+function checkUsernameBeforePlay(next){
+  if(needsUsername()){
+    document.getElementById('usernameModal').classList.remove('hidden');
+    // Store callback to run after username is set
+    window._afterUsername=next;
+    setTimeout(function(){document.getElementById('usernameInput').focus();},80);
+  } else {
+    next();
+  }
+}
 
 // Tutorial
 var hasSeenTutorial=localStorage.getItem('splitTutSeen')==='true';
@@ -1380,9 +1417,11 @@ function onDown(e){
   if(STATE==='start'){
     document.getElementById('startScreen').classList.add('hidden');
     startMusic();
-    if(!hasSeenTutorial){openTutorial();}
-    else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
-    else{initGame();}
+    checkUsernameBeforePlay(function(){
+      if(!hasSeenTutorial){openTutorial();}
+      else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
+      else{initGame();}
+    });
     return;
   }
   if(STATE==='playing'){
@@ -1443,7 +1482,7 @@ function stopRec(cb){
 
 function shareRun(){
   var name=username||'Anonymous';
-  var txt=name+' scored '+score+' in '+formatTime(runElapsed)+' on Split - split.games';
+  var txt=name+' scored '+score+' in '+formatTime(runElapsed)+' on Split - split.game';
   if(recBlob&&navigator.share&&navigator.canShare){
     var f=new File([recBlob],'split-'+score+'.webm',{type:'video/webm'});
     if(navigator.canShare({files:[f]})){
@@ -1454,7 +1493,7 @@ function shareRun(){
   shareURL(txt);
 }
 function shareURL(txt){
-  if(navigator.share){navigator.share({title:'Split',text:txt,url:'https://split.games'}).catch(function(){copyTxt(txt);});return;}
+  if(navigator.share){navigator.share({title:'Split',text:txt,url:'https://split.game'}).catch(function(){copyTxt(txt);});return;}
   copyTxt(txt);
 }
 function copyTxt(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('Copied!');});else toast('Score: '+score);}
@@ -1645,9 +1684,15 @@ document.getElementById('usernameSaveBtn').addEventListener('click',function(){
   if(!val)return;
   username=val;localStorage.setItem('splitUsername',val);
   document.getElementById('usernameModal').classList.add('hidden');
-  var isNew=score>getHS().score;
-  if(isNew)setHS(score,username);
-  showGO();
+  // Register username with backend
+  fetch(BACKEND_URL+'/register-user',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:val})
+  }).catch(function(){});
+  // Run pending callback (game start or paywall)
+  if(window._afterUsername){var cb=window._afterUsername;window._afterUsername=null;cb();}
+  else{var isNew=score>getHS().score;if(isNew)setHS(score,username);showGO();}
 });
 document.getElementById('usernameInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('usernameSaveBtn').click();});
 
@@ -1656,9 +1701,11 @@ document.getElementById('startBtn').addEventListener('click',function(e){
   e.stopPropagation();
   document.getElementById('startScreen').classList.add('hidden');
   ensureAudio();startMusic();
-  if(!hasSeenTutorial){openTutorial();}
-  else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
-  else{initGame();}
+  checkUsernameBeforePlay(function(){
+    if(!hasSeenTutorial){openTutorial();}
+    else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
+    else{initGame();}
+  });
 });
 document.getElementById('startSkinBtn').addEventListener('click',function(e){e.stopPropagation();openSkins('start');});
 document.getElementById('startMusicBtn').addEventListener('click',function(e){e.stopPropagation();ensureAudio();toggleMusic();});
