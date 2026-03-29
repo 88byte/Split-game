@@ -64,7 +64,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 .sk-card-icon{font-size:18px;color:rgba(255,255,255,0.75);}
 .sk-card-name{font-size:8px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.38);font-family:‘Georgia’,serif;}
 .sk-card.active .sk-card-name{color:#fff;}
-.sk-check{position:absolute;top:4px;right:4px;width:12px;height:12px;border-radius:50%;background:#fff;color:#06090f;font-size:7px;font-weight:900;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;}
+.sk-check{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:50%;background:#fff;font-size:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;}
+.sk-check::after{content:’’;display:block;width:4px;height:7px;border:2px solid #06090f;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px);}
 .sk-card.active .sk-check{opacity:1;}
 /* color cards show dots */
 .color-preview{display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 0;}
@@ -216,7 +217,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 
 <div id="paywallScreen" class="hidden">
   <div class="pw-title">Split Pass</div>
-  <div class="pw-sub">You've used your 7 free games</div>
+  <div class="pw-sub">You've used your 10 free games</div>
   <div class="pw-cards">
     <div class="pw-card standard" id="pwStandardBtn">
       <div class="pw-card-name">Split Pass</div>
@@ -697,7 +698,7 @@ var COLOR_SETS=[
   {name:'Gold',      icon:ICONS.cGold,      m:'#ffdd00',t:'#ff9944',b:'#aaddff'},
   {name:'Neon',      icon:ICONS.cNeon,      m:'#ffff00',t:'#ff00ff',b:'#00ffff'},
   {name:'Blood Moon',icon:ICONS.cBloodMoon, m:'#ffbbaa',t:'#ff2200',b:'#aa00ff'},
-  {name:'Origin',    icon:ICONS.cOrigin,    m:'#c8a000',t:'#ffffff',b:'#9944ff',founders:true},
+  {name:'Origin',    icon:ICONS.cOrigin,    m:'#cc66ff',t:'#ffffff',b:'#9944ff',founders:true},
 ];
 var BODIES=[
   {name:'Glass',    icon:ICONS.bGlass},
@@ -909,28 +910,45 @@ function movingChance(){return 0;} // disabled per earlier decision
 // Founders orb body renderer (index 7)
 function drawFoundersBody(ctx2,x,y,r,t){
   ctx2.save();ctx2.beginPath();ctx2.arc(x,y,r,0,Math.PI*2);ctx2.clip();
-  // Black void interior
-  ctx2.fillStyle='rgba(0,0,0,0.9)';ctx2.fillRect(x-r,y-r,r*2,r*2);
-  // White plasma blobs
-  var wbds=[{ox:0.25,oy:-0.2,sz:0.42},{ox:-0.22,oy:0.18,sz:0.38},{ox:0.05,oy:0.28,sz:0.35}];
-  wbds.forEach(function(b,bi){
-    var bx=x+Math.cos(t*0.55+bi*2.1)*r*0.3+b.ox*r;
-    var by2=y+Math.sin(t*0.48+bi*1.8)*r*0.25+b.oy*r;
-    var bg2=ctx2.createRadialGradient(bx,by2,0,bx,by2,r*b.sz);
-    bg2.addColorStop(0,'rgba(255,255,255,0.55)');
-    bg2.addColorStop(1,'rgba(0,0,0,0)');
-    ctx2.fillStyle=bg2;ctx2.fillRect(x-r,y-r,r*2,r*2);
+
+  // Deep space background
+  ctx2.fillStyle='rgba(4,2,12,0.95)';ctx2.fillRect(x-r,y-r,r*2,r*2);
+
+  // Swirling arms - 3 arcs rotating, purple and white
+  var arms=[
+    {col:'rgba(160,80,255,0.7)',speed:0.38,radius:0.62,width:2.2},
+    {col:'rgba(255,255,255,0.55)',speed:-0.28,radius:0.44,width:1.6},
+    {col:'rgba(120,60,220,0.5)',speed:0.52,radius:0.52,width:1.4},
+  ];
+  arms.forEach(function(arm){
+    ctx2.save();ctx2.translate(x,y);ctx2.rotate(t*arm.speed);
+    ctx2.beginPath();
+    for(var i=0;i<=60;i++){
+      var a=(i/60)*Math.PI*1.4;
+      var rad=arm.radius*r*(0.3+i/60*0.7);
+      var px=Math.cos(a)*rad;
+      var py=Math.sin(a)*rad*0.45;
+      if(i===0)ctx2.moveTo(px,py);else ctx2.lineTo(px,py);
+    }
+    ctx2.strokeStyle=arm.col;ctx2.lineWidth=arm.width;
+    ctx2.shadowColor=arm.col;ctx2.shadowBlur=6;
+    ctx2.stroke();ctx2.restore();
   });
-  // Gold accretion ring
-  ctx2.save();ctx2.translate(x,y);ctx2.rotate(t*0.4);
-  ctx2.beginPath();ctx2.ellipse(0,0,r*0.75,r*0.20,0,0,Math.PI*2);
-  ctx2.strokeStyle='rgba(200,160,0,0.9)';ctx2.lineWidth=2;
-  ctx2.shadowColor='#c8a000';ctx2.shadowBlur=8;ctx2.stroke();
-  ctx2.restore();
-  // Core glow
-  var cg=ctx2.createRadialGradient(x,y,0,x,y,r*0.2);
-  cg.addColorStop(0,'rgba(200,160,0,0.9)');cg.addColorStop(1,'rgba(0,0,0,0)');
+
+  // Bright core - white/purple
+  var cg=ctx2.createRadialGradient(x,y,0,x,y,r*0.28);
+  cg.addColorStop(0,'rgba(255,255,255,0.95)');
+  cg.addColorStop(0.4,'rgba(180,100,255,0.6)');
+  cg.addColorStop(1,'rgba(0,0,0,0)');
   ctx2.fillStyle=cg;ctx2.fillRect(x-r,y-r,r*2,r*2);
+
+  // Outer purple glow ring
+  ctx2.save();ctx2.translate(x,y);ctx2.rotate(t*0.22);
+  ctx2.beginPath();ctx2.ellipse(0,0,r*0.8,r*0.22,0,0,Math.PI*2);
+  ctx2.strokeStyle='rgba(150,70,255,0.7)';ctx2.lineWidth=1.5;
+  ctx2.shadowColor='rgba(150,70,255,1)';ctx2.shadowBlur=10;ctx2.stroke();
+  ctx2.restore();
+
   ctx2.restore();
 }
 
@@ -939,8 +957,8 @@ function drawCrown(x,y,r){
   var cr=r*0.55;
   var cy=y-r*0.85;
   ctx.save();
-  ctx.fillStyle='#c8a000';
-  ctx.strokeStyle='rgba(255,220,80,0.8)';
+  ctx.fillStyle='rgba(200,130,255,0.95)';
+  ctx.strokeStyle='rgba(255,255,255,0.7)';
   ctx.lineWidth=1;
   // Crown base
   ctx.beginPath();
@@ -1604,7 +1622,7 @@ function showGO(){
   document.getElementById('goScore').textContent=score;
   document.getElementById('goTime').textContent=formatTime(runElapsed)+(username?' · '+username:'');
   document.getElementById('goBest').textContent=hs.score>0?'Best: '+hs.score:'Best: --';
-  document.getElementById('goMedal').textContent=score>=30?ICONS.trophy:score>=20?ICONS.gold:score>=12?ICONS.silver:score>=6?ICONS.bronze:ICONS.star;
+  document.getElementById('goMedal').textContent=score>=30?ICONS.trophy:score>=20?ICONS.gold:score>=12?ICONS.silver:score>=6?ICONS.bronze:'';
   document.getElementById('goScreen').classList.remove('hidden');
   // Soft sign in only when not signed in
   var softDiv=document.getElementById('goSoftSignIn');
@@ -1730,15 +1748,20 @@ function stopRec(cb){
 
 function shareRun(){
   var name=username||'Anonymous';
-  var txt=name+' scored '+score+' in '+formatTime(runElapsed)+' on Split - split.game';
-  if(recBlob&&navigator.share&&navigator.canShare){
-    var f=new File([recBlob],'split-'+score+'.webm',{type:'video/webm'});
-    if(navigator.canShare({files:[f]})){
-      navigator.share({title:'Split',text:txt,files:[f]}).catch(function(){shareURL(txt);});
-      return;
-    }
-  }
-  shareURL(txt);
+  var txt=name+' scored '+score+' on Split\nsplit.games';
+  // Try to capture canvas as image to share
+  try{
+    canvas.toBlob(function(blob){
+      if(blob&&navigator.share&&navigator.canShare){
+        var f=new File([blob],'split-score-'+score+'.png',{type:'image/png'});
+        if(navigator.canShare({files:[f]})){
+          navigator.share({title:'I scored '+score+' on Split',text:txt,files:[f]}).catch(function(){shareURL(txt);});
+          return;
+        }
+      }
+      shareURL(txt);
+    },'image/png');
+  }catch(e){shareURL(txt);}
 }
 function shareURL(txt){
   if(navigator.share){navigator.share({title:'Split',text:txt,url:'https://split.game'}).catch(function(){copyTxt(txt);});return;}
@@ -1882,7 +1905,7 @@ function buildSkinGrid(){
     } else {
       var ic=document.createElement('div');ic.className='sk-card-icon';ic.textContent=item.icon;card.appendChild(ic);
     }
-    var chk=document.createElement('div');chk.className='sk-check';chk.textContent='v';card.appendChild(chk);
+    var chk=document.createElement('div');chk.className='sk-check';chk.innerHTML='';card.appendChild(chk);
     var nm=document.createElement('div');nm.className='sk-card-name';nm.textContent=item.name+(locked?' (Origin)':'');card.appendChild(nm);
 
     (function(idx,key,lk){
@@ -2061,10 +2084,11 @@ document.getElementById('accountBtn').addEventListener('click',function(){
   else{openSignIn('account',true);}
 });
 document.getElementById('acctCloseBtn').addEventListener('click',function(){
+  stopAcctOrb();
   document.getElementById('accountMenu').classList.add('hidden');
-  drawAcctOrb();
 });
 document.getElementById('acctCustomizeBtn').addEventListener('click',function(){
+  stopAcctOrb();
   document.getElementById('accountMenu').classList.add('hidden');
   openSkins('start');
 });
@@ -2222,18 +2246,35 @@ function startHomeOrbPreview(){
 function stopHomeOrbPreview(){if(homeOrbRAF){cancelAnimationFrame(homeOrbRAF);homeOrbRAF=null;}}
 
 // Also draw orb in account menu
+var acctOrbRAF=null,acctOrbT=0;
 function drawAcctOrb(){
+  if(acctOrbRAF){cancelAnimationFrame(acctOrbRAF);acctOrbRAF=null;}
   var ac=document.getElementById('acctOrbCanvas');
   if(!ac)return;
   var actx=ac.getContext('2d');
   var savedCtx=ctx,savedGT=GT;
-  ctx=actx;GT=homeOrbT;
-  actx.clearRect(0,0,60,60);
-  actx.fillStyle='rgba(6,8,14,1)';actx.fillRect(0,0,60,60);
-  var cs=CS();
-  drawOrb(30,30,18,cs.m,true);
-  ctx=savedCtx;GT=savedGT;
+  var loop=function(){
+    acctOrbT+=0.02;GT=acctOrbT;ctx=actx;
+    actx.clearRect(0,0,60,60);
+    actx.fillStyle='rgba(6,8,14,1)';actx.fillRect(0,0,60,60);
+    var cs=CS();
+    // Draw split state preview
+    var prog=(Math.sin(acctOrbT*0.7)+1)*0.5;
+    var spread=prog*22;
+    if(spread<5){
+      drawOrb(30,30,14,cs.m,true);
+    } else {
+      drawOrb(30,30-spread*0.5,10,cs.t,false);
+      drawOrb(30,30+spread*0.5,10,cs.b,false);
+    }
+    ctx=savedCtx;GT=savedGT;
+    if(document.getElementById('accountMenu')&&!document.getElementById('accountMenu').classList.contains('hidden')){
+      acctOrbRAF=requestAnimationFrame(loop);
+    }
+  };
+  acctOrbRAF=requestAnimationFrame(loop);
 }
+function stopAcctOrb(){if(acctOrbRAF){cancelAnimationFrame(acctOrbRAF);acctOrbRAF=null;}}
 
 // -----------------------------------
 //  MODE + LEVEL FLOW
