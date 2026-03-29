@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Split Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#06080d;color:#fff;font-family:'Georgia',serif;min-height:100vh;padding:24px;}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:16px;}
+.header h1{font-size:24px;letter-spacing:4px;text-transform:uppercase;}
+.login{display:flex;gap:10px;}
+.login input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;padding:10px 14px;font-size:14px;font-family:'Georgia',serif;outline:none;}
+.login button{background:#fff;color:#000;border:none;border-radius:8px;padding:10px 20px;font-weight:900;font-family:'Georgia',serif;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-size:12px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px;}
+.stat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;}
+.stat-val{font-size:42px;font-weight:900;line-height:1;}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase;margin-top:6px;}
+.stat.revenue .stat-val{color:#c8a000;}
+.section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:20px;margin-bottom:20px;}
+.section h2{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:0 0 10px;font-weight:400;}
+td{padding:10px 0;border-top:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);}
+.tier-origin{color:#c8a000;font-weight:700;}
+.tier-standard{color:#aaa;font-weight:700;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.badge.origin{background:rgba(200,160,0,0.2);color:#c8a000;border:1px solid rgba(200,160,0,0.4);}
+.badge.standard{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15);}
+.hidden{display:none!important;}
+.err{color:#ff6666;font-size:13px;margin-top:8px;}
+#loading{text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:14px;letter-spacing:2px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Split / Admin</h1>
+  <div class="login">
+    <input type="password" id="keyInput" placeholder="Admin key..." />
+    <button onclick="load()">Load</button>
+  </div>
+</div>
+
+<div id="loading">Enter admin key to load data</div>
+<div id="err" class="err hidden"></div>
+
+<div id="dashboard" class="hidden">
+  <div class="grid" id="statsGrid"></div>
+
+  <div class="section">
+    <h2>Recent Purchases</h2>
+    <table>
+      <thead><tr>
+        <th>Username</th><th>Email</th><th>Tier</th><th>Amount</th><th>Date</th>
+      </tr></thead>
+      <tbody id="purchasesBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+var BACKEND = 'https://split-backend.railway.app'; // update when deployed
+
+function load(){
+  var key = document.getElementById('keyInput').value.trim();
+  if(!key){ alert('Enter admin key'); return; }
+
+  document.getElementById('loading').textContent = 'Loading...';
+  document.getElementById('err').classList.add('hidden');
+
+  fetch(BACKEND+'/admin/stats', {
+    headers: { 'x-admin-key': key }
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error('Unauthorized or server error');
+    return r.json();
+  })
+  .then(function(data){
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    renderStats(data.stats);
+    renderPurchases(data.recent_purchases);
+  })
+  .catch(function(e){
+    document.getElementById('loading').textContent = '';
+    document.getElementById('err').textContent = 'Error: '+e.message;
+    document.getElementById('err').classList.remove('hidden');
+  });
+}
+
+function renderStats(s){
+  if(!s) return;
+  var revenue = ((s.total_revenue_cents||0)/100).toFixed(2);
+  var conv = s.total_page_views > 0
+    ? ((s.total_purchases/s.total_page_views)*100).toFixed(1)
+    : '0.0';
+
+  var stats = [
+    {val: s.total_page_views||0,    lbl:'Total Visits',        cls:''},
+    {val: s.page_views_7d||0,       lbl:'Visits (7 days)',     cls:''},
+    {val: s.total_games_played||0,  lbl:'Games Played',        cls:''},
+    {val: s.total_purchases||0,     lbl:'Total Sales',         cls:''},
+    {val: s.split_pass_sales||0,    lbl:'Split Pass',          cls:''},
+    {val: s.origin_pass_sales||0,   lbl:'Origin Pass',         cls:''},
+    {val: '$'+revenue,              lbl:'Total Revenue',       cls:'revenue'},
+    {val: conv+'%',                 lbl:'Visit-to-Purchase',   cls:''},
+  ];
+
+  var grid = document.getElementById('statsGrid');
+  grid.innerHTML = stats.map(function(s){
+    return '<div class="stat '+s.cls+'"><div class="stat-val">'+s.val+'</div><div class="stat-lbl">'+s.lbl+'</div></div>';
+  }).join('');
+}
+
+function renderPurchases(rows){
+  if(!rows||!rows.length){
+    document.getElementById('purchasesBody').innerHTML='<tr><td colspan="5" style="color:rgba(255,255,255,0.3);padding-top:20px;">No purchases yet</td></tr>';
+    return;
+  }
+  document.getElementById('purchasesBody').innerHTML = rows.map(function(p){
+    var amt = p.amount_cents ? '$'+(p.amount_cents/100).toFixed(2) : '-';
+    var date = new Date(p.created_at).toLocaleDateString();
+    return '<tr><td>'+esc(p.username||'-')+'</td><td>'+esc(p.email||'-')+'</td><td><span class="badge '+p.tier+'">'+p.tier+'</span></td><td>'+amt+'</td><td>'+date+'</td></tr>';
+  }).join('');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.getElementById('keyInput').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+</script>
+
+</body>
+</html>
