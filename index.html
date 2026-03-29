@@ -537,17 +537,21 @@ function _stopLofi(){lofiOn=false;if(lofiTmr){clearTimeout(lofiTmr);lofiTmr=null
 //  Speed caps at Pulse 3, never increases after
 // -----------------------------------
 var score=0;
-var PULSE_LEN=20, BREATHE_START=13; // breathe for last 7 of each pulse
+var PULSE_LEN=35, BREATHE_START=28; // break triggers at 28, runs 8s timer
 var pulseNum=0, withinPulse=0, isBreathing=false;
+var lastShownPulse=-1;
 
-function updatePulse(){
-  pulseNum=Math.floor(score/PULSE_LEN);
-  withinPulse=score%PULSE_LEN;
-  isBreathing=withinPulse>=BREATHE_START;
+// Called once per obstacle cleared (not per frame)
+function onObstacleCleared(){
+  if(scoreFrozen)return;
+  withinPulse++;
+  if(withinPulse>=BREATHE_START&&!isInBreak){
+    startBreak(); // time-driven, resets withinPulse after countdown
+  }
 }
 
-// Speed: caps at pulse 3 (score 60), breathing phases drop to 65% of peak
-var SPD_CAP=3; // pulse number where speed stops increasing
+// Speed and gap still use pulseNum for progression
+var SPD_CAP=4;
 function baseSpd(){
   var pn=Math.min(pulseNum,SPD_CAP);
   // Ramp: 0.011 to 0.020 over pulses 0-3
@@ -682,12 +686,13 @@ function startBreak(){
         // 1 second after 1 completes, start next pulse
         setTimeout(function(){
           document.getElementById('pulseBanner').classList.remove('show');
-          isInBreak=false;
-          scoreFrozen=false;
-          // Show next pulse banner briefly
+          // Advance to next pulse - reset withinPulse so break can't retrigger
           pulseNum++;
           withinPulse=0;
+          isInBreak=false;
+          scoreFrozen=false;
           lastShownPulse=pulseNum;
+          // Show next pulse name briefly
           document.getElementById('pulseBannerText').textContent=PULSE_NAMES[Math.min(pulseNum,PULSE_NAMES.length-1)];
           document.getElementById('pulseBannerSub').textContent='';
           document.getElementById('pulseBanner').classList.add('show');
@@ -700,6 +705,7 @@ function startBreak(){
 
 function cancelBreak(){
   isInBreak=false;scoreFrozen=false;
+  withinPulse=0; // reset so next game start is clean
   if(breakTimer){clearTimeout(breakTimer);breakTimer=null;}
   if(countdownTimer){clearInterval(countdownTimer);countdownTimer=null;}
   document.getElementById('pulseBanner').classList.remove('show');
@@ -1089,9 +1095,9 @@ function updateTimerHUD(){document.getElementById('hudTimer').textContent=format
 // Game count + paywall
 var FREE_GAMES=10;
 var gamesPlayed=parseInt(localStorage.getItem('splitGamesPlayed')||'0');
-var isPaid=localStorage.getItem('splitPaid')==='true';
-function incrementGameCount(){gamesPlayed++;localStorage.setItem('splitGamesPlayed',gamesPlayed);}
-function shouldShowPaywall(){return !isPaid&&gamesPlayed>=FREE_GAMES;}
+function isPaid(){return localStorage.getItem('splitPaid')==='true';}
+function incrementGameCount(){gamesPlayed++;localStorage.setItem('splitGamesPlayed',String(gamesPlayed));}
+function shouldShowPaywall(){return !isPaid()&&gamesPlayed>=FREE_GAMES;}
 
 // Tutorial
 var hasSeenTutorial=localStorage.getItem('splitTutSeen')==='true';
@@ -1278,7 +1284,7 @@ function toast(msg){var el=document.getElementById('toast');el.textContent=msg;e
 function buildLevelRow(){
   var row=document.getElementById('levelRow');row.innerHTML='';
   LEVELS.forEach(function(lv,i){
-    var isLocked=lv.founders&&!isPaid; // founders level requires any paid tier... wait, origin pass only
+    var isLocked=lv.founders&&localStorage.getItem('splitPaidTier')!=='origin';
     var isOriginLocked=lv.founders&&localStorage.getItem('splitPaidTier')!=='origin';
     var locked=lv.founders&&localStorage.getItem('splitPaidTier')!=='origin';
     var btn=document.createElement('div');
@@ -1424,7 +1430,7 @@ document.getElementById('tutNextBtn').addEventListener('click',function(e){
 // Paywall buttons
 document.getElementById('pwStandardBtn').addEventListener('click',function(e){
   e.stopPropagation();
-  isPaid=true;localStorage.setItem('splitPaid','true');localStorage.setItem('splitPaidTier','standard');
+  localStorage.setItem('splitPaid','true');localStorage.setItem('splitPaidTier','standard');
   document.getElementById('paywallScreen').classList.add('hidden');
   buildLevelRow();
   initGame();
@@ -1432,7 +1438,7 @@ document.getElementById('pwStandardBtn').addEventListener('click',function(e){
 });
 document.getElementById('pwPremiumBtn').addEventListener('click',function(e){
   e.stopPropagation();
-  isPaid=true;localStorage.setItem('splitPaid','true');localStorage.setItem('splitPaidTier','origin');
+  localStorage.setItem('splitPaid','true');localStorage.setItem('splitPaidTier','origin');
   document.getElementById('paywallScreen').classList.add('hidden');
   buildLevelRow();
   initGame();
@@ -1524,16 +1530,10 @@ function loop(){
 
     // Update pulse state only when not in a break
     if(!isInBreak){
-      updatePulse();
-
-      // Trigger break when we hit BREATHE_START within a pulse
-      if(withinPulse===BREATHE_START&&lastShownPulse!==-(pulseNum*100)){
-        lastShownPulse=-(pulseNum*100);
-        startBreak();
-      }
+      // (pulse state managed manually via onObstacleCleared)
     }
 
-    // Only spawn + move obstacles when not in break
+    // Only spawn obstacles when not in break
     if(!isInBreak){
       var rightmost=-Infinity;for(var i=0;i<obstacles.length;i++)if(obstacles[i].x>rightmost)rightmost=obstacles[i].x;
       if(rightmost<W)nextX=spawnFrom(Math.max(W+80,rightmost+Math.max(baseSpacing()*rnd(0.82,1.20),minG())));
@@ -1544,14 +1544,16 @@ function loop(){
       obstacles[oi].x-=obstacles[oi].spd;obstacles[oi].alpha=Math.min(1,obstacles[oi].alpha+0.07);
       if(oi>0&&obstacles[oi-1].x-obstacles[oi].x<mg)obstacles[oi].x=obstacles[oi-1].x-mg;
       if(obstacles[oi].cl>0)obstacles[oi].cl=Math.max(0,obstacles[oi].cl-0.07);
-      // Only score points when not frozen
       if(!scoreFrozen&&!obstacles[oi].passed&&obstacles[oi].x<DOT_X-DOT_R*0.5){
-        obstacles[oi].passed=true;score++;document.getElementById('hudScore').textContent=score;obstacles[oi].cl=1;
+        obstacles[oi].passed=true;
+        score++;
+        document.getElementById('hudScore').textContent=score;
+        obstacles[oi].cl=1;
+        onObstacleCleared(); // advance pulse counter
         getGaps(obstacles[oi]).forEach(function(gap){var gm=(gap.top+gap.bot)*0.5;for(var p=0;p<5;p++){var pa=(Math.PI*2*p/5),ps=1.5+Math.random()*2;var gc=hexRGB(gap.color);pFX.push(new Pt(obstacles[oi].x+(Math.random()-0.5)*OBS_W,gm,Math.cos(pa)*ps,Math.sin(pa)*ps,DOT_R*0.16,0.05,gc[0],gc[1],gc[2]));}});
       }
     }
     for(var ri=obstacles.length-1;ri>=0;ri--)if(obstacles[ri].x<-OBS_W-20)obstacles.splice(ri,1);
-    // No collision during break
     if(!isInBreak&&checkHit())doGameOver();
   }
 
