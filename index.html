@@ -15,13 +15,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 #hudScore{font-size:56px;font-weight:900;color:#fff;font-family:'Georgia',serif;letter-spacing:-2px;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,0.6);}
 .screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;}
 .screen.hidden{display:none!important;}
+#startScreen.hidden{display:none!important;}
 .card{background:rgba(6,8,14,0.95);border:1.5px solid rgba(255,255,255,0.08);border-radius:22px;padding:24px 22px 20px;text-align:center;width:100%;max-width:296px;box-shadow:0 24px 60px rgba(0,0,0,0.85);backdrop-filter:blur(16px);}
 .title{font-size:80px;font-weight:900;color:#fff;font-family:'Georgia',serif;letter-spacing:10px;text-transform:uppercase;line-height:1;text-shadow:0 0 60px rgba(255,255,255,0.1);margin-bottom:4px;}
 .sub{font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:4px;text-transform:uppercase;font-family:'Georgia',serif;margin-bottom:16px;}
-.how{display:flex;gap:14px;justify-content:center;margin-bottom:16px;}
-.how-step{display:flex;flex-direction:column;align-items:center;gap:5px;}
-.how-icon{font-size:18px;}
-.how-lbl{font-size:8px;color:rgba(255,255,255,0.55);letter-spacing:1px;text-transform:uppercase;font-family:'Georgia',serif;}
 .btn{background:#fff;color:#06080d;border:none;border-radius:50px;padding:13px 0;font-size:13px;font-weight:900;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,0.4);transition:transform .1s,box-shadow .1s;font-family:'Georgia',serif;width:100%;}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,0.4);}
 .btn.ghost{background:rgba(255,255,255,0.10);color:rgba(255,255,255,0.78);border:1px solid rgba(255,255,255,0.22);box-shadow:none;}
@@ -146,6 +143,42 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 .si-card{width:100%;max-width:296px;display:flex;flex-direction:column;gap:10px;}
 .si-skip{font-size:11px;color:rgba(255,255,255,0.28);font-family:‘Georgia’,serif;text-align:center;margin-top:12px;cursor:pointer;letter-spacing:1px;}
 .si-skip:active{color:rgba(255,255,255,0.5);}
+
+/* MODE SELECT SCREEN */
+#modeScreen{position:fixed;inset:0;z-index:22;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;}
+#modeScreen.hidden{display:none!important;}
+.mode-title{font-size:13px;font-weight:900;color:rgba(255,255,255,0.4);letter-spacing:5px;text-transform:uppercase;font-family:‘Georgia’,serif;margin-bottom:4px;}
+.mode-btn{width:100%;max-width:296px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:18px;padding:18px 20px;cursor:pointer;text-align:left;transition:all .15s;position:relative;}
+.mode-btn.active-mode{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.1);}
+.mode-btn.locked-mode{opacity:0.45;cursor:default;}
+.mode-name{font-size:16px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:2px;text-transform:uppercase;}
+.mode-desc{font-size:11px;color:rgba(255,255,255,0.4);font-family:‘Georgia’,serif;margin-top:3px;}
+.mode-lock{position:absolute;top:16px;right:16px;font-size:13px;color:rgba(255,255,255,0.3);}
+.mode-soon{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;font-family:‘Georgia’,serif;margin-top:3px;}
+
+/* LEVEL SELECT SCREEN */
+#levelSelectScreen{position:fixed;inset:0;z-index:22;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;}
+#levelSelectScreen.hidden{display:none!important;}
+
+/* ACCOUNT MENU */
+#accountMenu{position:fixed;inset:0;z-index:55;background:rgba(0,0,0,0.88);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
+#accountMenu.hidden{display:none!important;}
+.acct-avatar{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.15);margin-bottom:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.acct-name{font-size:20px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:2px;margin-bottom:4px;}
+.acct-email{font-size:11px;color:rgba(255,255,255,0.35);font-family:‘Georgia’,serif;margin-bottom:24px;}
+.acct-card{width:100%;max-width:296px;display:flex;flex-direction:column;gap:10px;}
+.acct-input{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.18);border-radius:12px;color:#fff;font-size:16px;font-weight:700;padding:11px 14px;text-align:center;width:100%;font-family:‘Georgia’,serif;outline:none;letter-spacing:2px;}
+.acct-input:focus{border-color:rgba(255,255,255,0.5);}
+.acct-input::placeholder{color:rgba(255,255,255,0.18);font-size:13px;font-weight:400;letter-spacing:1px;}
+
+/* HOME ORB PREVIEW */
+#homeOrbPreview{display:flex;justify-content:center;margin-bottom:10px;}
+#homeOrbCanvas{border-radius:50%;background:transparent;}
+
+/* Style Google sign in button on-theme */
+#googleSignInBtn{display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.07);color:#fff;border:1.5px solid rgba(255,255,255,0.2);border-radius:50px;padding:13px 20px;font-size:13px;font-weight:900;letter-spacing:1px;cursor:pointer;font-family:‘Georgia’,serif;width:100%;transition:all .15s;}
+#googleSignInBtn:active{background:rgba(255,255,255,0.12);}
+#googleSignInBtn img{width:18px;height:18px;filter:brightness(10);}
 </style>
 
 </head>
@@ -207,24 +240,49 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 
 <!-- START -->
 
-<div class="screen" id="startScreen">
-  <div class="title">Split</div>
-  <div class="sub">Match the colors</div>
-  <div class="card">
-    <div class="how">
-      <div class="how-step"><div class="how-icon">👇</div><div class="how-lbl">Hold</div></div>
-      <div class="how-step"><div class="how-icon">↕</div><div class="how-lbl">Drag</div></div>
-      <div class="how-step"><div class="how-icon">🔄</div><div class="how-lbl">Swap</div></div>
+<div id="startScreen" style="position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+  <!-- Gradient overlay so text reads over canvas -->
+  <div style="position:absolute;inset:0;background:rgba(6,8,14,0.35);pointer-events:none;"></div>
+  <!-- Centered group: title + buttons -->
+  <div style="position:relative;pointer-events:all;width:100%;max-width:296px;padding:0 28px;display:flex;flex-direction:column;align-items:center;gap:0;">
+    <div class="title" style="margin-bottom:32px;">Split</div>
+    <button class="btn" id="startBtn" style="background:rgba(255,255,255,0.12);color:#fff;border:1.5px solid rgba(255,255,255,0.28);backdrop-filter:blur(8px);box-shadow:none;margin-bottom:10px;width:100%;">Play</button>
+    <div class="btn-row" style="width:100%;">
+      <button class="btn ghost musicToggleBtn" id="startMusicBtn">Music On</button>
+      <button class="btn ghost" id="startSkinBtn">Customize</button>
     </div>
-    <div class="level-row" id="levelRow"></div>
-    <button class="btn" id="startBtn">Play</button>
-    <div style="height:8px"></div>
-    <div class="btn-row">
-      <button class="btn ghost musicToggleBtn" id="startMusicBtn">🎵 Music On</button>
-      <button class="btn ghost" id="startSkinBtn">🎨 Customize</button>
-    </div>
-    <div class="hint">Hold to split · Drag to aim · Cross center to swap</div>
   </div>
+</div>
+
+<!-- MODE SELECT -->
+
+<div id="modeScreen" class="hidden">
+  <div class="mode-title">Select Mode</div>
+  <div class="mode-btn active-mode" id="modeSingleBtn">
+    <div class="mode-name">Single Player</div>
+    <div class="mode-desc">Solo play - match colors and survive</div>
+  </div>
+  <div class="mode-btn locked-mode" id="modeCoopBtn">
+    <div class="mode-name">Co-op</div>
+    <div class="mode-desc">Play together with a friend</div>
+    <div class="mode-soon">Coming Soon</div>
+    <div class="mode-lock">🔒</div>
+  </div>
+  <div class="mode-btn locked-mode" id="modeCompBtn">
+    <div class="mode-name">Competitive</div>
+    <div class="mode-desc">Race against another player</div>
+    <div class="mode-soon">Coming Soon</div>
+    <div class="mode-lock">🔒</div>
+  </div>
+  <button class="btn ghost" id="modeBackBtn" style="max-width:296px;margin-top:4px;">Back</button>
+</div>
+
+<!-- LEVEL SELECT -->
+
+<div id="levelSelectScreen" class="hidden">
+  <div class="mode-title">Select Level</div>
+  <div style="width:100%;max-width:296px;display:flex;flex-direction:column;gap:10px;" id="levelSelectList"></div>
+  <button class="btn ghost" id="levelBackBtn" style="max-width:296px;margin-top:4px;">Back</button>
 </div>
 
 <!-- GAME OVER -->
@@ -311,6 +369,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
   </div>
 </div>
 
+<!-- ACCOUNT MENU -->
+
+<div id="accountMenu" class="hidden">
+  <div class="acct-avatar"><canvas id="acctOrbCanvas" width="60" height="60"></canvas></div>
+  <div class="acct-name" id="acctName"></div>
+  <div class="acct-email" id="acctEmail"></div>
+  <div class="acct-card">
+    <input class="acct-input" id="acctUsernameInput" type="text" maxlength="12" placeholder="Change username..." autocomplete="off" spellcheck="false">
+    <button class="btn" id="acctSaveUsernameBtn">Save Username</button>
+    <button class="btn ghost" id="acctCustomizeBtn">Customize Orb</button>
+    <button class="btn ghost" id="acctSignOutBtn" style="color:rgba(255,100,100,0.8);border-color:rgba(255,100,100,0.3);">Sign Out</button>
+  </div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.18);font-family:'Georgia',serif;text-align:center;margin-top:16px;cursor:pointer;" id="acctCloseBtn">Close</div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -371,14 +444,18 @@ var ICONS=(function(){
 // -----------------------------------
 //  STRIPE CHECKOUT
 // -----------------------------------
-var STRIPE_PK='pk_live_51TGCS46Y0qc5ka7Cd4nY5KvOd3xdWOH52NVwlRSWDducRd1UlXqpACWOS1KphdEsPOTfTG9tgGEzaUK15eKrJqTP00eJAKAPli';
+var STRIPE_PK='pk_live_51TGCS46Y@qc5ka7Cd4nY5Kv0d3xdWOH52NVwIRSWDducRd1UlXqpACW0S1KphdEsPOTfTG9tgGEzaUK15eKrJqTP00eJAKAPli';
 var BACKEND_URL='https://split-backend-production-18a8.up.railway.app'; // update once deployed
 
 function stripeCheckout(tier){
   fetch(BACKEND_URL+'/create-checkout-session',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({tier:tier,username:username||'Anonymous'})
+    body:JSON.stringify({
+      tier:tier,
+      username:username||'Guest',
+      email:googleUser?googleUser.email:undefined
+    })
   }).then(function(r){return r.json();})
   .then(function(d){
     if(d.url){
@@ -632,34 +709,54 @@ function setHS(s,n){localStorage.setItem('splitScoreMod',s);localStorage.setItem
 var bgAudio=null,lofiOn=false,lofiTmr=null,lofiCI=0,lofiBN=0,lofiCN=0;
 var AC=null;
 var musicEnabled=localStorage.getItem('splitMusicOn')!=='false';
-var bgAudioInited=false;
+var menuAudio=null,gameAudio=null;
+var MENU_TRACK='https://www.dropbox.com/scl/fi/6rmya1h7hugs9npmtjd1j/ES_Vintergatan-Strom.mp3?rlkey=f99ehicmcs9hdszccs2hz1qb1&st=rfbw58gn&dl=1';
+var GAME_TRACK='https://www.dropbox.com/scl/fi/7rfis7s9tj55z86iau2t5/ES_Lofi-on-the-Bass-Daniel-Fridell.mp3?rlkey=unngv2l76q9fisfmj8f2hfm7n&st=5avwvmb4&dl=1';
 
 function getAC(){if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}return AC;}
 
-function initBgAudio(){
-  if(bgAudioInited)return;bgAudioInited=true;
+function _makeAudio(url){
   try{
-    var url='https://www.dropbox.com/scl/fi/7rfis7s9tj55z86iau2t5/ES_Lofi-on-the-Bass-Daniel-Fridell.mp3?rlkey=unngv2l76q9fisfmj8f2hfm7n&st=5avwvmb4&raw=1';
-    bgAudio=new Audio();
-    bgAudio.loop=true;bgAudio.volume=0.38;
-    bgAudio.src=url;
-    bgAudio.onerror=function(){bgAudio=null;};
-  }catch(e){bgAudio=null;}
+    var a=new Audio();
+    a.loop=true;a.volume=0.38;
+    a.src=url;
+    a.onerror=function(){};
+    return a;
+  }catch(e){return null;}
 }
 
-function startMusic(){
+function startMenuMusic(){
   if(!musicEnabled)return;
   var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
-  initBgAudio();
-  if(bgAudio){
-    var p=bgAudio.play();
-    if(p&&p.catch)p.catch(function(){bgAudio=null;_startLofi();});
-  } else {
-    _startLofi();
+  // Stop game track
+  if(gameAudio&&!gameAudio.paused){gameAudio.pause();gameAudio.currentTime=0;}
+  // Start menu track
+  if(!menuAudio)menuAudio=_makeAudio(MENU_TRACK);
+  if(menuAudio&&menuAudio.paused){
+    var p=menuAudio.play();
+    if(p&&p.catch)p.catch(function(){menuAudio=null;_startLofi();});
   }
 }
+
+function startGameMusic(){
+  if(!musicEnabled)return;
+  var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
+  // Stop menu track
+  if(menuAudio&&!menuAudio.paused){menuAudio.pause();menuAudio.currentTime=0;}
+  // Start game track
+  if(!gameAudio)gameAudio=_makeAudio(GAME_TRACK);
+  if(gameAudio&&gameAudio.paused){
+    var p=gameAudio.play();
+    if(p&&p.catch)p.catch(function(){gameAudio=null;_startLofi();});
+  }
+}
+
+// Legacy aliases used elsewhere in code
+function initBgAudio(){}
+function startMusic(){startMenuMusic();}
 function stopMusic(){
-  if(bgAudio&&!bgAudio.paused)bgAudio.pause();
+  if(menuAudio&&!menuAudio.paused)menuAudio.pause();
+  if(gameAudio&&!gameAudio.paused)gameAudio.pause();
   _stopLofi();
 }
 function toggleMusic(){
@@ -680,6 +777,7 @@ document.getElementById('paySuccessBtn').addEventListener('click',function(){
   document.getElementById('paywallScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   STATE='start';
+  startHomeOrbPreview();
 });
 document.getElementById('payFailRetryBtn').addEventListener('click',function(){
   document.getElementById('payFailModal').classList.add('hidden');
@@ -1367,7 +1465,8 @@ function openSignIn(context,skippable){
 
 function updateAccountBtn(){
   var btn=document.getElementById('accountBtn');
-  if(username){btn.textContent=username.slice(0,1).toUpperCase()+' '+username;btn.classList.remove('hidden');}
+  if(googleUser&&username){btn.textContent=username;btn.classList.remove('hidden');}
+  else if(username){btn.textContent=username;btn.classList.remove('hidden');}
   else{btn.textContent='Sign In';btn.classList.remove('hidden');}
 }
 
@@ -1447,6 +1546,7 @@ function initGame(){
   document.getElementById('hudScore').textContent='0';
   document.getElementById('hudTimer').textContent='0:00';
   document.getElementById('hud').classList.remove('hidden');
+  startGameMusic();
   startRec();
   STATE='playing';
 }
@@ -1508,13 +1608,8 @@ function onDown(e){
   var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
   if(!isOnCanvas(e.target))return;
   if(STATE==='start'){
-    document.getElementById('startScreen').classList.add('hidden');
-    startMusic();
-    checkUsernameBeforePlay(function(){
-      if(!hasSeenTutorial){openTutorial();}
-      else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
-      else{initGame();}
-    });
+    ensureAudio();startMusic();
+    showModeScreen();
     return;
   }
   if(STATE==='playing'){
@@ -1596,7 +1691,7 @@ function toast(msg){var el=document.getElementById('toast');el.textContent=msg;e
 //  LEVEL SELECTOR (start screen)
 // -----------------------------------
 function buildLevelRow(){
-  var row=document.getElementById('levelRow');row.innerHTML='';
+  var row=document.getElementById('levelRow');if(!row)return;row.innerHTML='';
   LEVELS.forEach(function(lv,i){
     var isLocked=lv.founders&&localStorage.getItem('splitPaidTier')!=='origin';
     var isOriginLocked=lv.founders&&localStorage.getItem('splitPaidTier')!=='origin';
@@ -1790,16 +1885,8 @@ document.getElementById('usernameSaveBtn').addEventListener('click',function(){
 document.getElementById('usernameInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('usernameSaveBtn').click();});
 
 // Start screen
-document.getElementById('startBtn').addEventListener('click',function(e){
-  e.stopPropagation();
-  document.getElementById('startScreen').classList.add('hidden');
-  ensureAudio();startMusic();
-  checkUsernameBeforePlay(function(){
-    if(!hasSeenTutorial){openTutorial();}
-    else if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
-    else{initGame();}
-  });
-});
+// startBtn handled in mode screen flow
+
 document.getElementById('startSkinBtn').addEventListener('click',function(e){e.stopPropagation();openSkins('start');});
 document.getElementById('startMusicBtn').addEventListener('click',function(e){e.stopPropagation();ensureAudio();toggleMusic();});
 
@@ -1815,6 +1902,7 @@ document.getElementById('homeBtn').addEventListener('click',function(e){
   document.getElementById('goScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   STATE='start';
+  startMenuMusic();
 });
 document.getElementById('shareBtn').addEventListener('click',function(e){e.stopPropagation();shareRun();});
 document.getElementById('goMusicBtn').addEventListener('click',function(e){e.stopPropagation();ensureAudio();toggleMusic();});
@@ -1822,6 +1910,96 @@ document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stop
 
 // Skin + name
 document.getElementById('skinDoneBtn').addEventListener('click',closeSkins);
+// Mode screen buttons
+document.getElementById('startBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  ensureAudio();startMusic();
+  showModeScreen();
+});
+document.getElementById('modeSingleBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  showLevelScreen();
+});
+document.getElementById('modeCoopBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  toast('Co-op coming soon');
+});
+document.getElementById('modeCompBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  toast('Competitive coming soon');
+});
+document.getElementById('modeBackBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  document.getElementById('modeScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('levelBackBtn').addEventListener('click',function(e){
+  e.stopPropagation();
+  document.getElementById('levelSelectScreen').classList.add('hidden');
+  document.getElementById('modeScreen').classList.remove('hidden');
+});
+
+// Account menu buttons
+document.getElementById('accountBtn').addEventListener('click',function(){
+  if(googleUser||username){openAccountMenu();}
+  else{openSignIn('account',true);}
+});
+document.getElementById('acctCloseBtn').addEventListener('click',function(){
+  document.getElementById('accountMenu').classList.add('hidden');
+  drawAcctOrb();
+});
+document.getElementById('acctCustomizeBtn').addEventListener('click',function(){
+  document.getElementById('accountMenu').classList.add('hidden');
+  openSkins('start');
+});
+document.getElementById('acctSignOutBtn').addEventListener('click',function(){
+  googleUser=null;username='';
+  localStorage.removeItem('splitUsername');
+  localStorage.removeItem('splitPaid');
+  localStorage.removeItem('splitPaidTier');
+  localStorage.removeItem('splitGamesPlayed');
+  gamesPlayed=0;
+  document.getElementById('accountMenu').classList.add('hidden');
+  updateAccountBtn();
+  toast('Signed out');
+  if(window.google&&window.google.accounts){window.google.accounts.id.disableAutoSelect();}
+});
+document.getElementById('acctSaveUsernameBtn').addEventListener('click',function(){
+  var val=(document.getElementById('acctUsernameInput').value||'').trim().slice(0,12);
+  if(!val){toast('Enter a username');return;}
+  // Check availability
+  fetch(BACKEND_URL+'/check-username',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:val,current:username})
+  }).then(function(r){return r.json();})
+  .then(function(d){
+    if(d.available){
+      username=val;
+      localStorage.setItem('splitUsername',val);
+      document.getElementById('acctName').textContent=val;
+      document.getElementById('acctUsernameInput').value='';
+      document.getElementById('acctUsernameInput').placeholder=val;
+      updateAccountBtn();
+      toast('Username updated');
+    } else {
+      toast('Username taken - try another');
+    }
+  }).catch(function(){
+    // Offline - just update locally
+    username=val;localStorage.setItem('splitUsername',val);
+    updateAccountBtn();toast('Username updated');
+  });
+});
+
+
+
+// Soft Google button on game over
+document.getElementById('goGoogleBtn').addEventListener('click',function(){
+  openSignIn('soft',true);
+});
+
+
 updateMusicBtns();
 
 // Auth listeners
@@ -1846,10 +2024,32 @@ updateAccountBtn();
 
 // Auto sign in returning users silently
 window.addEventListener('load',function(){
+  // Track page view
+  fetch(BACKEND_URL+'/track-view',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      session_id:Math.random().toString(36).slice(2),
+      referrer:document.referrer||''
+    })
+  }).catch(function(){});
+
   if(window.google&&window.google.accounts){
     window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleSignIn,auto_select:true});
     window.google.accounts.id.prompt(function(){});
   }
+
+  // Start menu music on first interaction (iOS requires gesture)
+  var startedMenuMusic=false;
+  function tryStartMenuMusic(){
+    if(startedMenuMusic)return;
+    startedMenuMusic=true;
+    startMenuMusic();
+  }
+  document.addEventListener('touchstart',tryStartMenuMusic,{once:true,passive:true});
+  document.addEventListener('mousedown',tryStartMenuMusic,{once:true});
+  // Also try immediately (works on desktop, silently fails on iOS)
+  startMenuMusic();
 });
 
 // -----------------------------------
@@ -1857,13 +2057,129 @@ window.addEventListener('load',function(){
 // -----------------------------------
 var stT=0,sDY=0,sBY=0;
 function drawStartOrbs(){
-  var cs=CS();stT+=0.018;var prog=(Math.sin(stT*0.72)+1)*0.5,bob=Math.sin(stT*0.9)*H*0.04;
+  var cs=CS();
+  stT+=0.018;
+  var prog=(Math.sin(stT*0.72)+1)*0.5;
+  var bob=Math.sin(stT*0.9)*H*0.04;
   if(!sDY){sDY=DOT_MID;sBY=DOT_MID;}
-  sDY=lerp(sDY,lerp(DOT_MID,H*0.26,prog)+bob,0.12);sBY=lerp(sBY,lerp(DOT_MID,H*0.74,prog)+bob,0.12);
-  emitT(W*0.5,sDY,0,0,cs.m,1);emitT(W*0.5,sDY,0,0,cs.t,1);emitT(W*0.5,sBY,0,0,cs.b,1);
+  sDY=lerp(sDY,lerp(DOT_MID,H*0.26,prog)+bob,0.12);
+  sBY=lerp(sBY,lerp(DOT_MID,H*0.74,prog)+bob,0.12);
+  emitT(W*0.5,sDY,0,0,cs.m,1);
+  emitT(W*0.5,sDY,0,0,cs.t,1);
+  emitT(W*0.5,sBY,0,0,cs.b,1);
   tickArr(pTrail);drawArr(pTrail,0.42);
-  if(prog<0.5)drawOrb(W*0.5,sDY,DOT_R,cs.m,true);
-  else{drawOrb(W*0.5,sDY,DOT_R,cs.t,false);drawOrb(W*0.5,sBY,DOT_R,cs.b,false);}
+  // Use actual distance to decide merged vs split — threshold = 3x orb radius
+  var dist=Math.abs(sDY-sBY);
+  if(dist<DOT_R*3){
+    // Merged — single orb at midpoint
+    var midY=(sDY+sBY)*0.5;
+    drawOrb(W*0.5,midY,DOT_R,cs.m,true);
+  } else {
+    drawOrb(W*0.5,sDY,DOT_R,cs.t,false);
+    drawOrb(W*0.5,sBY,DOT_R,cs.b,false);
+  }
+}
+
+
+// -----------------------------------
+//  HOME ORB PREVIEW
+// -----------------------------------
+var homeOrbT=0,homeOrbRAF=null;
+function startHomeOrbPreview(){
+  stopHomeOrbPreview();
+  var hc=document.getElementById('homeOrbCanvas');
+  if(!hc)return;
+  var hctx=hc.getContext('2d');
+  var pw=hc.width,ph=hc.height;
+  var savedCtx=ctx,savedGT=GT;
+  var loop=function(){
+    homeOrbT+=0.02;GT=homeOrbT;ctx=hctx;
+    hctx.clearRect(0,0,pw,ph);
+    hctx.fillStyle='rgba(6,8,14,1)';hctx.fillRect(0,0,pw,ph);
+    var cs=CS(),r=pw*0.28;
+    drawOrb(pw*0.5,ph*0.5,r,cs.m,true);
+    ctx=savedCtx;GT=savedGT;
+    homeOrbRAF=requestAnimationFrame(loop);
+  };
+  homeOrbRAF=requestAnimationFrame(loop);
+}
+function stopHomeOrbPreview(){if(homeOrbRAF){cancelAnimationFrame(homeOrbRAF);homeOrbRAF=null;}}
+
+// Also draw orb in account menu
+function drawAcctOrb(){
+  var ac=document.getElementById('acctOrbCanvas');
+  if(!ac)return;
+  var actx=ac.getContext('2d');
+  var savedCtx=ctx,savedGT=GT;
+  ctx=actx;GT=homeOrbT;
+  actx.clearRect(0,0,60,60);
+  actx.fillStyle='rgba(6,8,14,1)';actx.fillRect(0,0,60,60);
+  var cs=CS();
+  drawOrb(30,30,18,cs.m,true);
+  ctx=savedCtx;GT=savedGT;
+}
+
+// -----------------------------------
+//  MODE + LEVEL FLOW
+// -----------------------------------
+function showModeScreen(){
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('modeScreen').classList.remove('hidden');
+  startMenuMusic();
+}
+
+function showLevelScreen(){
+  document.getElementById('modeScreen').classList.add('hidden');
+  document.getElementById('levelSelectScreen').classList.remove('hidden');
+  buildLevelSelectList();
+}
+
+function buildLevelSelectList(){
+  var list=document.getElementById('levelSelectList');
+  list.innerHTML='';
+  var isOrigin=localStorage.getItem('splitPaidTier')==='origin';
+  LEVELS.forEach(function(lv,i){
+    var locked=lv.founders&&!isOrigin;
+    var btn=document.createElement('div');
+    btn.className='mode-btn'+(i===activeLevel?' active-mode':'')+(locked?' locked-mode':'');
+    btn.innerHTML='<div class="mode-name">'+(locked?'[L] ':'')+lv.name+'</div>'
+      +'<div class="mode-desc">'+(locked?'Origin Pass exclusive':'')+'</div>';
+    if(!locked){
+      (function(idx){
+        btn.addEventListener('click',function(){
+          activeLevel=idx;saveLevel();
+          document.getElementById('levelSelectScreen').classList.add('hidden');
+          // Go straight to game
+          checkAndStartGame();
+        });
+      })(i);
+    } else {
+      btn.addEventListener('click',function(){toast('Origin Pass exclusive');});
+    }
+    list.appendChild(btn);
+  });
+}
+
+function checkAndStartGame(){
+  stopHomeOrbPreview();
+  if(!hasSeenTutorial){openTutorial();}
+  else if(shouldShowPaywall()){
+    if(!googleUser){openSignIn('gate',false);}
+    else{document.getElementById('paywallScreen').classList.remove('hidden');}
+  }
+  else{initGame();}
+}
+
+// -----------------------------------
+//  ACCOUNT MENU
+// -----------------------------------
+function openAccountMenu(){
+  document.getElementById('acctName').textContent=username||'Guest';
+  document.getElementById('acctEmail').textContent=googleUser?googleUser.email:'Not signed in';
+  document.getElementById('acctUsernameInput').value='';
+  document.getElementById('acctUsernameInput').placeholder=username||'Username...';
+  drawAcctOrb();
+  document.getElementById('accountMenu').classList.remove('hidden');
 }
 
 // -----------------------------------
