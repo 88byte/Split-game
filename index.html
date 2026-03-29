@@ -728,12 +728,14 @@ function _makeAudio(url){
 function startMenuMusic(){
   if(!musicEnabled)return;
   var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
+  // Stop game track only, don't touch menu track if already playing
   if(gameAudio&&!gameAudio.paused){gameAudio.pause();gameAudio.currentTime=0;}
   if(!menuAudio)menuAudio=_makeAudio(MENU_TRACK);
   if(menuAudio&&menuAudio.paused){
     var p=menuAudio.play();
     if(p&&p.catch)p.catch(function(e){console.warn('Menu audio failed:',e);});
   }
+  // If already playing, leave it alone
 }
 
 function startGameMusic(){
@@ -758,22 +760,29 @@ function stopMusic(){
 function toggleMusic(){
   musicEnabled=!musicEnabled;
   localStorage.setItem('splitMusicOn',musicEnabled?'true':'false');
-  
+  if(musicEnabled)startMusic(); else stopMusic();
+  updateMusicBtns();
+}
+
+function updateMusicBtns(){
+  var label=musicEnabled?ICONS.musicOn+' Music On':ICONS.musicOff+' Music Off';
+  document.querySelectorAll('.musicToggleBtn').forEach(function(b){b.textContent=label;});
+}
+
 // Payment modal buttons
 document.getElementById('paySuccessBtn').addEventListener('click',function(){
   document.getElementById('paySuccessModal').classList.add('hidden');
-  // Reset all game state fully before showing start screen
   pTrail=[];pFX=[];activeFX=null;deathFX=null;
   obstacles=[];score=0;
   cancelBreak();
   buildLevelRow();
-  sDY=0;sBY=0; // reset start screen orb positions
+  sDY=0;sBY=0;
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('goScreen').classList.add('hidden');
   document.getElementById('paywallScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   STATE='start';
-  startHomeOrbPreview();
+  startMenuMusic();
 });
 document.getElementById('payFailRetryBtn').addEventListener('click',function(){
   document.getElementById('payFailModal').classList.add('hidden');
@@ -781,16 +790,11 @@ document.getElementById('payFailRetryBtn').addEventListener('click',function(){
 });
 document.getElementById('payFailHomeBtn').addEventListener('click',function(){
   document.getElementById('payFailModal').classList.add('hidden');
+  document.getElementById('modeScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   STATE='start';
+  startMenuMusic();
 });
-updateMusicBtns();
-  if(musicEnabled)startMusic(); else stopMusic();
-}
-function updateMusicBtns(){
-  var label=musicEnabled?ICONS.musicOn+' Music On':ICONS.musicOff+' Music Off';
-  document.querySelectorAll('.musicToggleBtn').forEach(function(b){b.textContent=label;});
-}
 
 function LFB_VAR(){return 60/72;}
 var LOFI_CHORDS=[[110,130.81,164.81,195.99],[87.31,110,130.81,164.81],[130.81,164.81,195.99,246.94],[98,123.47,146.83,174.61]];
