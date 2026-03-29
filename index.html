@@ -30,6 +30,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 .btn-row{display:flex;gap:9px;}
 .btn-row .btn{flex:1;font-size:11px;padding:12px 0;}
 
+/* Home screen Play button - translucent on canvas */
+.hs-btn{backdrop-filter:blur(6px);}
+#startBtn.hs-btn{background:rgba(255,255,255,0.13);color:#fff;border:1.5px solid rgba(255,255,255,0.3);box-shadow:none;}
+/* Remove leftover util styles */
+.go-util-row,.go-util-btn{}
+
 /* LEVEL SELECTOR on start screen */
 .level-row{display:flex;gap:8px;margin-bottom:12px;}
 .level-btn{flex:1;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;padding:10px 6px 8px;cursor:pointer;text-align:center;transition:all .15s;color:rgba(255,255,255,0.7);}
@@ -163,6 +169,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 /* ACCOUNT MENU */
 #accountMenu{position:fixed;inset:0;z-index:55;background:rgba(0,0,0,0.88);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
 #accountMenu.hidden{display:none!important;}
+#lbScreen.hidden{display:none!important;}
 .acct-avatar{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.15);margin-bottom:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
 .acct-name{font-size:20px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:2px;margin-bottom:4px;}
 .acct-email{font-size:11px;color:rgba(255,255,255,0.35);font-family:‘Georgia’,serif;margin-bottom:24px;}
@@ -241,17 +248,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 <!-- START -->
 
 <div id="startScreen" style="position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
-  <!-- Gradient overlay so text reads over canvas -->
   <div style="position:absolute;inset:0;background:rgba(6,8,14,0.35);pointer-events:none;"></div>
-  <!-- Centered group: title + buttons -->
-  <div style="position:relative;pointer-events:all;width:100%;max-width:296px;padding:0 28px;display:flex;flex-direction:column;align-items:center;gap:0;">
-    <div class="title" style="margin-bottom:32px;">Split</div>
-    <button class="btn" id="startBtn" style="background:rgba(255,255,255,0.12);color:#fff;border:1.5px solid rgba(255,255,255,0.28);backdrop-filter:blur(8px);box-shadow:none;margin-bottom:10px;width:100%;">Play</button>
-    <div class="btn-row" style="width:100%;">
-      <button class="btn ghost musicToggleBtn" id="startMusicBtn">Music On</button>
-      <button class="btn ghost" id="startSkinBtn">Customize</button>
-      <button class="btn ghost" id="startLbBtn" style="margin-top:4px;width:100%;">Leaderboard</button>
+  <div style="position:relative;pointer-events:all;width:calc(100% - 56px);max-width:296px;display:flex;flex-direction:column;align-items:stretch;gap:9px;">
+    <div class="title" style="text-align:center;margin-bottom:24px;">Split</div>
+    <button class="btn hs-btn" id="startBtn">Play</button>
+    <div style="display:flex;gap:9px;">
+      <button class="btn ghost hs-btn" id="startMusicBtn" style="flex:1;">Music On</button>
+      <button class="btn ghost hs-btn" id="startSkinBtn" style="flex:1;">Customize</button>
     </div>
+    <button class="btn ghost hs-btn" id="startLbBtn">Leaderboard</button>
   </div>
 </div>
 
@@ -289,42 +294,47 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 <!-- GAME OVER -->
 
 <div class="screen hidden" id="goScreen">
-  <div class="card" style="padding:20px 20px 16px;">
-    <!-- Score section -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2px;">
-      <div id="goMedal" style="font-size:26px;line-height:1;">💫</div>
-      <div class="score-big" id="goScore" style="font-size:56px;">0</div>
-    </div>
-    <div style="font-size:10px;color:rgba(255,255,255,0.3);font-family:'Georgia',serif;text-align:center;margin-bottom:2px;" id="goTime"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <div class="best-row" id="goBest" style="margin:0;font-size:12px;">Best: --</div>
-      <div id="goRank" style="font-size:12px;color:rgba(255,255,255,0.45);font-family:'Georgia',serif;"></div>
-    </div>
-    <div class="divider" style="margin:0 0 10px;"></div>
-    <!-- Primary actions -->
-    <div class="btn-row" style="margin-bottom:8px;">
-      <button class="btn" id="retryBtn" style="font-size:12px;">Again</button>
-      <button class="btn ghost" id="goLbBtn" style="font-size:12px;">Leaderboard</button>
-    </div>
-    <!-- Secondary actions -->
-    <div class="btn-row" style="margin-bottom:8px;">
-      <button class="btn ghost" id="goLevelBtn" style="font-size:11px;" id="goLevelBtn">Level</button>
-      <button class="btn ghost" id="goSkinBtn" style="font-size:11px;">Customize</button>
-      <button class="btn ghost" id="shareBtn" style="font-size:11px;">Share</button>
-    </div>
-    <!-- Bottom row -->
-    <div class="btn-row">
-      <button class="btn ghost" id="homeBtn" style="font-size:11px;">Home</button>
-      <button class="btn ghost musicToggleBtn" id="goMusicBtn" style="font-size:11px;">Music On</button>
-    </div>
-    <!-- Sign in prompt - only shown when not signed in -->
-    <div id="goSoftSignIn" style="display:none;margin-top:10px;">
-      <div style="font-size:9px;color:rgba(255,255,255,0.3);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:7px;">Save scores · Leaderboard · Friends</div>
-      <div id="goGoogleBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);border-radius:50px;padding:10px 0;cursor:pointer;font-size:11px;font-weight:700;font-family:'Georgia',serif;letter-spacing:1px;color:#fff;">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:14px;height:14px;filter:brightness(10);" alt="G">
-        Sign in with Google
-      </div>
-    </div>
+  <div class="card" style="padding:24px 22px 22px;">
+
+```
+<!-- Score -->
+<div style="text-align:center;margin-bottom:16px;">
+  <div id="goMedal" style="font-size:26px;margin-bottom:6px;">💫</div>
+  <div class="score-big" id="goScore">0</div>
+  <div id="goTime" style="font-size:10px;color:rgba(255,255,255,0.25);font-family:'Georgia',serif;margin-top:4px;letter-spacing:1px;"></div>
+</div>
+
+<!-- Stats bar -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:18px;">
+  <div id="goBest" style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Georgia',serif;letter-spacing:1px;">Best: --</div>
+  <div id="goRank" style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Georgia',serif;letter-spacing:1px;"></div>
+</div>
+
+<!-- All buttons: consistent 2-per-row -->
+<div style="display:flex;flex-direction:column;gap:9px;">
+  <button class="btn" id="retryBtn">Play Again</button>
+  <button class="btn ghost" id="goLbBtn">Leaderboard</button>
+  <div style="display:flex;gap:9px;">
+    <button class="btn ghost" id="homeBtn" style="flex:1;">Home</button>
+    <button class="btn ghost" id="goLevelBtn" style="flex:1;">Level</button>
+  </div>
+  <div style="display:flex;gap:9px;">
+    <button class="btn ghost" id="goSkinBtn" style="flex:1;">Customize</button>
+    <button class="btn ghost" id="shareBtn" style="flex:1;">Share</button>
+  </div>
+  <button class="btn ghost musicToggleBtn" id="goMusicBtn">Music On</button>
+</div>
+
+<!-- Sign in prompt - only when not signed in -->
+<div id="goSoftSignIn" style="display:none;margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+  <div style="font-size:9px;color:rgba(255,255,255,0.25);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:9px;">Save scores · Leaderboard · Friends</div>
+  <div id="goGoogleBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.13);border-radius:50px;padding:11px 0;cursor:pointer;font-size:11px;font-weight:700;font-family:'Georgia',serif;letter-spacing:1px;color:rgba(255,255,255,0.6);">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:14px;height:14px;filter:brightness(10);" alt="G">
+    Sign in with Google
+  </div>
+</div>
+```
+
   </div>
 </div>
 
