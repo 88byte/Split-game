@@ -69,14 +69,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
 .cp-dot-s{width:13px;height:13px;border-radius:50%;}
 .sk-foot{padding:8px 16px 24px;flex-shrink:0;max-width:360px;margin:0 auto;width:100%;}
 
-/* NAME MODAL */
-#nameModal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;}
-#nameModal.hidden{display:none!important;}
-#nameModal .card{display:flex;flex-direction:column;align-items:center;gap:9px;max-width:278px;}
-#nameModal h3{font-size:16px;font-weight:900;color:#fff;font-family:‘Georgia’,serif;letter-spacing:2px;text-transform:uppercase;}
-#nameInput{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.18);border-radius:12px;color:#fff;font-size:18px;font-weight:700;padding:11px 14px;text-align:center;width:100%;font-family:‘Georgia’,serif;outline:none;letter-spacing:2px;}
-#nameInput:focus{border-color:rgba(255,255,255,0.5);}
-#nameInput::placeholder{color:rgba(255,255,255,0.18);font-size:13px;font-weight:400;letter-spacing:1px;}
 /* RUN TIMER in HUD */
 #hudTimer{font-size:16px;font-weight:700;color:rgba(255,255,255,0.45);font-family:‘Georgia’,serif;letter-spacing:1px;margin-top:6px;}
 
@@ -249,14 +241,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;touch-action
 
 <!-- NAME MODAL -->
 
-<div id="nameModal" class="hidden">
-  <div class="card">
-    <div style="font-size:30px">🏆</div>
-    <h3>New Best!</h3>
-    <input id="nameInput" type="text" maxlength="12" placeholder="Your name..." autocomplete="off" spellcheck="false">
-    <button class="btn" id="nameSaveBtn">Save</button>
-  </div>
-</div>
 <div id="toast"></div>
 
 <script>
@@ -502,7 +486,7 @@ function updatePulse(){
 var SPD_CAP=3; // pulse number where speed stops increasing
 function baseSpd(){
   var pn=Math.min(pulseNum,SPD_CAP);
-  // Ramp: 0.011 → 0.020 over pulses 0-3
+  // Ramp: 0.011 to 0.020 over pulses 0-3
   var peak=W*(0.011+pn*(0.009/SPD_CAP));
   // Breathe phases slow down noticeably
   return isBreathing?peak*0.65:peak;
@@ -778,7 +762,13 @@ function drawDeathFX(){
 //  OBSTACLES
 // ═══════════════════════════════════
 var obstacles=[],lastType='',nextX=0;
-function pickSF(){var lo=Math.max(0.15,0.30-sf()*0.11),hi=Math.min(0.43,0.40-sf()*0.04);return rnd(lo,hi);}
+function pickSF(){
+  // How extreme split positions get — increases with pulse number
+  var pf=Math.min(pulseNum,SPD_CAP)/SPD_CAP; // 0 to 1
+  var lo=Math.max(0.15,0.30-pf*0.11);
+  var hi=Math.min(0.43,0.40-pf*0.04);
+  return rnd(lo,hi);
+}
 function makeWall(type,x){
   var isMerge=(type==='merge');
   return{x:x,type:type,spd:baseSpd()*rnd(0.88,1.14),gapH:Math.max(baseGapH()*rnd(0.90,1.12),DOT_R*2.8),sf:pickSF(),passed:false,alpha:0,cl:0,
@@ -990,21 +980,10 @@ function doGameOver(){
         document.getElementById('paywallScreen').classList.remove('hidden');
         return;
       }
-      // Check if username needed
-      if(!username){
-        document.getElementById('usernameModal').classList.remove('hidden');
-        setTimeout(function(){document.getElementById('usernameInput').focus();},80);
-        return;
-      }
-      // New high score?
+      // Save high score automatically using username
       var isNew=score>getHS().score;
-      if(isNew){
-        document.getElementById('nameInput').value='';
-        document.getElementById('nameModal').classList.remove('hidden');
-        setTimeout(function(){document.getElementById('nameInput').focus();},80);
-      } else {
-        showGO();
-      }
+      if(isNew){setHS(score,username||'Anonymous');}
+      showGO();
     });
   },1800);
 }
@@ -1266,8 +1245,8 @@ document.getElementById('usernameSaveBtn').addEventListener('click',function(){
   username=val;localStorage.setItem('splitUsername',val);
   document.getElementById('usernameModal').classList.add('hidden');
   var isNew=score>getHS().score;
-  if(isNew){document.getElementById('nameInput').value=val;document.getElementById('nameModal').classList.remove('hidden');setTimeout(function(){document.getElementById('nameInput').focus();},80);}
-  else showGO();
+  if(isNew)setHS(score,username);
+  showGO();
 });
 document.getElementById('usernameInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('usernameSaveBtn').click();});
 
@@ -1302,13 +1281,6 @@ document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stop
 
 // Skin + name
 document.getElementById('skinDoneBtn').addEventListener('click',closeSkins);
-document.getElementById('nameSaveBtn').addEventListener('click',function(){
-  var name=(document.getElementById('nameInput').value||'').trim().slice(0,12)||username||'Anonymous';
-  setHS(score,name);
-  document.getElementById('nameModal').classList.add('hidden');
-  showGO();
-});
-document.getElementById('nameInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('nameSaveBtn').click();});
 updateMusicBtns();
 
 // ═══════════════════════════════════
