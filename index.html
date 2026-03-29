@@ -710,8 +710,8 @@ var bgAudio=null,lofiOn=false,lofiTmr=null,lofiCI=0,lofiBN=0,lofiCN=0;
 var AC=null;
 var musicEnabled=localStorage.getItem('splitMusicOn')!=='false';
 var menuAudio=null,gameAudio=null;
-var MENU_TRACK='https://www.dropbox.com/scl/fi/6rmya1h7hugs9npmtjd1j/ES_Vintergatan-Strom.mp3?rlkey=f99ehicmcs9hdszccs2hz1qb1&st=rfbw58gn&dl=1';
-var GAME_TRACK='https://www.dropbox.com/scl/fi/7rfis7s9tj55z86iau2t5/ES_Lofi-on-the-Bass-Daniel-Fridell.mp3?rlkey=unngv2l76q9fisfmj8f2hfm7n&st=5avwvmb4&dl=1';
+var MENU_TRACK='https://www.dropbox.com/scl/fi/6rmya1h7hugs9npmtjd1j/ES_Vintergatan-Strom.mp3?rlkey=f99ehicmcs9hdszccs2hz1qb1&st=rfbw58gn&raw=1';
+var GAME_TRACK='https://www.dropbox.com/scl/fi/7rfis7s9tj55z86iau2t5/ES_Lofi-on-the-Bass-Daniel-Fridell.mp3?rlkey=unngv2l76q9fisfmj8f2hfm7n&st=5avwvmb4&raw=1';
 
 function getAC(){if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}return AC;}
 
@@ -728,26 +728,22 @@ function _makeAudio(url){
 function startMenuMusic(){
   if(!musicEnabled)return;
   var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
-  // Stop game track
   if(gameAudio&&!gameAudio.paused){gameAudio.pause();gameAudio.currentTime=0;}
-  // Start menu track
   if(!menuAudio)menuAudio=_makeAudio(MENU_TRACK);
   if(menuAudio&&menuAudio.paused){
     var p=menuAudio.play();
-    if(p&&p.catch)p.catch(function(){menuAudio=null;_startLofi();});
+    if(p&&p.catch)p.catch(function(e){console.warn('Menu audio failed:',e);});
   }
 }
 
 function startGameMusic(){
   if(!musicEnabled)return;
   var ac=getAC();if(ac&&ac.state==='suspended')ac.resume();
-  // Stop menu track
   if(menuAudio&&!menuAudio.paused){menuAudio.pause();menuAudio.currentTime=0;}
-  // Start game track
   if(!gameAudio)gameAudio=_makeAudio(GAME_TRACK);
   if(gameAudio&&gameAudio.paused){
     var p=gameAudio.play();
-    if(p&&p.catch)p.catch(function(){gameAudio=null;_startLofi();});
+    if(p&&p.catch)p.catch(function(e){console.warn('Game audio failed:',e);});
   }
 }
 
