@@ -1443,7 +1443,7 @@ function stopRec(cb){
 
 function shareRun(){
   var name=username||'Anonymous';
-  var txt=name+' scored '+score+' in '+formatTime(runElapsed)+' on Split - split.game';
+  var txt=name+' scored '+score+' in '+formatTime(runElapsed)+' on Split - split.games';
   if(recBlob&&navigator.share&&navigator.canShare){
     var f=new File([recBlob],'split-'+score+'.webm',{type:'video/webm'});
     if(navigator.canShare({files:[f]})){
@@ -1454,7 +1454,7 @@ function shareRun(){
   shareURL(txt);
 }
 function shareURL(txt){
-  if(navigator.share){navigator.share({title:'Split',text:txt,url:'https://split.game'}).catch(function(){copyTxt(txt);});return;}
+  if(navigator.share){navigator.share({title:'Split',text:txt,url:'https://split.games'}).catch(function(){copyTxt(txt);});return;}
   copyTxt(txt);
 }
 function copyTxt(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('Copied!');});else toast('Score: '+score);}
