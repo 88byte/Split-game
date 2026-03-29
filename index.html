@@ -1284,7 +1284,7 @@ function formatTime(ms){var s=Math.floor(ms/1000),m=Math.floor(s/60);s=s%60;retu
 function updateTimerHUD(){document.getElementById('hudTimer').textContent=formatTime(Date.now()-runStartTime);}
 
 // Game count + paywall
-var FREE_GAMES=10;
+var FREE_GAMES=7;
 var gamesPlayed=parseInt(localStorage.getItem('splitGamesPlayed')||'0');
 
 function isPaid(){return localStorage.getItem('splitPaid')==='true';}
