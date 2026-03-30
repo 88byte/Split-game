@@ -530,9 +530,22 @@ function showPaySuccess(tier){
     var tier=params.get('tier')||'standard';
     localStorage.setItem('splitPaid','true');
     localStorage.setItem('splitPaidTier',tier);
-    // Clean URL
     window.history.replaceState({},'',window.location.pathname);
-    // Show success after short delay so page renders
+    // Update Supabase user tier via backend (fire and forget)
+    var savedUser=localStorage.getItem('splitUsername')||'';
+    if(savedUser){
+      fetch(BACKEND_URL+'/confirm-purchase',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:savedUser,tier:tier})
+      }).catch(function(){});
+    }
+    // Try silent Google re-auth (works on desktop, may fail on iOS Chrome)
+    if(window.google&&window.google.accounts){
+      window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleSignIn,auto_select:true});
+      window.google.accounts.id.prompt(function(){});
+    }
+    // Show success modal
     setTimeout(function(){showPaySuccess(tier);},300);
   } else if(params.get('payment')==='cancelled'){
     window.history.replaceState({},'',window.location.pathname);
@@ -1635,8 +1648,8 @@ function showGO(){
   // Fetch rank if signed in
   var rankEl=document.getElementById('goRank');
   if(rankEl){
-    if(googleUser&&username){
-      rankEl.textContent='Fetching rank...';
+    if(username){
+      rankEl.textContent='';
       fetch(BACKEND_URL+'/rank/'+encodeURIComponent(username))
         .then(function(r){return r.json();})
         .then(function(d){rankEl.textContent=d.rank?'#'+d.rank+' Global':'';})
@@ -1668,8 +1681,8 @@ function doGameOver(){
       // Save score locally
       var isNew=score>getHS().score;
       if(isNew){setHS(score,username||'Guest');}
-      // Submit to backend if signed in
-      if(googleUser&&username){
+      // Submit score to backend if we have a username (paid or not)
+      if(username){
         fetch(BACKEND_URL+'/submit-score',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
@@ -1809,12 +1822,15 @@ function closeSkins(){
   saveSkin();
   document.getElementById('skinScreen').classList.add('hidden');
   stopPreviewAnim();
-  if(skinFrom==='start'||skinFrom==='account'){
-    document.getElementById('startScreen').classList.remove('hidden');
+  if(skinFrom==='account'){
+    document.getElementById('accountMenu').classList.remove('hidden');
+    drawAcctOrb();
   } else if(skinFrom==='gameover'){
     document.getElementById('goScreen').classList.remove('hidden');
+  } else {
+    // start or anything else
+    document.getElementById('startScreen').classList.remove('hidden');
   }
-  // Don't touch any other screens
 }
 function stopPreviewAnim(){if(previewRAF){cancelAnimationFrame(previewRAF);previewRAF=null;}}
 
@@ -2095,7 +2111,7 @@ document.getElementById('acctCloseBtn').addEventListener('click',function(){
 document.getElementById('acctCustomizeBtn').addEventListener('click',function(){
   stopAcctOrb();
   document.getElementById('accountMenu').classList.add('hidden');
-  openSkins('start');
+  openSkins('account');
 });
 document.getElementById('acctSignOutBtn').addEventListener('click',function(){
   googleUser=null;
@@ -2121,39 +2137,21 @@ document.getElementById('acctSignOutBtn').addEventListener('click',function(){
 document.getElementById('acctSaveUsernameBtn').addEventListener('click',function(){
   var val=(document.getElementById('acctUsernameInput').value||'').trim().slice(0,12);
   if(!val){toast('Enter a username');return;}
-  // Check availability
-  fetch(BACKEND_URL+'/check-username',{
+  var old=username;
+  // Update locally immediately — don't wait for backend
+  username=val;
+  localStorage.setItem('splitUsername',val);
+  document.getElementById('acctName').textContent=val;
+  document.getElementById('acctUsernameInput').value='';
+  document.getElementById('acctUsernameInput').placeholder=val;
+  updateAccountBtn();
+  toast('Username updated');
+  // Sync to backend in background
+  fetch(BACKEND_URL+'/update-username',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({username:val,current:username})
-  }).then(function(r){return r.json();})
-  .then(function(d){
-    if(d.available){
-      var old=username;
-      username=val;
-      localStorage.setItem('splitUsername',val);
-      document.getElementById('acctName').textContent=val;
-      document.getElementById('acctUsernameInput').value='';
-      document.getElementById('acctUsernameInput').placeholder=val;
-      updateAccountBtn();
-      // Update in Supabase
-      fetch(BACKEND_URL+'/update-username',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          old_username:old,
-          new_username:val,
-          email:googleUser?googleUser.email:''
-        })
-      }).catch(function(){});
-      toast('Username updated');
-    } else {
-      toast('Username taken - try another');
-    }
-  }).catch(function(){
-    username=val;localStorage.setItem('splitUsername',val);
-    updateAccountBtn();toast('Username updated');
-  });
+    body:JSON.stringify({old_username:old,new_username:val,email:googleUser?googleUser.email:''})
+  }).catch(function(){});
 });
 
 
