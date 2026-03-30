@@ -1919,7 +1919,7 @@ function shareRun(){
     c.fillRect(0,0,sw,sh);
 
     // Single subtle bloom behind orb — tight radius, low opacity
-    var bloom=c.createRadialGradient(sw*0.5,sh*0.72,0,sw*0.5,sh*0.72,sw*0.28);
+    var bloom=c.createRadialGradient(sw*0.5,sh*0.63,0,sw*0.5,sh*0.63,sw*0.22);
     bloom.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.10)');
     bloom.addColorStop(1,'rgba(0,0,0,0)');
     c.fillStyle=bloom;c.fillRect(0,0,sw,sh);
@@ -1933,14 +1933,14 @@ function shareRun(){
     c.textAlign='center';c.textBaseline='middle';
     c.save();
     c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.35)';
-    c.shadowBlur=30;
+    c.shadowBlur=16;
     c.fillStyle='#ffffff';
     c.font='900 '+Math.round(sw*0.30)+'px Georgia,serif';
-    c.fillText(score,sw*0.5,sh*0.24);
+    c.fillText(score,sw*0.5,sh*0.16);
     c.restore();
 
     // ── SPLIT DIVIDER ────────────────────────────────────────────
-    var divY=sh*0.375;
+    var divY=sh*0.285;
     var divL=sw*0.18,divR=sw*0.82,divMid=sw*0.5;
     var grad1=c.createLinearGradient(divL,divY,divMid,divY);
     grad1.addColorStop(0,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0)');
@@ -1954,11 +1954,11 @@ function shareRun(){
     c.beginPath();c.moveTo(divMid,divY);c.lineTo(divR,divY);c.stroke();
 
     // ── RANK ─────────────────────────────────────────────────────
-    var infoTop=sh*0.435;
+    var infoTop=sh*0.345;
     if(rankStr){
       c.save();
       c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.7)';
-      c.shadowBlur=24;
+      c.shadowBlur=10;
       c.fillStyle=cm;
       c.font='800 '+Math.round(sw*0.062)+'px Georgia,serif';
       c.fillText(rankStr,sw*0.5,infoTop);
@@ -1973,11 +1973,10 @@ function shareRun(){
 
     // ── ORB — below all text, glowing reveal ─────────────────────
     // ── ORB — single clean draw, shadowBlur for glow only ──────────
-    var orbY=sh*0.72;
+    var orbY=sh*0.62;
     ctx=c;GT=acctOrbT;
     c.save();
-    c.shadowColor=cm;
-    c.shadowBlur=18;
+    c.shadowBlur=0;
     drawOrb(sw*0.5,orbY,sw*0.14,cm,true);
     c.restore();
     ctx=savedCtx;GT=savedGT;
@@ -1985,7 +1984,7 @@ function shareRun(){
     // ── BRANDING ─────────────────────────────────────────────────
     c.fillStyle='rgba(255,255,255,0.22)';
     c.font='600 '+Math.round(sw*0.038)+'px Georgia,serif';
-    c.fillText('www.split.games',sw*0.5,sh*0.94);
+    c.fillText('www.split.games',sw*0.5,sh*0.92);
 
     // Subtle border
     c.strokeStyle='rgba(255,255,255,0.05)';c.lineWidth=2;
