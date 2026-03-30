@@ -13,7 +13,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;}
 #tap{
   position:fixed;inset:0;z-index:50;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;background:transparent;
+  cursor:pointer;background:rgba(0,0,0,0.001);
 }
 #tapWord{
   font:900 clamp(62px,16vw,108px)/1 'Cormorant Garamond','Georgia',serif;
@@ -81,7 +81,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;}
   <button id="readyBtn">I'm ready</button>
 </div>
 <audio id="mus" loop preload="auto">
-  <source src="https://dl.dropboxusercontent.com/scl/fi/z4sjuysyg1q5xxvs6tvw6/ES_Space-Whales-Stefan-Eks
+  <source src="https://dl.dropboxusercontent.com/scl/fi/z4sjuysyg1q5xxvs6tvw6/ES_Space-Whales-Stefan-Ekstrom-Adapted-2026-03-30-at-19.17.52-UTC.mp3?rlkey=lcqzo8d34xjmprckw1nexxu5f&st=cgkrj1dx" type="audio/mpeg">
+</audio>
 <script>
 'use strict';
 var C=document.getElementById('c'),ctx=C.getContext('2d');
