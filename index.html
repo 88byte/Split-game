@@ -1918,24 +1918,11 @@ function shareRun(){
     c.fillStyle='#06080d';
     c.fillRect(0,0,sw,sh);
 
-    // Skin-colored radial bloom centered behind orb position
-    var bloom=c.createRadialGradient(sw*0.5,sh*0.65,0,sw*0.5,sh*0.65,sw*0.72);
-    bloom.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.18)');
-    bloom.addColorStop(0.45,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.05)');
+    // Single subtle bloom behind orb — tight radius, low opacity
+    var bloom=c.createRadialGradient(sw*0.5,sh*0.72,0,sw*0.5,sh*0.72,sw*0.28);
+    bloom.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.10)');
     bloom.addColorStop(1,'rgba(0,0,0,0)');
     c.fillStyle=bloom;c.fillRect(0,0,sw,sh);
-
-    // Secondary bloom from top color bottom-left
-    var bloom2=c.createRadialGradient(sw*0.15,sh*0.7,0,sw*0.15,sh*0.7,sw*0.5);
-    bloom2.addColorStop(0,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0.06)');
-    bloom2.addColorStop(1,'rgba(0,0,0,0)');
-    c.fillStyle=bloom2;c.fillRect(0,0,sw,sh);
-
-    // Bottom color bloom right
-    var bloom3=c.createRadialGradient(sw*0.85,sh*0.75,0,sw*0.85,sh*0.75,sw*0.4);
-    bloom3.addColorStop(0,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0.06)');
-    bloom3.addColorStop(1,'rgba(0,0,0,0)');
-    c.fillStyle=bloom3;c.fillRect(0,0,sw,sh);
 
     // Subtle grid
     c.strokeStyle='rgba(255,255,255,0.03)';c.lineWidth=1;
@@ -1945,8 +1932,8 @@ function shareRun(){
     // ── SCORE — top, dominant ────────────────────────────────────
     c.textAlign='center';c.textBaseline='middle';
     c.save();
-    c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.5)';
-    c.shadowBlur=60;
+    c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.35)';
+    c.shadowBlur=30;
     c.fillStyle='#ffffff';
     c.font='900 '+Math.round(sw*0.30)+'px Georgia,serif';
     c.fillText(score,sw*0.5,sh*0.24);
@@ -1986,14 +1973,10 @@ function shareRun(){
 
     // ── ORB — below all text, glowing reveal ─────────────────────
     var orbY2=sh*0.72;
-    var halo2=c.createRadialGradient(sw*0.5,orbY2,0,sw*0.5,orbY2,sw*0.42);
-    halo2.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.28)');
-    halo2.addColorStop(0.5,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.07)');
-    halo2.addColorStop(1,'rgba(0,0,0,0)');
-    c.fillStyle=halo2;c.fillRect(0,0,sw,sh);
+    // Draw orb — shadowBlur creates the glow, no separate halo circle
     ctx=c;GT=acctOrbT+Math.random()*6;
-    c.save();c.shadowColor=cm;c.shadowBlur=50;
-    drawOrb(sw*0.5,orbY2,sw*0.16,cm,true);
+    c.save();c.shadowColor=cm;c.shadowBlur=22;
+    drawOrb(sw*0.5,orbY2,sw*0.15,cm,true);
     c.restore();
     ctx=savedCtx;GT=savedGT;
 
