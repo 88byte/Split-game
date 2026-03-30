@@ -1356,11 +1356,113 @@ function drawDeathFX(){
     var ir2=(1-al)*DOT_R*8;ctx.save();ctx.globalAlpha=al*0.65;var ig2=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,ir2);ig2.addColorStop(0,rgba(d.col,0.85));ig2.addColorStop(0.6,rgba(d.col,0.4));ig2.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=ig2;ctx.beginPath();ctx.arc(d.x,d.y,ir2,0,Math.PI*2);ctx.fill();ctx.restore();
   } else if(d.di===3){// Glitch
     ctx.save();ctx.globalAlpha=al*0.7;for(var gi=0;gi<12;gi++){ctx.fillStyle=rgba(d.col,al);ctx.fillRect(d.x+(Math.random()-0.5)*DOT_R*4*(1-al+0.3),d.y+(Math.random()-0.5)*DOT_R*4*(1-al+0.3),rnd(3,14),rnd(1,5));}ctx.restore();
-  } else if(d.di===4){// Shards - already emitted as particles
-  } else if(d.di===5){// Dissolve
-    ctx.save();ctx.globalAlpha=al;for(var di2=0;di2<3;di2++){var dr2=(1-al+0.2)*DOT_R*3+di2*DOT_R*0.8;ctx.beginPath();ctx.arc(d.x,d.y,dr2,0,Math.PI*2);ctx.strokeStyle=rgba(d.col,al*(1-di2*0.3));ctx.lineWidth=1.5;ctx.stroke();}ctx.restore();
+  } else if(d.di===4){// Shards — sharp angular fragments flying outward
+    ctx.save();
+    var numShards=10;
+    for(var si=0;si<numShards;si++){
+      var sa=si/numShards*Math.PI*2;
+      var slen=DOT_R*(2.5+Math.random()*2)*(1-al+0.1);
+      var sdist=DOT_R*5*(1-al);
+      var sx1=d.x+Math.cos(sa)*sdist;
+      var sy1=d.y+Math.sin(sa)*sdist;
+      var sx2=sx1+Math.cos(sa+0.4)*slen;
+      var sy2=sy1+Math.sin(sa+0.4)*slen;
+      ctx.save();
+      ctx.globalAlpha=al*0.9;
+      ctx.strokeStyle=rgba(d.col,1);
+      ctx.lineWidth=2.5;
+      ctx.shadowColor=d.col;ctx.shadowBlur=8;
+      ctx.beginPath();ctx.moveTo(sx1,sy1);ctx.lineTo(sx2,sy2);ctx.stroke();
+      ctx.restore();
+    }
+    // Central flash
+    ctx.globalAlpha=al*al*0.7;
+    var sf=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,DOT_R*3*(1-al+0.2));
+    sf.addColorStop(0,'rgba(255,255,255,0.9)');
+    sf.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sf;ctx.beginPath();ctx.arc(d.x,d.y,DOT_R*3*(1-al+0.2),0,Math.PI*2);ctx.fill();
+    ctx.restore();
+
+  } else if(d.di===5){// Dissolve — orb breaks into drifting pixel clouds
+    ctx.save();
+    // Multiple expanding blobs that fade and drift
+    for(var dbi=0;dbi<8;dbi++){
+      var dba=dbi/8*Math.PI*2+d.t*0.3;
+      var dbr=DOT_R*0.8*(1-al+0.15);
+      var dbdist=DOT_R*4*(1-al);
+      var dbx=d.x+Math.cos(dba)*dbdist;
+      var dby=d.y+Math.sin(dba)*dbdist;
+      ctx.globalAlpha=al*0.55;
+      var dbg=ctx.createRadialGradient(dbx,dby,0,dbx,dby,dbr*2);
+      dbg.addColorStop(0,rgba(d.col,0.8));
+      dbg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=dbg;
+      ctx.beginPath();ctx.arc(dbx,dby,dbr*2,0,Math.PI*2);ctx.fill();
+    }
+    // Shrinking core
+    ctx.globalAlpha=al*al;
+    var dcg=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,DOT_R*al);
+    dcg.addColorStop(0,rgba(d.col,0.9));dcg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=dcg;ctx.beginPath();ctx.arc(d.x,d.y,DOT_R*al,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+
   } else if(d.di===6){// Electric
     if(al>0.05){ctx.save();ctx.globalAlpha=al;ctx.shadowColor=d.col;ctx.shadowBlur=14;for(var ei=0;ei<6;ei++){var ea=ei/6*Math.PI*2,el=(1-al)*DOT_R*7;ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x+Math.cos(ea)*el+(Math.random()-0.5)*10,d.y+Math.sin(ea)*el+(Math.random()-0.5)*10);ctx.strokeStyle=rgba(d.col,al);ctx.lineWidth=1.8;ctx.stroke();}ctx.restore();}
+
+  } else if(d.di===7){// Origin — spiral collapse into a black hole then explode
+    ctx.save();
+    var phase=1-al; // 0=just died, 1=fully complete
+    if(phase<0.4){
+      // Phase 1: collapse — purple spiral arms sucked inward
+      var collapseAl=1-phase/0.4;
+      for(var oi2=0;oi2<3;oi2++){
+        ctx.save();
+        ctx.translate(d.x,d.y);
+        ctx.rotate(d.t*2.5+oi2*Math.PI*2/3);
+        ctx.globalAlpha=collapseAl*0.8;
+        ctx.strokeStyle='rgba(180,80,255,'+collapseAl+')';
+        ctx.lineWidth=3;
+        ctx.shadowColor='rgba(180,80,255,1)';ctx.shadowBlur=12;
+        ctx.beginPath();
+        for(var pi2=0;pi2<=30;pi2++){
+          var pa2=pi2/30*Math.PI*1.5;
+          var pr2=DOT_R*2.5*(1-pi2/30)*collapseAl;
+          if(pi2===0)ctx.moveTo(Math.cos(pa2)*pr2,Math.sin(pa2)*pr2);
+          else ctx.lineTo(Math.cos(pa2)*pr2,Math.sin(pa2)*pr2);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+      // Singularity core
+      ctx.globalAlpha=collapseAl;
+      var sg2=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,DOT_R*1.2*collapseAl);
+      sg2.addColorStop(0,'rgba(255,255,255,1)');
+      sg2.addColorStop(0.3,'rgba(180,80,255,0.8)');
+      sg2.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=sg2;ctx.beginPath();ctx.arc(d.x,d.y,DOT_R*1.2*collapseAl,0,Math.PI*2);ctx.fill();
+    } else {
+      // Phase 2: explosion — purple/white shockwave
+      var expPhase=(phase-0.4)/0.6;
+      var expR=DOT_R*14*expPhase;
+      ctx.globalAlpha=(1-expPhase)*0.9;
+      // Outer shockwave ring
+      ctx.strokeStyle='rgba(200,130,255,'+(1-expPhase)+')';
+      ctx.lineWidth=4*(1-expPhase)+1;
+      ctx.shadowColor='rgba(200,130,255,1)';ctx.shadowBlur=20;
+      ctx.beginPath();ctx.arc(d.x,d.y,expR,0,Math.PI*2);ctx.stroke();
+      // Inner white ring
+      ctx.strokeStyle='rgba(255,255,255,'+(1-expPhase)*0.6+')';
+      ctx.lineWidth=2;ctx.shadowBlur=8;
+      ctx.beginPath();ctx.arc(d.x,d.y,expR*0.55,0,Math.PI*2);ctx.stroke();
+      // Fill glow
+      ctx.globalAlpha=(1-expPhase)*(1-expPhase)*0.3;
+      var eg=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,expR);
+      eg.addColorStop(0,'rgba(200,130,255,0.6)');
+      eg.addColorStop(0.4,'rgba(180,80,255,0.2)');
+      eg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=eg;ctx.beginPath();ctx.arc(d.x,d.y,expR,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
   }
 
   if(d.life<=0&&pFX.filter(function(p){return p.life>0;}).length===0)deathFX=null;
@@ -1653,7 +1755,7 @@ function showGO(){
       rankEl.textContent='';
       fetch(BACKEND_URL+'/rank/'+encodeURIComponent(username))
         .then(function(r){return r.json();})
-        .then(function(d){rankEl.textContent=d.rank?'#'+d.rank+' Global':'';})
+        .then(function(d){var rk=d.rank?'#'+d.rank+' Global':'';rankEl.textContent=rk;window._lastRank=rk;})
         .catch(function(){rankEl.textContent='';});
     } else {
       rankEl.textContent='';
@@ -1769,46 +1871,92 @@ function shareRun(){
   var name=username||'Anonymous';
   var txt=name+' scored '+score+' on Split\nsplit.games';
   try{
-    // Draw score overlay directly on canvas, capture, then restore
-    var overlayH=H*0.28;
-    var oy=H*0.5-overlayH*0.5;
-    // Draw score card overlay
-    ctx.save();
-    ctx.fillStyle='rgba(6,8,14,0.82)';
-    roundRect(ctx,W*0.1,oy,W*0.8,overlayH,18);ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1.5;
-    roundRect(ctx,W*0.1,oy,W*0.8,overlayH,18);ctx.stroke();
-    // Score
-    ctx.fillStyle='#fff';ctx.font='900 '+Math.round(W*0.18)+'px Georgia,serif';
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(score,W*0.5,oy+overlayH*0.38);
+    // Draw on a separate offscreen canvas — clean branded card, no game bleed
+    var sw=600,sh=900; // portrait 2:3 ratio
+    var sc=document.createElement('canvas');
+    sc.width=sw;sc.height=sh;
+    var c=sc.getContext('2d');
+
+    // Background — deep dark gradient
+    var bg=c.createLinearGradient(0,0,sw,sh);
+    bg.addColorStop(0,'#06080d');
+    bg.addColorStop(1,'#0d0818');
+    c.fillStyle=bg;c.fillRect(0,0,sw,sh);
+
+    // Subtle grid lines (brand texture)
+    c.strokeStyle='rgba(255,255,255,0.04)';c.lineWidth=1;
+    for(var gx=0;gx<sw;gx+=44){c.beginPath();c.moveTo(gx,0);c.lineTo(gx,sh);c.stroke();}
+    for(var gy=0;gy<sh;gy+=44){c.beginPath();c.moveTo(0,gy);c.lineTo(sw,gy);c.stroke();}
+
+    // Glow behind score
+    var glow=c.createRadialGradient(sw*0.5,sh*0.42,0,sw*0.5,sh*0.42,sw*0.55);
+    glow.addColorStop(0,'rgba(255,255,255,0.06)');
+    glow.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=glow;c.fillRect(0,0,sw,sh);
+
+    // Draw the orb in the upper portion
+    var savedCtx=ctx,savedGT=GT;
+    ctx=c;GT=acctOrbT;
+    var cs=CS();
+    drawOrb(sw*0.5,sh*0.28,sw*0.12,cs.m,true);
+    ctx=savedCtx;GT=savedGT;
+
+    // Score — big and bold
+    c.textAlign='center';c.textBaseline='middle';
+    c.fillStyle='#ffffff';
+    c.font='900 '+Math.round(sw*0.28)+'px Georgia,serif';
+    c.shadowColor='rgba(255,255,255,0.15)';c.shadowBlur=30;
+    c.fillText(score,sw*0.5,sh*0.52);
+    c.shadowBlur=0;
+
+    // Score label
+    c.font='400 '+Math.round(sw*0.045)+'px Georgia,serif';
+    c.fillStyle='rgba(255,255,255,0.3)';
+    c.letterSpacing='6px';
+    c.fillText('SCORE',sw*0.5,sh*0.63);
+
+    // Divider
+    c.strokeStyle='rgba(255,255,255,0.08)';c.lineWidth=1;
+    c.beginPath();c.moveTo(sw*0.2,sh*0.695);c.lineTo(sw*0.8,sh*0.695);c.stroke();
+
     // Name + time
-    ctx.font='400 '+Math.round(W*0.038)+'px Georgia,serif';
-    ctx.fillStyle='rgba(255,255,255,0.45)';
-    ctx.fillText(name+' · '+formatTime(runElapsed),W*0.5,oy+overlayH*0.72);
-    // Branding
-    ctx.font='700 '+Math.round(W*0.032)+'px Georgia,serif';
-    ctx.fillStyle='rgba(255,255,255,0.22)';
-    ctx.fillText('split.games',W*0.5,oy+overlayH*0.9);
-    ctx.restore();
-    canvas.toBlob(function(blob){
-      // Restore canvas state (game loop will redraw next frame)
+    // Global rank if available
+    var rankStr=window._lastRank||'';
+    if(rankStr){
+      c.font='700 '+Math.round(sw*0.042)+'px Georgia,serif';
+      c.fillStyle='rgba(200,130,255,0.85)';
+      c.fillText(rankStr,sw*0.5,sh*0.71);
+    }
+    c.font='600 '+Math.round(sw*0.048)+'px Georgia,serif';
+    c.fillStyle='rgba(255,255,255,0.55)';
+    c.fillText(name,sw*0.5,sh*(rankStr?0.775:0.74));
+
+    c.font='400 '+Math.round(sw*0.038)+'px Georgia,serif';
+    c.fillStyle='rgba(255,255,255,0.28)';
+    c.fillText(formatTime(runElapsed),sw*0.5,sh*0.785);
+
+    // Branding — bottom
+    c.font='700 '+Math.round(sw*0.042)+'px Georgia,serif';
+    c.fillStyle='rgba(255,255,255,0.18)';
+    c.letterSpacing='4px';
+    c.fillText('SPLIT.GAMES',sw*0.5,sh*0.91);
+
+    // Border
+    c.strokeStyle='rgba(255,255,255,0.06)';c.lineWidth=2;
+    c.strokeRect(1,1,sw-2,sh-2);
+
+    sc.toBlob(function(blob){
       if(blob&&navigator.share&&navigator.canShare){
-        var f=new File([blob],'split-'+score+'.png',{type:'image/png'});
+        var f=new File([blob],'split-score-'+score+'.png',{type:'image/png'});
         if(navigator.canShare({files:[f]})){
-          navigator.share({title:'I scored '+score+' on Split',text:txt,files:[f]}).catch(function(){shareURL(txt);});
+          navigator.share({title:'I scored '+score+' on Split',text:txt,files:[f]})
+            .catch(function(){shareURL(txt);});
           return;
         }
       }
       shareURL(txt);
     },'image/png');
   }catch(e){shareURL(txt);}
-}
-function roundRect(c,x,y,w,h,r){
-  c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);
-  c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);
-  c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);
-  c.closePath();
 }
 function shareURL(txt){
   if(navigator.share){navigator.share({title:'Split',text:txt,url:'https://split.game'}).catch(function(){copyTxt(txt);});return;}
