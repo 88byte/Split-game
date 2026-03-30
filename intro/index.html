@@ -85,7 +85,14 @@ canvas{position:fixed;inset:0;width:100%;height:100%;}
 'use strict';
 var C=document.getElementById('c'),ctx=C.getContext('2d');
 var W,H;
-function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight;}
+function resize(){
+  var dpr=window.devicePixelRatio||1;
+  W=window.innerWidth;H=window.innerHeight;
+  C.width=Math.round(W*dpr);C.height=Math.round(H*dpr);
+  C.style.width=W+'px';C.style.height=H+'px';
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr,dpr);
+}
 resize();window.addEventListener('resize',resize);
 
 var PI=Math.PI,TAU=PI*2;
@@ -138,7 +145,7 @@ var TL={
 var BREATH_FREQ=0.2; // one breath every 5s
 var BREATH_AMP=0.06;
 // Split phases
-var SP={p0:.10,p1:.22,p2:.45,p3:.65,p4:.778};
+var SP={p0:.10,p1:.22,p2:.45,p3:.65,p4:.889};
 
 // ── PARTICLES ──────────────────────────────────────────────
 var pts=[];
@@ -436,14 +443,17 @@ function cText(text,x,y,sz,alpha,col){
 var lastVibBreath=0,flashVibrated=false;
 function vibrate(pattern){if(navigator.vibrate)navigator.vibrate(pattern);}
 
-// ── DANCE ORBS ────────────────────────────────────────────
+// ── DANCE ORBS — binary state machine ──────────────────────
 var DA={x:0,y:0,vx:.9,vy:.5};
 var DB={x:0,y:0,vx:-.8,vy:-.6};
-var DBLEND=0;       // 0=split 1=merged
-var DFLASH=0;       // merge flash alpha
-var DTITLE=null;    // title bounds {cx,cy,hw,hh}
+var DMERGED=false;  // binary: merged or split
+var DMERGE_T=0;     // time of last merge (for smooth visual)
+var DSPLIT_T=0;     // time of last split
+var DFLASH=0;
+var DTITLE=null;
 var DANCE_INIT=false;
-var DOR=0;          // dance orb radius (set at runtime)
+var DOR=0;
+var DMX=0,DMY=0;    // merged orb position
 
 function initDance(){
   if(DANCE_INIT)return;
@@ -451,55 +461,71 @@ function initDance(){
   DA.x=W*.28;DA.y=H*.44;
   DB.x=W*.72;DB.y=H*.56;
   DOR=W*.065;
-  // Approximate title bounds (center screen, roughly)
-  DTITLE={cx:W*.5,cy:H*.5,hw:W*.26,hh:H*.09};
+  DTITLE={cx:W*.5,cy:H*.5,hw:W*.28,hh:H*.10};
 }
 
 function tickDance(){
   initDance();
-  // Random wander
-  if(Math.random()<.022){DA.vx+=rnd(-.35,.35);}
-  if(Math.random()<.022){DA.vy+=rnd(-.35,.35);}
-  if(Math.random()<.022){DB.vx+=rnd(-.35,.35);}
-  if(Math.random()<.022){DB.vy+=rnd(-.35,.35);}
-  // Speed limit
-  var ms=1.8;
-  DA.vx=clamp(DA.vx,-ms,ms);DA.vy=clamp(DA.vy,-ms,ms);
-  DB.vx=clamp(DB.vx,-ms,ms);DB.vy=clamp(DB.vy,-ms,ms);
-  // Soft boundary
-  var mg=.1;
-  if(DA.x<W*mg)DA.vx+=.18;if(DA.x>W*(1-mg))DA.vx-=.18;
-  if(DA.y<H*mg)DA.vy+=.18;if(DA.y>H*(1-mg))DA.vy-=.18;
-  if(DB.x<W*mg)DB.vx+=.18;if(DB.x>W*(1-mg))DB.vx-=.18;
-  if(DB.y<H*mg)DB.vy+=.18;if(DB.y>H*(1-mg))DB.vy-=.18;
-  DA.x+=DA.vx;DA.y+=DA.vy;
-  DB.x+=DB.vx;DB.y+=DB.vy;
+  var now=GT;
 
-  var dx=DA.x-DB.x,dy=DA.y-DB.y;
-  var dist=Math.sqrt(dx*dx+dy*dy);
+  if(DMERGED){
+    // Move as single orb
+    if(Math.random()<.025){DMX+=rnd(-1.5,1.5);}
+    if(Math.random()<.025){DMY+=rnd(-1.5,1.5);}
+    var ms2=1.5;
+    DA.vx=clamp(DA.vx+(DMX-DA.x)*.002,-ms2,ms2);
+    DA.vy=clamp(DA.vy+(DMY-DA.y)*.002,-ms2,ms2);
+    DA.x+=DA.vx*.5;DA.y+=DA.vy*.5;
+    // Boundary
+    var mg=.12;
+    if(DA.x<W*mg)DA.vx+=.22;if(DA.x>W*(1-mg))DA.vx-=.22;
+    if(DA.y<H*mg)DA.vy+=.22;if(DA.y>H*(1-mg))DA.vy-=.22;
+    DA.x=clamp(DA.x,W*.08,W*.92);DA.y=clamp(DA.y,H*.08,H*.92);
+    DB.x=DA.x;DB.y=DA.y;
+    DMX=DA.x;DMY=DA.y;
 
-  // Title collision → SPLIT apart
-  if(DTITLE&&DBLEND>.35){
-    var inA=Math.abs(DA.x-DTITLE.cx)<DTITLE.hw+DOR&&Math.abs(DA.y-DTITLE.cy)<DTITLE.hh+DOR;
-    var inB=Math.abs(DB.x-DTITLE.cx)<DTITLE.hw+DOR&&Math.abs(DB.y-DTITLE.cy)<DTITLE.hh+DOR;
-    if(inA||inB){
-      DBLEND=Math.max(0,DBLEND-.12);
-      if(inA){DA.vx*=-1.15;DA.vy+=rnd(-.3,.3);}
-      if(inB){DB.vx*=-1.15;DB.vy+=rnd(-.3,.3);}
-      burst(inA?DA.x:DB.x,inA?DA.y:DB.y,4,2,LTPURPLE,true,.005);
-      burst(inA?DA.x:DB.x,inA?DA.y:DB.y,4,2,WHITE,true,.005);
+    // Title collision when merged → SPLIT
+    if(DTITLE&&now-DMERGE_T>1.2){
+      var inM=Math.abs(DA.x-DTITLE.cx)<DTITLE.hw&&Math.abs(DA.y-DTITLE.cy)<DTITLE.hh;
+      if(inM){
+        DMERGED=false;DSPLIT_T=now;
+        DFLASH=0.7;
+        // Repel apart
+        DA.vx=-2+rnd(-1,0);DA.vy=rnd(-1,1);
+        DB.x=DA.x;DB.y=DA.y;
+        DB.vx=2+rnd(0,1);DB.vy=rnd(-1,1);
+        burst(DA.x,DA.y,7,2.5,LTPURPLE,true,.005);
+        burst(DA.x,DA.y,7,2.5,WHITE,true,.005);
+      }
+    }
+  } else {
+    // Move independently
+    var ms=1.8;
+    if(Math.random()<.022){DA.vx+=rnd(-.4,.4);}if(Math.random()<.022){DA.vy+=rnd(-.4,.4);}
+    if(Math.random()<.022){DB.vx+=rnd(-.4,.4);}if(Math.random()<.022){DB.vy+=rnd(-.4,.4);}
+    DA.vx=clamp(DA.vx,-ms,ms);DA.vy=clamp(DA.vy,-ms,ms);
+    DB.vx=clamp(DB.vx,-ms,ms);DB.vy=clamp(DB.vy,-ms,ms);
+    var mg=.09;
+    if(DA.x<W*mg)DA.vx+=.2;if(DA.x>W*(1-mg))DA.vx-=.2;
+    if(DA.y<H*mg)DA.vy+=.2;if(DA.y>H*(1-mg))DA.vy-=.2;
+    if(DB.x<W*mg)DB.vx+=.2;if(DB.x>W*(1-mg))DB.vx-=.2;
+    if(DB.y<H*mg)DB.vy+=.2;if(DB.y>H*(1-mg))DB.vy-=.2;
+    DA.x+=DA.vx;DA.y+=DA.vy;
+    DB.x+=DB.vx;DB.y+=DB.vy;
+
+    // Collision → MERGE (only if enough time since last split)
+    var dx=DA.x-DB.x,dy=DA.y-DB.y;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<DOR*1.8&&now-DSPLIT_T>1.5){
+      DMERGED=true;DMERGE_T=now;
+      DFLASH=0.9;
+      DMX=(DA.x+DB.x)*.5;DMY=(DA.y+DB.y)*.5;
+      DA.x=DMX;DA.y=DMY;DB.x=DMX;DB.y=DMY;
+      burst(DMX,DMY,8,2.5,PURPLE,true,.005);
     }
   }
-  // Orb collision → MERGE
-  if(dist<DOR*2.2&&DBLEND<.4){
-    DBLEND=Math.min(DBLEND+.06,1);
-    DFLASH=Math.min(DFLASH+.12,1);
-    if(DBLEND>.9){burst((DA.x+DB.x)*.5,(DA.y+DB.y)*.5,6,2,PURPLE,true,.005);}
-  }
-  // Natural split when far
-  if(dist>DOR*7&&DBLEND>.6){DBLEND=Math.max(DBLEND-.025,0);}
 
-  DFLASH=Math.max(0,DFLASH-.04);
+  DFLASH=Math.max(0,DFLASH-.035);
 }
 
 // ── SCENE STATE ────────────────────────────────────────────
@@ -578,7 +604,7 @@ function draw(){
     }
     // Vibrate on breath peak
     var bPeak=Math.sin(GT*BREATH_FREQ*TAU)>.92;
-    if(bPeak&&GT-lastVibBreath>2){vibrate(55);lastVibBreath=GT;}
+    if(bPeak&&GT-lastVibBreath>1.4){vibrate(60);lastVibBreath=GT;}
     drawOrb(W*.5,H*.5,W*.12,PURPLE,1,0,0);
     cText('Breath',W*.5,H*.65,clamp(W*.054,26,40),breathA,'255,255,255');
     drawVignette(.8);
@@ -623,18 +649,18 @@ function draw(){
     var l2in=phase(T,TL.bigTextLine2,.9);
     var l2out=T>=TL.bigTextOut-.9?1-phase(T,TL.bigTextOut-.9,.9):0;
     line2A=easeOut(l2in)*(1-easeIn(l2out));
-    var iState=(T>=TL.innerExpose)?1:0;
     var iBlend=clamp(phase(T,TL.innerExpose,2.5),0,1);
+    var iState=iBlend>.02?1:0;  // only switch after blend starts to avoid flicker frame
     var bigGlow=1+iBlend*.55;
     // Emit colored particles as reveal happens
-    if(iBlend>.06&&iBlend<.55&&Math.random()<.22){
+    if(iBlend>.08&&iBlend<.48&&Math.random()<.14){
       burst(W*.5+rnd(-W*.12,W*.12),H*.5-rnd(0,W*.06),3,rnd(1.8,3.8),LTPURPLE,true,.005);
       burst(W*.5+rnd(-W*.12,W*.12),H*.5+rnd(0,W*.06),3,rnd(1.8,3.8),WHITE,true,.005);
     }
     drawOrb(W*.5,H*.5,W*.12,PURPLE,1,iState,iBlend,bigGlow);
     var sz=clamp(W*.04,18,30);
     cText('The split is not a game.',W*.5,H*.67,sz,line1A,'255,255,255');
-    cText('It is something that happens\nwhen you\'re ready\nto pay attention.',W*.5,H*.78,sz*.88,line2A,'220,200,255');
+    cText('It is something that happens when you\'re ready to pay attention.',W*.5,H*.77,sz*.88,line2A,'220,200,255');
     drawVignette(.8);
   }
 
@@ -760,18 +786,17 @@ function draw(){
       ctx.save();ctx.globalAlpha=DFLASH*.3;ctx.fillStyle='rgba('+PURPLE+',.6)';ctx.fillRect(0,0,W,H);ctx.restore();
     }
 
-    // Draw orbs in Z order — use DA.vy as proxy for depth
+    // Draw orbs
     var aFront=DA.vy>0;
-    if(DBLEND>.85){
-      // Merged
-      var mc={x:lerp(DA.x,DB.x,.5),y:lerp(DA.y,DB.y,.5)};
-      drawSimpleOrb(mc.x,mc.y,DOR*(1+DBLEND*.12),PURPLE,1);
+    if(DMERGED){
+      var mergeAge=GT-DMERGE_T;
+      var mBounce=DOR*(1+Math.max(0,.3-mergeAge*.3));
+      drawSimpleOrb(DA.x,DA.y,mBounce,PURPLE,1);
     } else {
       var first=aFront?DB:DA,second=aFront?DA:DB;
       var fcol=aFront?WHITE:LTPURPLE,scol=aFront?LTPURPLE:WHITE;
-      var fAlpha=clamp(1-DBLEND*.6,.4,1);
-      drawSimpleOrb(first.x,first.y,DOR,fcol,fAlpha);
-      drawSimpleOrb(second.x,second.y,DOR,scol,fAlpha);
+      drawSimpleOrb(first.x,first.y,DOR,fcol,1);
+      drawSimpleOrb(second.x,second.y,DOR,scol,1);
     }
 
     // Captions
@@ -800,13 +825,7 @@ function draw(){
     if(T>=TL.titleFadeIn){
       var tA=phase(T,TL.titleFadeIn,TL.titleFull-TL.titleFadeIn);
       document.getElementById('title').style.opacity=easeOut(tA);
-      if(tA>.85){
-        var btn=document.getElementById('readyBtn');
-        if(parseFloat(btn.style.opacity||0)<.01){
-          btn.style.pointerEvents='all';
-          animFade(btn,0,1,700,easeOut,null);
-        }
-      }
+
     }
 
     drawVignette(.72);
@@ -845,11 +864,17 @@ function begin(){
   setTimeout(function(){tapEl.style.display='none';},900);
   // Music
   mus.volume=0;mus.play().catch(function(){});fadeMusic(.75,4000);
+  setTimeout(showReadyBtn,(TL.titleFull+1.5)*1000);
   // Fire captions on timeline
-  setTimeout(function(){qC('In the beginning',3400,0);},6500*1000/1000);
   // (captions for pulse/breath are driven by draw loop, not queue)
 }
 tapEl.addEventListener('click',begin);
+// Show ready button at title reveal
+function showReadyBtn(){
+  var btn=document.getElementById('readyBtn');
+  btn.style.pointerEvents='all';
+  animFade(btn,0,1,900,easeOut,null);
+}
 tapEl.addEventListener('touchstart',function(e){e.preventDefault();begin();},{passive:false});
 
 // Ready button
