@@ -1972,26 +1972,13 @@ function shareRun(){
     c.fillText(name+' · '+formatTime(runElapsed),sw*0.5,infoTop);
 
     // ── ORB — below all text, glowing reveal ─────────────────────
-    var orbY2=sh*0.72;
-    // Draw orb — shadowBlur creates the glow, no separate halo circle
-    ctx=c;GT=acctOrbT+Math.random()*6;
-    c.save();c.shadowColor=cm;c.shadowBlur=22;
-    drawOrb(sw*0.5,orbY2,sw*0.15,cm,true);
-    c.restore();
-    ctx=savedCtx;GT=savedGT;
-
-    // ── ORB — below info, glowing upward ─────────────────────────
-    var orbY=sh*0.68;
-    // Halo bloom behind orb
-    var halo=c.createRadialGradient(sw*0.5,orbY,0,sw*0.5,orbY,sw*0.38);
-    halo.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.25)');
-    halo.addColorStop(0.5,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.06)');
-    halo.addColorStop(1,'rgba(0,0,0,0)');
-    c.fillStyle=halo;c.fillRect(0,orbY-sw*0.38,sw,sw*0.76);
-    // Orb
-    ctx=c;GT=goOrbT;
-    c.save();c.shadowColor=cm;c.shadowBlur=50;
-    drawOrb(sw*0.5,orbY,sw*0.155,cm,true);
+    // ── ORB — single clean draw, shadowBlur for glow only ──────────
+    var orbY=sh*0.72;
+    ctx=c;GT=acctOrbT;
+    c.save();
+    c.shadowColor=cm;
+    c.shadowBlur=18;
+    drawOrb(sw*0.5,orbY,sw*0.14,cm,true);
     c.restore();
     ctx=savedCtx;GT=savedGT;
 
