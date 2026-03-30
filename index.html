@@ -1869,88 +1869,131 @@ function stopRec(cb){
 
 function shareRun(){
   var name=username||'Anonymous';
-  var txt=name+' scored '+score+' on Split\nsplit.games';
+  var rankStr=window._lastRank||'';
+  var txt=(rankStr?rankStr+' · ':'')+name+' scored '+score+' on Split\nsplit.games';
+
   try{
-    // Draw on a separate offscreen canvas — clean branded card, no game bleed
-    var sw=600,sh=900; // portrait 2:3 ratio
+    var sw=600,sh=1000;
     var sc=document.createElement('canvas');
     sc.width=sw;sc.height=sh;
     var c=sc.getContext('2d');
 
-    // Background — deep dark gradient
-    var bg=c.createLinearGradient(0,0,sw,sh);
-    bg.addColorStop(0,'#06080d');
-    bg.addColorStop(1,'#0d0818');
-    c.fillStyle=bg;c.fillRect(0,0,sw,sh);
-
-    // Subtle grid lines (brand texture)
-    c.strokeStyle='rgba(255,255,255,0.04)';c.lineWidth=1;
-    for(var gx=0;gx<sw;gx+=44){c.beginPath();c.moveTo(gx,0);c.lineTo(gx,sh);c.stroke();}
-    for(var gy=0;gy<sh;gy+=44){c.beginPath();c.moveTo(0,gy);c.lineTo(sw,gy);c.stroke();}
-
-    // Glow behind score
-    var glow=c.createRadialGradient(sw*0.5,sh*0.42,0,sw*0.5,sh*0.42,sw*0.55);
-    glow.addColorStop(0,'rgba(255,255,255,0.06)');
-    glow.addColorStop(1,'rgba(0,0,0,0)');
-    c.fillStyle=glow;c.fillRect(0,0,sw,sh);
-
-    // Draw the orb in the upper portion
+    // Get skin colors — card reflects the orb they used
     var savedCtx=ctx,savedGT=GT;
     ctx=c;GT=acctOrbT;
     var cs=CS();
-    drawOrb(sw*0.5,sh*0.28,sw*0.12,cs.m,true);
+    var cm=cs.m, ct=cs.t, cb=cs.b;
+    var cmRGB=hexRGB(cm),ctRGB=hexRGB(ct),cbRGB=hexRGB(cb);
     ctx=savedCtx;GT=savedGT;
 
-    // Score — big and bold
+    // ── BACKGROUND ──────────────────────────────────────────────
+    c.fillStyle='#06080d';
+    c.fillRect(0,0,sw,sh);
+
+    // Skin-colored radial bloom centered behind orb position
+    var orbY=sh*0.30;
+    var bloom=c.createRadialGradient(sw*0.5,orbY,0,sw*0.5,orbY,sw*0.72);
+    bloom.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.18)');
+    bloom.addColorStop(0.45,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.05)');
+    bloom.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=bloom;c.fillRect(0,0,sw,sh);
+
+    // Secondary bloom from top color bottom-left
+    var bloom2=c.createRadialGradient(sw*0.15,sh*0.7,0,sw*0.15,sh*0.7,sw*0.5);
+    bloom2.addColorStop(0,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0.06)');
+    bloom2.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=bloom2;c.fillRect(0,0,sw,sh);
+
+    // Bottom color bloom right
+    var bloom3=c.createRadialGradient(sw*0.85,sh*0.75,0,sw*0.85,sh*0.75,sw*0.4);
+    bloom3.addColorStop(0,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0.06)');
+    bloom3.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=bloom3;c.fillRect(0,0,sw,sh);
+
+    // Subtle grid
+    c.strokeStyle='rgba(255,255,255,0.03)';c.lineWidth=1;
+    for(var gx=0;gx<sw;gx+=48){c.beginPath();c.moveTo(gx,0);c.lineTo(gx,sh);c.stroke();}
+    for(var gy=0;gy<sh;gy+=48){c.beginPath();c.moveTo(0,gy);c.lineTo(sw,gy);c.stroke();}
+
+    // ── ORB ─────────────────────────────────────────────────────
+    // Outer glow halo using merge color
+    var halo=c.createRadialGradient(sw*0.5,orbY,0,sw*0.5,orbY,sw*0.3);
+    halo.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.22)');
+    halo.addColorStop(0.6,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.05)');
+    halo.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=halo;c.fillRect(0,0,sw,sh);
+
+    // Draw the actual orb — large with shadow blur for bloom
+    ctx=c;GT=acctOrbT+Math.random()*6; // slight random phase so orb looks different each share
+    c.save();c.shadowColor=cm;c.shadowBlur=40;
+    drawOrb(sw*0.5,orbY,sw*0.14,cm,true);
+    c.restore();
+    ctx=savedCtx;GT=savedGT;
+
+    // ── SCORE ───────────────────────────────────────────────────
     c.textAlign='center';c.textBaseline='middle';
+
+    // Shadow/glow behind score number
+    c.save();
+    c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.4)';
+    c.shadowBlur=50;
     c.fillStyle='#ffffff';
-    c.font='900 '+Math.round(sw*0.28)+'px Georgia,serif';
-    c.shadowColor='rgba(255,255,255,0.15)';c.shadowBlur=30;
-    c.fillText(score,sw*0.5,sh*0.52);
-    c.shadowBlur=0;
+    c.font='900 '+Math.round(sw*0.30)+'px Georgia,serif';
+    c.fillText(score,sw*0.5,sh*0.535);
+    c.restore();
 
-    // Score label
-    c.font='400 '+Math.round(sw*0.045)+'px Georgia,serif';
-    c.fillStyle='rgba(255,255,255,0.3)';
-    c.letterSpacing='6px';
-    c.fillText('SCORE',sw*0.5,sh*0.63);
+    // ── SPLIT DIVIDER ────────────────────────────────────────────
+    // Left half = top color, right half = bottom color
+    var divY=sh*0.645;
+    var divL=sw*0.18,divR=sw*0.82,divMid=sw*0.5;
+    var grad1=c.createLinearGradient(divL,divY,divMid,divY);
+    grad1.addColorStop(0,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0)');
+    grad1.addColorStop(1,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0.5)');
+    c.strokeStyle=grad1;c.lineWidth=1.5;
+    c.beginPath();c.moveTo(divL,divY);c.lineTo(divMid,divY);c.stroke();
 
-    // Divider
-    c.strokeStyle='rgba(255,255,255,0.08)';c.lineWidth=1;
-    c.beginPath();c.moveTo(sw*0.2,sh*0.695);c.lineTo(sw*0.8,sh*0.695);c.stroke();
+    var grad2=c.createLinearGradient(divMid,divY,divR,divY);
+    grad2.addColorStop(0,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0.5)');
+    grad2.addColorStop(1,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0)');
+    c.strokeStyle=grad2;
+    c.beginPath();c.moveTo(divMid,divY);c.lineTo(divR,divY);c.stroke();
 
-    // Name + time
-    // Global rank if available
-    var rankStr=window._lastRank||'';
+    // ── RANK (if available) ───────────────────────────────────────
+    var infoTop=sh*0.695;
     if(rankStr){
-      c.font='700 '+Math.round(sw*0.042)+'px Georgia,serif';
-      c.fillStyle='rgba(200,130,255,0.85)';
-      c.fillText(rankStr,sw*0.5,sh*0.71);
+      c.save();
+      c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.6)';
+      c.shadowBlur=20;
+      c.fillStyle=cm; // rank in their merge color — personalised
+      c.font='800 '+Math.round(sw*0.058)+'px Georgia,serif';
+      c.fillText(rankStr,sw*0.5,infoTop);
+      c.restore();
+      infoTop+=sh*0.078;
     }
-    c.font='600 '+Math.round(sw*0.048)+'px Georgia,serif';
-    c.fillStyle='rgba(255,255,255,0.55)';
-    c.fillText(name,sw*0.5,sh*(rankStr?0.775:0.74));
 
-    c.font='400 '+Math.round(sw*0.038)+'px Georgia,serif';
-    c.fillStyle='rgba(255,255,255,0.28)';
-    c.fillText(formatTime(runElapsed),sw*0.5,sh*0.785);
+    // ── NAME · TIME ───────────────────────────────────────────────
+    c.fillStyle='rgba(255,255,255,0.45)';
+    c.font='500 '+Math.round(sw*0.044)+'px Georgia,serif';
+    c.fillText(name+' · '+formatTime(runElapsed),sw*0.5,infoTop);
 
-    // Branding — bottom
-    c.font='700 '+Math.round(sw*0.042)+'px Georgia,serif';
-    c.fillStyle='rgba(255,255,255,0.18)';
-    c.letterSpacing='4px';
-    c.fillText('SPLIT.GAMES',sw*0.5,sh*0.91);
+    // ── BRANDING ──────────────────────────────────────────────────
+    c.fillStyle='rgba(255,255,255,0.13)';
+    c.font='600 '+Math.round(sw*0.034)+'px Georgia,serif';
+    c.fillText('split.games',sw*0.5,sh*0.94);
 
-    // Border
-    c.strokeStyle='rgba(255,255,255,0.06)';c.lineWidth=2;
+    // Subtle border
+    c.strokeStyle='rgba(255,255,255,0.05)';c.lineWidth=2;
     c.strokeRect(1,1,sw-2,sh-2);
 
     sc.toBlob(function(blob){
       if(blob&&navigator.share&&navigator.canShare){
-        var f=new File([blob],'split-score-'+score+'.png',{type:'image/png'});
+        var f=new File([blob],'split-'+score+'.png',{type:'image/png'});
         if(navigator.canShare({files:[f]})){
-          navigator.share({title:'I scored '+score+' on Split',text:txt,files:[f]})
-            .catch(function(){shareURL(txt);});
+          navigator.share({
+            title:rankStr?rankStr+' on Split':'I scored '+score+' on Split',
+            text:txt,
+            files:[f]
+          }).catch(function(){shareURL(txt);});
           return;
         }
       }
