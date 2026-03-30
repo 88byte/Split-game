@@ -187,6 +187,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 #googleSignInBtn{display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.07);color:#fff;border:1.5px solid rgba(255,255,255,0.2);border-radius:50px;padding:13px 20px;font-size:13px;font-weight:900;letter-spacing:1px;cursor:pointer;font-family:‘Georgia’,serif;width:100%;transition:all .15s;}
 #googleSignInBtn:active{background:rgba(255,255,255,0.12);}
 #googleSignInBtn img{width:18px;height:18px;filter:brightness(10);}
+
+/* Game over card skin glow */
+#goCard{background:rgba(6,8,14,0.97);border:1.5px solid rgba(255,255,255,0.08);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,0.85);backdrop-filter:blur(16px);width:100%;max-width:296px;}
 </style>
 
 </head>
@@ -296,44 +299,59 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06080d;color:#fff;t
 <!-- GAME OVER -->
 
 <div class="screen hidden" id="goScreen">
-  <div class="card" style="padding:24px 22px 22px;">
+  <div class="card" id="goCard" style="padding:0;overflow:hidden;position:relative;">
 
 ```
-<!-- Score -->
-<div style="text-align:center;margin-bottom:16px;">
-  <div id="goMedal" style="font-size:26px;margin-bottom:6px;"></div>
-  <div class="score-big" id="goScore">0</div>
-  <div id="goTime" style="font-size:10px;color:rgba(255,255,255,0.25);font-family:'Georgia',serif;margin-top:4px;letter-spacing:1px;"></div>
-</div>
+<!-- Skin-colored glow background — set by JS -->
+<div id="goCardGlow" style="position:absolute;inset:0;pointer-events:none;z-index:0;"></div>
 
-<!-- Stats bar -->
-<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:18px;">
-  <div id="goBest" style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Georgia',serif;letter-spacing:1px;">Best: --</div>
-  <div id="goRank" style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Georgia',serif;letter-spacing:1px;"></div>
-</div>
+<!-- Content -->
+<div style="position:relative;z-index:1;padding:20px 22px 20px;">
 
-<!-- All buttons: consistent 2-per-row -->
-<div style="display:flex;flex-direction:column;gap:9px;">
-  <button class="btn" id="retryBtn">Play Again</button>
-  <button class="btn ghost" id="goLbBtn">Leaderboard</button>
-  <div style="display:flex;gap:9px;">
-    <button class="btn ghost" id="homeBtn" style="flex:1;">Home</button>
-    <button class="btn ghost" id="goLevelBtn" style="flex:1;">Level</button>
+  <!-- Score + time — top, dominant -->
+  <div style="text-align:center;padding:18px 0 12px;">
+    <div class="score-big" id="goScore" style="font-size:72px;line-height:1;">0</div>
+    <div id="goTime" style="font-size:11px;color:rgba(255,255,255,0.35);font-family:'Georgia',serif;margin-top:5px;letter-spacing:1px;"></div>
   </div>
-  <div style="display:flex;gap:9px;">
-    <button class="btn ghost" id="goSkinBtn" style="flex:1;">Customize</button>
-    <button class="btn ghost" id="shareBtn" style="flex:1;">Share</button>
-  </div>
-  <button class="btn ghost musicToggleBtn" id="goMusicBtn">Music On</button>
-</div>
 
-<!-- Sign in prompt - only when not signed in -->
-<div id="goSoftSignIn" style="display:none;margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
-  <div style="font-size:9px;color:rgba(255,255,255,0.25);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:9px;">Save scores · Leaderboard · Friends</div>
-  <div id="goGoogleBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.13);border-radius:50px;padding:11px 0;cursor:pointer;font-size:11px;font-weight:700;font-family:'Georgia',serif;letter-spacing:1px;color:rgba(255,255,255,0.6);">
-    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:14px;height:14px;filter:brightness(10);" alt="G">
-    Sign in with Google
+  <!-- Split divider — skin colored, set by JS -->
+  <canvas id="goDividerCanvas" width="252" height="2" style="display:block;width:100%;height:2px;margin-bottom:10px;"></canvas>
+
+  <!-- Stats: best + rank -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div id="goBest" style="font-size:11px;color:rgba(255,255,255,0.4);font-family:'Georgia',serif;">Best: --</div>
+    <div id="goRank" style="font-size:11px;font-family:'Georgia',serif;font-weight:700;"></div>
   </div>
+
+  <!-- Animated orb — centered -->
+  <div style="display:flex;justify-content:center;margin-bottom:14px;">
+    <canvas id="goOrbCanvas" width="100" height="100" style="width:100px;height:100px;border-radius:50%;display:block;"></canvas>
+  </div>
+
+  <!-- Buttons -->
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <button class="btn" id="retryBtn">Play Again</button>
+    <button class="btn ghost" id="goLbBtn">Leaderboard</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn ghost" id="homeBtn" style="flex:1;">Home</button>
+      <button class="btn ghost" id="goLevelBtn" style="flex:1;">Level</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn ghost" id="goSkinBtn" style="flex:1;">Customize</button>
+      <button class="btn ghost" id="shareBtn" style="flex:1;">Share</button>
+    </div>
+    <button class="btn ghost musicToggleBtn" id="goMusicBtn">Music On</button>
+  </div>
+
+  <!-- Sign in prompt -->
+  <div id="goSoftSignIn" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+    <div style="font-size:9px;color:rgba(255,255,255,0.25);font-family:'Georgia',serif;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:9px;">Save scores · Leaderboard · Friends</div>
+    <div id="goGoogleBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.13);border-radius:50px;padding:11px 0;cursor:pointer;font-size:11px;font-weight:700;font-family:'Georgia',serif;letter-spacing:1px;color:rgba(255,255,255,0.6);">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:14px;height:14px;filter:brightness(10);" alt="G">
+      Sign in with Google
+    </div>
+  </div>
+
 </div>
 ```
 
@@ -1743,24 +1761,34 @@ function showGO(){
   document.getElementById('goScore').textContent=score;
   document.getElementById('goTime').textContent=formatTime(runElapsed)+(username?' · '+username:'');
   document.getElementById('goBest').textContent=hs.score>0?'Best: '+hs.score:'Best: --';
-  document.getElementById('goMedal').style.display='none';
   document.getElementById('goScreen').classList.remove('hidden');
   // Soft sign in only when not signed in
   var softDiv=document.getElementById('goSoftSignIn');
   if(softDiv){softDiv.style.display=(!googleUser&&gamesPlayed>=1)?'block':'none';}
-  // Fetch rank if signed in
+  // Start animated orb and skin card
+  updateGoCardSkin();
+  startGoOrb();
+  // Fetch rank
   var rankEl=document.getElementById('goRank');
   if(rankEl){
     if(username){
       rankEl.textContent='';
       fetch(BACKEND_URL+'/rank/'+encodeURIComponent(username))
         .then(function(r){return r.json();})
-        .then(function(d){var rk=d.rank?'#'+d.rank+' Global':'';rankEl.textContent=rk;window._lastRank=rk;})
+        .then(function(d){
+          var rk=d.rank?'#'+d.rank+' Global':'';
+          rankEl.textContent=rk;
+          window._lastRank=rk;
+          // Color rank with skin merge color
+          if(rk){var cs=CS();rankEl.style.color=cs.m;}
+        })
         .catch(function(){rankEl.textContent='';});
     } else {
       rankEl.textContent='';
     }
   }
+  // Start animated orb after short delay for DOM to settle
+  setTimeout(startGoOrb,80);
 }
 
 function doGameOver(){
@@ -1891,8 +1919,7 @@ function shareRun(){
     c.fillRect(0,0,sw,sh);
 
     // Skin-colored radial bloom centered behind orb position
-    var orbY=sh*0.30;
-    var bloom=c.createRadialGradient(sw*0.5,orbY,0,sw*0.5,orbY,sw*0.72);
+    var bloom=c.createRadialGradient(sw*0.5,sh*0.65,0,sw*0.5,sh*0.65,sw*0.72);
     bloom.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.18)');
     bloom.addColorStop(0.45,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.05)');
     bloom.addColorStop(1,'rgba(0,0,0,0)');
@@ -1915,71 +1942,80 @@ function shareRun(){
     for(var gx=0;gx<sw;gx+=48){c.beginPath();c.moveTo(gx,0);c.lineTo(gx,sh);c.stroke();}
     for(var gy=0;gy<sh;gy+=48){c.beginPath();c.moveTo(0,gy);c.lineTo(sw,gy);c.stroke();}
 
-    // ── ORB ─────────────────────────────────────────────────────
-    // Outer glow halo using merge color
-    var halo=c.createRadialGradient(sw*0.5,orbY,0,sw*0.5,orbY,sw*0.3);
-    halo.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.22)');
-    halo.addColorStop(0.6,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.05)');
-    halo.addColorStop(1,'rgba(0,0,0,0)');
-    c.fillStyle=halo;c.fillRect(0,0,sw,sh);
-
-    // Draw the actual orb — large with shadow blur for bloom
-    ctx=c;GT=acctOrbT+Math.random()*6; // slight random phase so orb looks different each share
-    c.save();c.shadowColor=cm;c.shadowBlur=40;
-    drawOrb(sw*0.5,orbY,sw*0.14,cm,true);
-    c.restore();
-    ctx=savedCtx;GT=savedGT;
-
-    // ── SCORE ───────────────────────────────────────────────────
+    // ── SCORE — top, dominant ────────────────────────────────────
     c.textAlign='center';c.textBaseline='middle';
-
-    // Shadow/glow behind score number
     c.save();
-    c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.4)';
-    c.shadowBlur=50;
+    c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.5)';
+    c.shadowBlur=60;
     c.fillStyle='#ffffff';
     c.font='900 '+Math.round(sw*0.30)+'px Georgia,serif';
-    c.fillText(score,sw*0.5,sh*0.535);
+    c.fillText(score,sw*0.5,sh*0.24);
     c.restore();
 
     // ── SPLIT DIVIDER ────────────────────────────────────────────
-    // Left half = top color, right half = bottom color
-    var divY=sh*0.645;
+    var divY=sh*0.375;
     var divL=sw*0.18,divR=sw*0.82,divMid=sw*0.5;
     var grad1=c.createLinearGradient(divL,divY,divMid,divY);
     grad1.addColorStop(0,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0)');
-    grad1.addColorStop(1,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0.5)');
-    c.strokeStyle=grad1;c.lineWidth=1.5;
+    grad1.addColorStop(1,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0.6)');
+    c.strokeStyle=grad1;c.lineWidth=2;
     c.beginPath();c.moveTo(divL,divY);c.lineTo(divMid,divY);c.stroke();
-
     var grad2=c.createLinearGradient(divMid,divY,divR,divY);
-    grad2.addColorStop(0,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0.5)');
+    grad2.addColorStop(0,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0.6)');
     grad2.addColorStop(1,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0)');
     c.strokeStyle=grad2;
     c.beginPath();c.moveTo(divMid,divY);c.lineTo(divR,divY);c.stroke();
 
-    // ── RANK (if available) ───────────────────────────────────────
-    var infoTop=sh*0.695;
+    // ── RANK ─────────────────────────────────────────────────────
+    var infoTop=sh*0.435;
     if(rankStr){
       c.save();
-      c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.6)';
-      c.shadowBlur=20;
-      c.fillStyle=cm; // rank in their merge color — personalised
-      c.font='800 '+Math.round(sw*0.058)+'px Georgia,serif';
+      c.shadowColor='rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.7)';
+      c.shadowBlur=24;
+      c.fillStyle=cm;
+      c.font='800 '+Math.round(sw*0.062)+'px Georgia,serif';
       c.fillText(rankStr,sw*0.5,infoTop);
       c.restore();
-      infoTop+=sh*0.078;
+      infoTop+=sh*0.07;
     }
 
-    // ── NAME · TIME ───────────────────────────────────────────────
+    // ── NAME · TIME ──────────────────────────────────────────────
     c.fillStyle='rgba(255,255,255,0.45)';
     c.font='500 '+Math.round(sw*0.044)+'px Georgia,serif';
     c.fillText(name+' · '+formatTime(runElapsed),sw*0.5,infoTop);
 
-    // ── BRANDING ──────────────────────────────────────────────────
-    c.fillStyle='rgba(255,255,255,0.13)';
-    c.font='600 '+Math.round(sw*0.034)+'px Georgia,serif';
-    c.fillText('split.games',sw*0.5,sh*0.94);
+    // ── ORB — below all text, glowing reveal ─────────────────────
+    var orbY2=sh*0.72;
+    var halo2=c.createRadialGradient(sw*0.5,orbY2,0,sw*0.5,orbY2,sw*0.42);
+    halo2.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.28)');
+    halo2.addColorStop(0.5,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.07)');
+    halo2.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=halo2;c.fillRect(0,0,sw,sh);
+    ctx=c;GT=acctOrbT+Math.random()*6;
+    c.save();c.shadowColor=cm;c.shadowBlur=50;
+    drawOrb(sw*0.5,orbY2,sw*0.16,cm,true);
+    c.restore();
+    ctx=savedCtx;GT=savedGT;
+
+    // ── ORB — below info, glowing upward ─────────────────────────
+    var orbY=sh*0.68;
+    // Halo bloom behind orb
+    var halo=c.createRadialGradient(sw*0.5,orbY,0,sw*0.5,orbY,sw*0.38);
+    halo.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.25)');
+    halo.addColorStop(0.5,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.06)');
+    halo.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=halo;c.fillRect(0,orbY-sw*0.38,sw,sw*0.76);
+    // Orb
+    ctx=c;GT=goOrbT;
+    c.save();c.shadowColor=cm;c.shadowBlur=50;
+    drawOrb(sw*0.5,orbY,sw*0.155,cm,true);
+    c.restore();
+    ctx=savedCtx;GT=savedGT;
+
+    // ── BRANDING ─────────────────────────────────────────────────
+    c.fillStyle='rgba(255,255,255,0.22)';
+    c.font='600 '+Math.round(sw*0.038)+'px Georgia,serif';
+    c.fillText('www.split.games',sw*0.5,sh*0.94);
 
     // Subtle border
     c.strokeStyle='rgba(255,255,255,0.05)';c.lineWidth=2;
@@ -2227,12 +2263,14 @@ document.getElementById('startMusicBtn').addEventListener('click',function(e){e.
 // Game over screen
 document.getElementById('retryBtn').addEventListener('click',function(e){
   e.stopPropagation();
+  stopGoOrb();
   document.getElementById('goScreen').classList.add('hidden');
   if(shouldShowPaywall()){document.getElementById('paywallScreen').classList.remove('hidden');}
   else{initGame();}
 });
 document.getElementById('homeBtn').addEventListener('click',function(e){
   e.stopPropagation();
+  stopGoOrb();
   document.getElementById('goScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   STATE='start';
@@ -2240,13 +2278,14 @@ document.getElementById('homeBtn').addEventListener('click',function(e){
 });
 document.getElementById('shareBtn').addEventListener('click',function(e){e.stopPropagation();shareRun();});
 document.getElementById('goMusicBtn').addEventListener('click',function(e){e.stopPropagation();ensureAudio();toggleMusic();});
-document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stopPropagation();document.getElementById('goScreen').classList.add('hidden');openSkins('gameover');});
+document.getElementById('goSkinBtn').addEventListener('click',function(e){e.stopPropagation();stopGoOrb();document.getElementById('goScreen').classList.add('hidden');openSkins('gameover');});
 
 // Skin + name
 document.getElementById('skinDoneBtn').addEventListener('click',closeSkins);
 // Game over new buttons
 document.getElementById('goLbBtn').addEventListener('click',function(e){
   e.stopPropagation();
+  stopGoOrb();
   document.getElementById('goScreen').classList.add('hidden');
   openLeaderboard();
 });
@@ -2596,6 +2635,83 @@ function openAccountMenu(){
 }
 
 
+
+// -----------------------------------
+//  GAME OVER ORB + SKIN CARD
+// -----------------------------------
+var goOrbRAF=null,goOrbT=0;
+
+function startGoOrb(){
+  if(goOrbRAF){cancelAnimationFrame(goOrbRAF);goOrbRAF=null;}
+  var ac=document.getElementById('goOrbCanvas');
+  if(!ac)return;
+  var pw=ac.width,ph=ac.height;
+  var actx=ac.getContext('2d');
+  var savedCtx=ctx,savedGT=GT;
+  var loop=function(){
+    goOrbT+=0.022;GT=goOrbT;ctx=actx;
+    var cx=pw*0.5,cy=ph*0.5,r=pw*0.4;
+    actx.clearRect(0,0,pw,ph);
+    actx.save();
+    actx.beginPath();actx.arc(cx,cy,r*1.1,0,Math.PI*2);
+    actx.fillStyle='rgba(6,8,14,0)';actx.fill();
+    actx.clip();
+    var cs=CS();
+    // Outer glow ring
+    actx.save();
+    actx.shadowColor=cs.m;actx.shadowBlur=18;
+    drawOrb(cx,cy,r,cs.m,true);
+    actx.restore();
+    actx.restore();
+    ctx=savedCtx;GT=savedGT;
+    var goSc=document.getElementById('goScreen');
+    if(goSc&&!goSc.classList.contains('hidden')){
+      goOrbRAF=requestAnimationFrame(loop);
+    }
+  };
+  goOrbRAF=requestAnimationFrame(loop);
+}
+
+function stopGoOrb(){
+  if(goOrbRAF){cancelAnimationFrame(goOrbRAF);goOrbRAF=null;}
+}
+
+function updateGoCardSkin(){
+  var cs=CS();
+  var cmRGB=hexRGB(cs.m),ctRGB=hexRGB(cs.t),cbRGB=hexRGB(cs.b);
+
+  // Background glow — very subtle skin color bloom
+  var glow=document.getElementById('goCardGlow');
+  if(glow){
+    glow.style.background=
+      'radial-gradient(ellipse 80% 40% at 50% 0%,'+
+      'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.12) 0%,'+
+      'rgba(0,0,0,0) 100%)';
+  }
+
+  // Rank color — use merge color
+  var rankEl=document.getElementById('goRank');
+  if(rankEl&&rankEl.textContent){
+    rankEl.style.color=cs.m;
+  }
+
+  // Split divider canvas — left=top color, right=bottom color
+  var dc=document.getElementById('goDividerCanvas');
+  if(dc){
+    var dctx=dc.getContext('2d');
+    var dw=dc.width,dh=dc.height;
+    dctx.clearRect(0,0,dw,dh);
+    var g1=dctx.createLinearGradient(0,0,dw*0.5,0);
+    g1.addColorStop(0,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0)');
+    g1.addColorStop(1,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0.7)');
+    dctx.fillStyle=g1;dctx.fillRect(0,0,dw*0.5,dh);
+    var g2=dctx.createLinearGradient(dw*0.5,0,dw,0);
+    g2.addColorStop(0,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0.7)');
+    g2.addColorStop(1,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0)');
+    dctx.fillStyle=g2;dctx.fillRect(dw*0.5,0,dw*0.5,dh);
+  }
+}
+
 // -----------------------------------
 //  LEADERBOARD
 // -----------------------------------
@@ -2628,6 +2744,77 @@ function loadLeaderboard(){
     .catch(function(){list.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-family:Georgia,serif;font-size:13px;">Could not load scores</div>';});
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+
+// -----------------------------------
+//  GAME OVER ORB ANIMATION
+// -----------------------------------
+var goOrbRAF=null,goOrbT=0;
+
+function startGoOrb(){
+  if(goOrbRAF){cancelAnimationFrame(goOrbRAF);goOrbRAF=null;}
+  var ac=document.getElementById('goOrbCanvas');
+  if(!ac)return;
+  var pw=ac.width,ph=ac.height;
+  var actx=ac.getContext('2d');
+  var savedCtx=ctx,savedGT=GT;
+  var cs=CS();
+  var cm=cs.m;
+
+  // Set card glow background
+  var glowEl=document.getElementById('goCardGlow');
+  if(glowEl){
+    var cmRGB=hexRGB(cm);
+    glowEl.style.background='radial-gradient(ellipse at 50% 30%,rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.18) 0%,rgba(0,0,0,0) 70%)';
+  }
+
+  // Draw split divider
+  var dc=document.getElementById('goDividerCanvas');
+  if(dc){
+    var dw=dc.width,dctx=dc.getContext('2d');
+    dctx.clearRect(0,0,dw,2);
+    var ctRGB=hexRGB(cs.t),cbRGB=hexRGB(cs.b);
+    var g1=dctx.createLinearGradient(0,0,dw*0.5,0);
+    g1.addColorStop(0,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0)');
+    g1.addColorStop(1,'rgba('+ctRGB[0]+','+ctRGB[1]+','+ctRGB[2]+',0.7)');
+    dctx.fillStyle=g1;dctx.fillRect(0,0,dw*0.5,2);
+    var g2=dctx.createLinearGradient(dw*0.5,0,dw,0);
+    g2.addColorStop(0,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0.7)');
+    g2.addColorStop(1,'rgba('+cbRGB[0]+','+cbRGB[1]+','+cbRGB[2]+',0)');
+    dctx.fillStyle=g2;dctx.fillRect(dw*0.5,0,dw*0.5,2);
+  }
+
+  // Set rank color to merge color
+  var rankEl=document.getElementById('goRank');
+  if(rankEl&&rankEl.textContent){rankEl.style.color=cm;}
+
+  var loop=function(){
+    goOrbT+=0.018;GT=goOrbT;ctx=actx;
+    var cx=pw*0.5,cy=ph*0.5,r=pw*0.38;
+    actx.clearRect(0,0,pw,ph);
+    actx.save();
+    // Glow halo
+    var halo=actx.createRadialGradient(cx,cy,0,cx,cy,r*1.6);
+    var cmRGB2=hexRGB(cm);
+    halo.addColorStop(0,'rgba('+cmRGB2[0]+','+cmRGB2[1]+','+cmRGB2[2]+',0.25)');
+    halo.addColorStop(1,'rgba(0,0,0,0)');
+    actx.fillStyle=halo;actx.fillRect(0,0,pw,ph);
+    // Clip to circle
+    actx.beginPath();actx.arc(cx,cy,r,0,Math.PI*2);actx.clip();
+    actx.shadowColor=cm;actx.shadowBlur=16;
+    drawOrb(cx,cy,r,cm,true);
+    actx.restore();
+    ctx=savedCtx;GT=savedGT;
+    if(document.getElementById('goScreen')&&!document.getElementById('goScreen').classList.contains('hidden')){
+      goOrbRAF=requestAnimationFrame(loop);
+    }
+  };
+  goOrbRAF=requestAnimationFrame(loop);
+}
+
+function stopGoOrb(){
+  if(goOrbRAF){cancelAnimationFrame(goOrbRAF);goOrbRAF=null;}
+}
 
 // -----------------------------------
 //  MAIN LOOP
