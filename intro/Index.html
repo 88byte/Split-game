@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Split</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+canvas{position:fixed;inset:0;width:100%;height:100%;}
+#tap{
+  position:fixed;inset:0;z-index:50;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;background:rgba(0,0,0,0.001);
+}
+#tapWord{
+  font:900 clamp(62px,16vw,108px)/1 'Cormorant Garamond','Georgia',serif;
+  color:#fff;letter-spacing:.28em;text-transform:uppercase;
+  margin-bottom:clamp(28px,7vh,52px);
+  opacity:0;animation:riseIn 1.8s cubic-bezier(.16,1,.3,1) forwards .5s;
+}
+#tapHint{
+  font:400 italic clamp(13px,3vw,16px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(255,255,255,.75);letter-spacing:.38em;text-transform:uppercase;
+  opacity:0;animation:riseIn 1s ease forwards 2s,blink 2.8s ease-in-out infinite 3s;
+}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+@keyframes blink{0%,100%{opacity:.55;}50%{opacity:.9;}}
+#caption{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:0 9vw clamp(44px,10vh,84px);
+  text-align:center;z-index:20;pointer-events:none;opacity:0;
+}
+#captInner{
+  font:400 italic clamp(20px,5vw,30px)/1.85 'Cormorant Garamond','Georgia',serif;
+  color:rgba(255,255,255,.86);letter-spacing:.04em;
+}
+#title{
+  position:fixed;inset:0;z-index:30;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;
+}
+#titleWord{
+  font:900 clamp(62px,16vw,120px)/1 'Cormorant Garamond','Georgia',serif;
+  color:#fff;letter-spacing:.28em;text-transform:uppercase;
+  text-shadow:0 0 100px rgba(180,80,255,.16),0 0 40px rgba(255,255,255,.06);
+  margin-bottom:clamp(10px,2vh,18px);
+}
+#tagA{
+  font:400 italic clamp(13px,3.4vw,17px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(255,255,255,.55);letter-spacing:.3em;text-transform:uppercase;
+  margin-bottom:6px;
+}
+#tagB{
+  font:400 italic clamp(13px,3.4vw,17px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(180,80,255,.72);letter-spacing:.3em;text-transform:uppercase;
+  margin-bottom:clamp(44px,10vh,76px);
+}
+#readyBtn{
+  font:400 italic clamp(13px,3.2vw,16px)/1 'Cormorant Garamond','Georgia',serif;
+  letter-spacing:.32em;color:rgba(255,255,255,.7);
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.38);
+  border-radius:50px;padding:15px 52px;
+  cursor:pointer;pointer-events:none;opacity:0;
+  transition:background .3s,border-color .3s,color .3s,box-shadow .3s;
+  box-shadow:0 0 28px rgba(180,80,255,.14);
+}
+#readyBtn:hover{background:rgba(180,80,255,.16);border-color:rgba(180,80,255,.45);color:#fff;box-shadow:0 0 32px rgba(180,80,255,.2);}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="tap"><div id="tapWord">SPLIT</div><div id="tapHint">tap to begin</div></div>
+<div id="caption"><div id="captInner"></div></div>
+<div id="title">
+  <div id="titleWord">SPLIT</div>
+  <div id="tagA">Nothing stays whole.</div>
+  <div id="tagB">Everything transforms.</div>
+  <button id="readyBtn">I'm ready</button>
+</div>
+<audio id="mus" loop preload="auto">
+  <source src="https://dl.dropboxusercontent.com/scl/fi/z4sjuysyg1q5xxvs6tvw6/ES_Space-Whales-Stefan-Ekstrom-Adapted-2026-03-30-at-19.17.52-UTC.mp3?rlkey=lcqzo8d34xjmprckw1nexxu5f&st=cgkrj1dx" type="audio/mpeg">
+</audio>
+<script>
+'use strict';
+var C=document.getElementById('c'),ctx=C.getContext('2d');
+var W,H;
+function resize(){
+  var dpr=window.devicePixelRatio||1;
+  W=window.innerWidth;H=window.innerHeight;
+  C.width=Math.round(W*dpr);C.height=Math.round(H*dpr);
+  C.style.width=W+'px';C.style.height=H+'px';
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr,dpr);
+}
+resize();window.addEventListener('resize',resize);
+
+var PI=Math.PI,TAU=PI*2;
+function lerp(a,b,t){return a+(b-a)*t;}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function easeOut(t){return 1-Math.pow(1-t,3);}
+function easeOut4(t){return 1-Math.pow(1-t,4);}
+function easeIn(t){return t*t*t;}
+function easeIO(t){return t<.5?4*t*t*t:(t-1)*(2*t-2)*(2*t-2)+1;}
+function rnd(a,b){return a+Math.random()*(b-a);}
+function phase(T,start,dur){return clamp((T-start)/dur,0,1);}
+
+// Origin palette
+var PURPLE='180,80,255';
+var LTPURPLE='204,102,255';
+var WHITE='255,255,255';
+var DPURPLE='120,40,200';
+
+// Global time
+var GT=0,startMs=null;
+var STARTED=false;
+
+// ── TIMELINE (seconds) ─────────────────────────────────────
+// Musical drop at T=50 → WHITE FLASH at T=50
+// splitStart=36, scene=18s, p4=0.778 → flash at 36+14=50s ✓
+var TL={
+  voidEnd:3,
+  entryEnd:6.5,
+  breathStart:6.5,
+  breathEnd:10.5,
+  pulseTextIn:10.5,
+  pulseScatter:14,
+  pulseEnd:16,
+  bigTextIn:16,
+  bigTextLine2:20,
+  bigTextOut:26,
+  innerExpose:21,
+  splitStart:26,
+  splitEnd:44,
+  danceStart:44,
+  titleFadeIn:47,
+  titleFull:51,
+  holdEnd:56
+};
+var BREATH_FREQ=0.2; // one breath every 5s
+var BREATH_AMP=0.06;
+// Split phases
+var SP={p0:.10,p1:.22,p2:.45,p3:.65,p4:.889};
+
+// ── PARTICLES ──────────────────────────────────────────────
+var pts=[];
+function Pt(x,y,vx,vy,r,life,col,glow,grav){
+  this.x=x;this.y=y;this.vx=vx;this.vy=vy;
+  this.r=r;this.life=life;this.ml=life;
+  this.col=col||WHITE;this.glow=!!glow;this.grav=grav||.006;
+}
+Pt.prototype.tick=function(){
+  this.x+=this.vx;this.y+=this.vy;
+  this.vy+=this.grav;this.vx*=.97;this.life-=.008;
+};
+Pt.prototype.draw=function(){
+  var al=clamp(this.life/this.ml,0,1);
+  ctx.save();
+  if(this.glow){ctx.shadowColor='rgba('+this.col+',1)';ctx.shadowBlur=this.r*4;}
+  ctx.globalAlpha=al*.8;
+  ctx.beginPath();ctx.arc(this.x,this.y,Math.max(.1,this.r*al),0,TAU);
+  ctx.fillStyle='rgba('+this.col+',1)';ctx.fill();
+  ctx.restore();
+};
+function burst(x,y,n,spd,col,glow,grav){
+  for(var i=0;i<n;i++){
+    var a=rnd(0,TAU),s=rnd(spd*.25,spd);
+    pts.push(new Pt(x,y,Math.cos(a)*s,Math.sin(a)*s,rnd(1,3.5),rnd(1,2.2),col,glow,grav));
+  }
+}
+
+// ── SPACE — dual temperature ────────────────────────────────
+var coolStars=[],warmStars=[];
+var coolDust=[],warmDust=[];
+(function(){
+  for(var i=0;i<420;i++){
+    var r=rnd(.3,1.4),al=rnd(.04,.22),spd=rnd(.00002,.0001);
+    coolStars.push({x:Math.random(),y:Math.random(),r:r,al:al,spd:spd,col:'200,220,255'});
+    warmStars.push({x:Math.random(),y:Math.random(),r:r*0.8,al:al*.8,spd:spd,
+      col:Math.random()<.14?LTPURPLE:'255,255,255'});
+  }
+  var cc=['60,100,200','80,130,220','50,90,180','70,110,210','90,120,230'];
+  var wc=[DPURPLE,'100,40,180','60,20,140','160,70,240','90,30,160'];
+  for(var j=0;j<70;j++){
+    coolDust.push({x:Math.random(),y:Math.random(),r:rnd(60,155),
+      al:rnd(.012,.048),spd:rnd(.00001,.00006),col:cc[j%cc.length]});
+    warmDust.push({x:Math.random(),y:Math.random(),r:rnd(60,155),
+      al:rnd(.012,.048),spd:rnd(.00001,.00006),col:wc[j%wc.length]});
+  }
+})();
+
+function drawSpace(temp){
+  // temp 0=cold blue, 1=warm purple
+  var t=clamp(temp,0,1);
+  var ct=1-t,wt=t;
+  // Cool stars
+  for(var i=0;i<coolStars.length;i++){
+    var s=coolStars[i];s.x=(s.x+s.spd)%1;
+    if(ct<=0)continue;
+    ctx.globalAlpha=s.al*ct;
+    ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,TAU);
+    ctx.fillStyle='rgba('+s.col+',1)';ctx.fill();
+  }
+  // Warm stars
+  for(var i=0;i<warmStars.length;i++){
+    var s=warmStars[i];s.x=(s.x+s.spd)%1;
+    if(wt<=0)continue;
+    ctx.globalAlpha=s.al*wt;
+    ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,TAU);
+    ctx.fillStyle='rgba('+s.col+',1)';ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // Cool dust
+  for(var j=0;j<coolDust.length;j++){
+    var d=coolDust[j];d.x=(d.x+d.spd)%1;
+    if(ct<=0)continue;
+    var dg=ctx.createRadialGradient(d.x*W,d.y*H,0,d.x*W,d.y*H,d.r);
+    dg.addColorStop(0,'rgba('+d.col+','+d.al*ct+')');dg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(d.x*W,d.y*H,d.r,0,TAU);ctx.fill();
+  }
+  // Warm dust
+  for(var j=0;j<warmDust.length;j++){
+    var d=warmDust[j];d.x=(d.x+d.spd)%1;
+    if(wt<=0)continue;
+    var dg=ctx.createRadialGradient(d.x*W,d.y*H,0,d.x*W,d.y*H,d.r);
+    dg.addColorStop(0,'rgba('+d.col+','+d.al*wt+')');dg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(d.x*W,d.y*H,d.r,0,TAU);ctx.fill();
+  }
+}
+
+function drawVignette(s){
+  var vg=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,Math.max(W,H)*.72);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(.5,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,'+(s||.8)+')');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+function drawPerspGrid(al,col){
+  if(al<=0)return;
+  ctx.save();ctx.globalAlpha=al;
+  var vx=W*.5,vy=H*.4;
+  ctx.strokeStyle=col||'rgba('+PURPLE+',.8)';ctx.lineWidth=.7;
+  for(var i=0;i<=18;i++){ctx.beginPath();ctx.moveTo(W*i/18,H);ctx.lineTo(vx,vy);ctx.stroke();}
+  for(var j=0;j<=12;j++){
+    var rp=Math.pow(j/12,1.6),ry=lerp(H,vy,rp);
+    ctx.beginPath();ctx.moveTo(lerp(0,vx,rp),ry);ctx.lineTo(lerp(W,vx,rp),ry);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── PLASMA ORB ─────────────────────────────────────────────
+var PLASMA=[];
+(function(){
+  var cols=['140,60,255','180,80,255','100,40,200','200,120,255','220,160,255','160,80,240','240,200,255','255,255,255'];
+  for(var i=0;i<8;i++){
+    PLASMA.push({
+      as:rnd(.12,.28)*(Math.random()<.5?1:-1),
+      bs:rnd(.14,.32)*(Math.random()<.5?1:-1),
+      ox:rnd(.2,.8),oy:rnd(.2,.8),
+      sz:rnd(.32,.56),al:rnd(.35,.58),
+      col:cols[i],seed:rnd(0,TAU)
+    });
+  }
+})();
+
+function drawOrb(x,y,r,col,alpha,innerState,innerBlend,glowMult){
+  if(alpha<=0||r<=0)return;
+  ctx.save();ctx.globalAlpha=alpha;
+  var breathe=1+Math.sin(GT*BREATH_FREQ*TAU)*BREATH_AMP;
+  var pr=r*breathe;
+  var gm=glowMult||1;
+
+  // Outer glow
+  var og=ctx.createRadialGradient(x,y,pr*.2,x,y,pr*2.3*gm);
+  og.addColorStop(0,'rgba('+col+',.15)');og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.3*gm,0,TAU);ctx.fill();
+
+  // Shell ring
+  ctx.beginPath();ctx.arc(x,y,pr+2.5+Math.sin(GT*1.9)*1.5,0,TAU);
+  ctx.strokeStyle='rgba('+col+',.09)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Clip to interior
+  ctx.save();ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.clip();
+
+  // Dark space base
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle='rgba(3,1,12,.92)';
+  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.fill();
+
+  // Plasma blobs
+  for(var i=0;i<PLASMA.length;i++){
+    var p=PLASMA[i];
+    var bx=x+Math.cos(p.as*GT+p.ox*TAU)*pr*(p.ox*.65+.12);
+    var by2=y+Math.sin(p.bs*GT+p.oy*TAU)*pr*(p.oy*.65+.12);
+    var bsz=pr*p.sz*(0.65+.35*Math.sin(GT*p.bs*2.5+p.seed));
+    var bal=p.al*(0.55+.45*Math.sin(GT*.4+p.seed));
+
+    var bCol;
+    if(typeof innerBlend==='number'&&innerBlend>0){
+      // Smooth continuous blend: 0=all purple plasma, 1=purple top / white bottom
+      var ib2=clamp(innerBlend,0,1);
+      var isPurpleSide=(by2<y);
+      // Interpolate color between original plasma col and split col
+      var targetCol=isPurpleSide?LTPURPLE:(i%2===0?'220,210,255':WHITE);
+      // At ib2=0 use original col, at ib2=1 use targetCol
+      // We can't lerp CSS strings so use alpha trick: draw both
+      bCol=p.col;  // base always purple
+      // Draw target color on top with ib2 alpha
+      var tBg=ctx.createRadialGradient(bx,by2,0,bx,by2,bsz);
+      tBg.addColorStop(0,'rgba('+targetCol+','+(bal*ib2*.9)+')');
+      tBg.addColorStop(.5,'rgba('+targetCol+','+(bal*ib2*.3)+')');
+      tBg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.globalAlpha=alpha;ctx.fillStyle=tBg;
+      ctx.beginPath();ctx.arc(bx,by2,bsz,0,TAU);ctx.fill();
+      bal*=(0.7+ib2*.3);
+    } else {
+      bCol=p.col;
+    }
+    var bg=ctx.createRadialGradient(bx,by2,0,bx,by2,bsz);
+    bg.addColorStop(0,'rgba('+bCol+','+bal*.9+')');
+    bg.addColorStop(.5,'rgba('+bCol+','+bal*.3+')');
+    bg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=alpha;ctx.fillStyle=bg;
+    ctx.beginPath();ctx.arc(bx,by2,bsz,0,TAU);ctx.fill();
+  }
+
+  // Plasma tendrils
+  ctx.globalAlpha=alpha*.2;
+  for(var ti=0;ti<5;ti++){
+    var ta=GT*.22+ti*TAU/5;
+    var tr=pr*(0.28+.18*Math.sin(GT*.4+ti*1.2));
+    ctx.strokeStyle='rgba('+PURPLE+',.6)';ctx.lineWidth=.9;
+    ctx.shadowColor='rgba('+PURPLE+',1)';ctx.shadowBlur=4;
+    ctx.beginPath();
+    ctx.moveTo(x+Math.cos(ta)*tr*.25,y+Math.sin(ta)*tr*.25);
+    ctx.quadraticCurveTo(
+      x+Math.cos(ta+.7)*tr*.65,y+Math.sin(ta+.45)*tr*.55,
+      x+Math.cos(ta+1.3)*tr,y+Math.sin(ta+1.0)*tr*.82
+    );
+    ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+
+  // Pulsing bright core
+  var coreR=pr*.18*(1+Math.sin(GT*BREATH_FREQ*TAU)*.22);
+  var cg=ctx.createRadialGradient(x,y,0,x,y,coreR);
+  cg.addColorStop(0,'rgba(255,255,255,.96)');
+  cg.addColorStop(.4,'rgba(200,140,255,.55)');
+  cg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.globalAlpha=alpha*.88;ctx.fillStyle=cg;
+  ctx.beginPath();ctx.arc(x,y,coreR,0,TAU);ctx.fill();
+
+  // Seam reveal — PARTICLES not a line
+  if(innerState>0&&innerBlend>0){
+    var ib=clamp(innerBlend,0,1);
+    var seamN=32;
+    for(var si=0;si<seamN;si++){
+      var sa=si/seamN*TAU+GT*.15;
+      var isPurple=si<seamN/2;
+      // Particles escape from equator toward their color's half
+      var esc=ib*(0.3+.5*Math.sin(GT*1.8+si*.4+1));
+      var spx=x+Math.cos(sa)*pr*(0.55+.3*Math.abs(Math.cos(sa)));
+      var spy=y+Math.sin(sa)*pr*.12-isPurple*pr*esc+(!isPurple)*pr*esc;
+      spy+=Math.sin(GT*2.5+si*.7)*ib*pr*.08;
+      spx+=Math.cos(GT*1.8+si*.5)*ib*pr*.06;
+      var sal=ib*(.35+.3*Math.sin(GT*1.5+si));
+      ctx.globalAlpha=alpha*sal;
+      ctx.shadowColor='rgba('+(isPurple?LTPURPLE:WHITE)+',1)';ctx.shadowBlur=3;
+      ctx.beginPath();ctx.arc(spx,spy,isPurple?1.8:1.4,0,TAU);
+      ctx.fillStyle='rgba('+(isPurple?LTPURPLE:WHITE)+',1)';ctx.fill();
+    }
+    ctx.shadowBlur=0;
+  }
+
+  ctx.restore(); // end clip
+
+  // Specular
+  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);
+  var sp2=ctx.createRadialGradient(x-pr*.28,y-pr*.36,0,x-pr*.1,y-pr*.18,pr*.5);
+  sp2.addColorStop(0,'rgba(255,255,255,.44)');sp2.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalAlpha=alpha*.5;ctx.fillStyle=sp2;ctx.fill();
+
+  ctx.restore();
+}
+
+// Simple orb — for dance (no clip complexity)
+function drawSimpleOrb(x,y,r,col,alpha){
+  if(alpha<=0||r<=0)return;
+  ctx.save();ctx.globalAlpha=alpha;
+  var pr=r*(1+Math.sin(GT*2.1)*.034);
+  var og=ctx.createRadialGradient(x,y,pr*.2,x,y,pr*2.3);
+  og.addColorStop(0,'rgba('+col+',.15)');og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.3,0,TAU);ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,pr+2,0,TAU);
+  ctx.strokeStyle='rgba('+col+',.08)';ctx.lineWidth=1.5;ctx.stroke();
+  var bg=ctx.createRadialGradient(x-pr*.25,y-pr*.3,0,x,y,pr);
+  bg.addColorStop(0,'rgba(255,255,255,.92)');
+  bg.addColorStop(.28,'rgba('+col+',.96)');
+  bg.addColorStop(1,'rgba(0,0,0,.55)');
+  ctx.globalAlpha=alpha*.88;ctx.fillStyle=bg;ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.fill();
+  var sp=ctx.createRadialGradient(x-pr*.28,y-pr*.35,0,x-pr*.1,y-pr*.18,pr*.5);
+  sp.addColorStop(0,'rgba(255,255,255,.5)');sp.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalAlpha=alpha*.54;ctx.fillStyle=sp;ctx.fill();
+  ctx.restore();
+}
+
+// ── CAPTIONS ───────────────────────────────────────────────
+var captEl=document.getElementById('caption');
+var captInner=document.getElementById('captInner');
+var captQ=[],captRunning=false,captT=[];
+function qC(text,hold,delay){captQ.push({text:text,hold:hold||4000,delay:delay||0});if(!captRunning)nextCap();}
+function nextCap(){
+  if(!captQ.length){captRunning=false;return;}
+  captRunning=true;
+  var item=captQ.shift();
+  captT.push(setTimeout(function(){
+    captInner.innerHTML=item.text.replace(/\n/g,'<br>');
+    fadeTo(captEl,1,650,function(){
+      captT.push(setTimeout(function(){
+        fadeTo(captEl,0,800,function(){captT.push(setTimeout(nextCap,200));});
+      },item.hold));
+    });
+  },item.delay));
+}
+function fadeTo(el,to,dur,cb){
+  var from=parseFloat(el.style.opacity)||0,s=null;
+  function step(ts){if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);el.style.opacity=lerp(from,to,easeIO(p));if(p<1)requestAnimationFrame(step);else if(cb)cb();}
+  requestAnimationFrame(step);
+}
+function clearCaps(){captT.forEach(clearTimeout);captT=[];captQ=[];captRunning=false;captEl.style.opacity=0;captInner.textContent='';}
+function animFade(el,from,to,dur,ease,cb){
+  var s=null;
+  function step(ts){if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);el.style.opacity=lerp(from,to,(ease||easeOut)(p));if(p<1)requestAnimationFrame(step);else if(cb)cb();}
+  requestAnimationFrame(step);
+}
+
+// ── CANVAS TEXT ────────────────────────────────────────────
+function cText(text,x,y,sz,alpha,col){
+  if(alpha<=0)return;
+  ctx.save();ctx.globalAlpha=alpha;
+  ctx.fillStyle='rgba('+(col||WHITE)+',1)';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='italic 400 '+Math.round(sz)+'px "Cormorant Garamond",Georgia,serif';
+  var lines=text.split('\n'),lh=sz*1.9;
+  var top=y-(lines.length-1)*lh*.5;
+  for(var i=0;i<lines.length;i++)ctx.fillText(lines[i],x,top+i*lh);
+  ctx.restore();
+}
+
+// ── VIBRATION ──────────────────────────────────────────────
+var flashVibrated=false;
+
+// ── DANCE ORBS — binary state machine ──────────────────────
+var DA={x:0,y:0,vx:.9,vy:.5};
+var DB={x:0,y:0,vx:-.8,vy:-.6};
+var DMERGED=false;  // binary: merged or split
+var DMERGE_T=0;     // time of last merge (for smooth visual)
+var DSPLIT_T=0;     // time of last split
+var DFLASH=0;
+var DTITLE=null;
+var DANCE_INIT=false;
+var DOR=0;
+var DMX=0,DMY=0;    // merged orb position
+
+function initDance(){
+  if(DANCE_INIT)return;
+  DANCE_INIT=true;
+  DA.x=W*.28;DA.y=H*.44;
+  DB.x=W*.72;DB.y=H*.56;
+  DA.phase=0;DB.phase=PI; // Z-phase offset so they're opposite
+  DOR=W*.065;
+  DTITLE={cx:W*.5,cy:H*.5,hw:W*.28,hh:H*.10};
+}
+
+function tickDance(){
+  initDance();
+  var now=GT;
+
+  if(DMERGED){
+    // Move as single orb
+    if(Math.random()<.025){DMX+=rnd(-1.5,1.5);}
+    if(Math.random()<.025){DMY+=rnd(-1.5,1.5);}
+    var ms2=1.5;
+    DA.vx=clamp(DA.vx+(DMX-DA.x)*.002,-ms2,ms2);
+    DA.vy=clamp(DA.vy+(DMY-DA.y)*.002,-ms2,ms2);
+    DA.x+=DA.vx*.5;DA.y+=DA.vy*.5;
+    // Boundary
+    var mg=.12;
+    if(DA.x<W*mg)DA.vx+=.22;if(DA.x>W*(1-mg))DA.vx-=.22;
+    if(DA.y<H*mg)DA.vy+=.22;if(DA.y>H*(1-mg))DA.vy-=.22;
+    DA.x=clamp(DA.x,W*.08,W*.92);DA.y=clamp(DA.y,H*.08,H*.92);
+    DB.x=DA.x;DB.y=DA.y;
+    DMX=DA.x;DMY=DA.y;
+
+    // Title collision when merged → SPLIT
+    if(DTITLE&&now-DMERGE_T>1.2){
+      var inM=Math.abs(DA.x-DTITLE.cx)<DTITLE.hw&&Math.abs(DA.y-DTITLE.cy)<DTITLE.hh;
+      if(inM){
+        DMERGED=false;DSPLIT_T=now;
+        DFLASH=0.7;
+        // Repel apart
+        DA.vx=-2+rnd(-1,0);DA.vy=rnd(-1,1);
+        DB.x=DA.x;DB.y=DA.y;
+        DB.vx=2+rnd(0,1);DB.vy=rnd(-1,1);
+        burst(DA.x,DA.y,7,2.5,LTPURPLE,true,.005);
+        burst(DA.x,DA.y,7,2.5,WHITE,true,.005);
+      }
+    }
+  } else {
+    // Move independently
+    var ms=2.8;
+    if(Math.random()<.022){DA.vx+=rnd(-.4,.4);}if(Math.random()<.022){DA.vy+=rnd(-.4,.4);}
+    if(Math.random()<.022){DB.vx+=rnd(-.4,.4);}if(Math.random()<.022){DB.vy+=rnd(-.4,.4);}
+    DA.vx=clamp(DA.vx,-ms,ms);DA.vy=clamp(DA.vy,-ms,ms);
+    DB.vx=clamp(DB.vx,-ms,ms);DB.vy=clamp(DB.vy,-ms,ms);
+    var mg=.06;
+    if(DA.x<W*mg)DA.vx+=.2;if(DA.x>W*(1-mg))DA.vx-=.2;
+    if(DA.y<H*mg)DA.vy+=.2;if(DA.y>H*(1-mg))DA.vy-=.2;
+    if(DB.x<W*mg)DB.vx+=.2;if(DB.x>W*(1-mg))DB.vx-=.2;
+    if(DB.y<H*mg)DB.vy+=.2;if(DB.y>H*(1-mg))DB.vy-=.2;
+    DA.x+=DA.vx;DA.y+=DA.vy;
+    DB.x+=DB.vx;DB.y+=DB.vy;
+
+    // Collision → MERGE (only if enough time since last split)
+    var dx=DA.x-DB.x,dy=DA.y-DB.y;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<DOR*1.8&&now-DSPLIT_T>1.5){
+      DMERGED=true;DMERGE_T=now;
+      DFLASH=0.9;
+      DMX=(DA.x+DB.x)*.5;DMY=(DA.y+DB.y)*.5;
+      DA.x=DMX;DA.y=DMY;DB.x=DMX;DB.y=DMY;
+      burst(DMX,DMY,8,2.5,PURPLE,true,.005);
+    }
+  }
+
+  DFLASH=Math.max(0,DFLASH-.035);
+  // Advance Z-phase
+  DA.phase=(DA.phase||0)+0.018;
+  DB.phase=(DB.phase||PI)+0.018;
+}
+
+// ── SCENE STATE ────────────────────────────────────────────
+var bigLine2Shown=false;
+var bigLine2Alpha=0;
+var flashFired=false;
+
+// ── MAIN DRAW ──────────────────────────────────────────────
+function draw(){
+  var T=GT;
+  ctx.fillStyle='#06080d';ctx.fillRect(0,0,W,H);
+
+  // Color temperature — cold blue early, warm purple by split
+  var temp=clamp(T/TL.splitStart,0,1);
+
+  // PRE-START ambient (tap screen)
+  if(!STARTED){
+    drawSpace(.5);
+    // Single dim orb behind tap text
+    drawOrb(W*.5,H*.5,W*.09,PURPLE,.18,0,0,1);
+    drawVignette(.88);
+    // Tick particles
+    for(var pi=pts.length-1;pi>=0;pi--){pts[pi].tick();pts[pi].draw();if(pts[pi].life<=0)pts.splice(pi,1);}
+    return;
+  }
+
+  // ── VOID (0-3) ──────────────────────────────────────────
+  if(T<TL.voidEnd){
+    var p=T/TL.voidEnd;
+    drawSpace(easeOut(p)*.45);
+    var rr=W*.75*p;
+    ctx.save();ctx.globalAlpha=easeOut(p*2.5)*.07*(1-p*.88);
+    ctx.strokeStyle='rgba('+PURPLE+',.8)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(W*.5,H*.5,rr,0,TAU);ctx.stroke();ctx.restore();
+    drawVignette(.94);
+  }
+
+  // ── ENTRY (3-6.5) ───────────────────────────────────────
+  else if(T<TL.entryEnd){
+    var ep=phase(T,TL.voidEnd,TL.entryEnd-TL.voidEnd);
+    drawSpace(.5);
+    var er=W*.12*easeOut4(ep);
+    if(ep<.06&&Math.random()<.5)burst(W*.5,H*.5,3,rnd(2,5),PURPLE,true,.007);
+    // Purple bloom blooms in
+    ctx.save();ctx.globalAlpha=easeOut(ep)*.1;
+    var pb=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.5);
+    pb.addColorStop(0,'rgba('+PURPLE+',.4)');pb.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb;ctx.fillRect(0,0,W,H);ctx.restore();
+    drawOrb(W*.5,H*.5,er,PURPLE,easeOut(ep),0,0);
+    drawVignette(.82);
+  }
+
+  // ── BREATH (6.5-20.5) ───────────────────────────────────
+  else if(T<TL.breathEnd){
+    var bT=T-TL.breathStart;
+    // Pure breath — no text, just the orb
+    drawSpace(temp*.7);
+    // Ambient bloom
+    ctx.save();ctx.globalAlpha=.08;
+    var pb2=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.5);
+    pb2.addColorStop(0,'rgba('+PURPLE+',.32)');pb2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb2;ctx.fillRect(0,0,W,H);ctx.restore();
+    // Breath rings
+    for(var ri=0;ri<5;ri++){
+      var rp=((GT*BREATH_FREQ+ri*.2)%1);
+      ctx.save();ctx.globalAlpha=Math.max(0,(1-rp)*.09);
+      ctx.strokeStyle='rgba('+PURPLE+',.7)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(W*.5,H*.5,W*.12*(1+rp*5),0,TAU);ctx.stroke();ctx.restore();
+    }
+    drawOrb(W*.5,H*.5,W*.12,PURPLE,1,0,0);
+    drawVignette(.8);
+  }
+
+  // ── FEEL THE PULSE (20.5-26) ─────────────────────────────
+  else if(T<TL.pulseEnd){
+    drawSpace(temp*.8);
+    ctx.save();ctx.globalAlpha=.09;
+    var pb3=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.52);
+    pb3.addColorStop(0,'rgba('+PURPLE+',.32)');pb3.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb3;ctx.fillRect(0,0,W,H);ctx.restore();
+    // Text fades in then bleaches out on a single hard orb pulse
+    var pulseA=Math.min(phase(T,TL.pulseTextIn,.9),1);
+    var bleachT=phase(T,TL.pulseScatter,.6);
+    var textAlpha=pulseA*(1-easeIn(bleachT));
+    // On bleach — orb fires one expansion ring
+    var ringP=phase(T,TL.pulseScatter,.5);
+    if(ringP>0&&ringP<1){
+      var ringR=W*.12*(1+ringP*5);
+      ctx.save();ctx.globalAlpha=(1-ringP)*.18;
+      ctx.shadowColor='rgba('+PURPLE+',1)';ctx.shadowBlur=20;
+      ctx.strokeStyle='rgba('+PURPLE+',1)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(W*.5,H*.5,ringR,0,TAU);ctx.stroke();
+      ctx.restore();
+    }
+    var extraG=1+bleachT*.55;
+    drawOrb(W*.5,H*.5,W*.12,PURPLE,1,0,0,extraG);
+    cText('Feel the pulse',W*.5,H*.65,clamp(W*.052,26,38),textAlpha,'255,255,255');
+    drawVignette(.78);
+  }
+
+  // ── BIG TEXT (26-36) ─────────────────────────────────────
+  else if(T<TL.bigTextOut){
+    drawSpace(temp*.9);
+    ctx.save();ctx.globalAlpha=.1;
+    var pb4=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.55);
+    pb4.addColorStop(0,'rgba('+PURPLE+',.35)');pb4.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb4;ctx.fillRect(0,0,W,H);ctx.restore();
+    // Two-stage text reveal
+    var line1A,line2A;
+    var l1in=phase(T,TL.bigTextIn,.8);
+    var l1out=T>=TL.bigTextOut-.9?1-phase(T,TL.bigTextOut-.9,.9):0;
+    line1A=easeOut(l1in)*(1-easeIn(l1out));
+    var l2in=phase(T,TL.bigTextLine2,.9);
+    var l2out=T>=TL.bigTextOut-.9?1-phase(T,TL.bigTextOut-.9,.9):0;
+    line2A=easeOut(l2in)*(1-easeIn(l2out));
+    var iBlend=clamp(phase(T,TL.innerExpose,2.5),0,1);
+    var bigGlow=1+iBlend*.55;
+    // Emit colored particles as reveal happens
+    if(iBlend>.08&&iBlend<.48&&Math.random()<.14){
+      burst(W*.5+rnd(-W*.12,W*.12),H*.5-rnd(0,W*.06),3,rnd(1.8,3.8),LTPURPLE,true,.005);
+      burst(W*.5+rnd(-W*.12,W*.12),H*.5+rnd(0,W*.06),3,rnd(1.8,3.8),WHITE,true,.005);
+    }
+    drawOrb(W*.5,H*.5,W*.12,PURPLE,1,iBlend,iBlend,bigGlow);
+    var sz=clamp(W*.048,22,34);
+    cText('The split is not a game.',W*.5,H*.67,sz,line1A,'255,255,255');
+    cText('It is something that happens when you\'re ready to pay attention.',W*.5,H*.77,sz*.88,line2A,'220,200,255');
+    drawVignette(.8);
+  }
+
+  // ── SELF TEAR (36-54, flash at T=50) ────────────────────
+  else if(T<TL.splitEnd){
+    var sp=phase(T,TL.splitStart,TL.splitEnd-TL.splitStart);
+    drawSpace(1);
+    // Purple atmosphere
+    ctx.save();ctx.globalAlpha=.1;
+    var satm=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.6);
+    satm.addColorStop(0,'rgba('+PURPLE+',.4)');satm.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=satm;ctx.fillRect(0,0,W,H);ctx.restore();
+
+    var p0=SP.p0,p1=SP.p1,p2=SP.p2,p3=SP.p3,p4=SP.p4;
+    var sox=W*.5,soy=H*.5,sor=W*.12;
+    var ssx=1,ssy=1;
+    var isSplit=false,topOY=H*.5,botOY=H*.5;
+
+    // Phase 0: stable orb
+    if(sp<=p0){
+      // Just show orb with full inner split reveal
+      drawOrb(sox,soy,sor,PURPLE,1,1,1,1);
+    }
+    // Phase 1: seam particles intensify — handled inside drawOrb
+    else if(sp<=p1){
+      var ib2=clamp((sp-p0)/(p1-p0),0,1);
+      drawOrb(sox,soy,sor,PURPLE,1,1,ib2,1);
+    }
+    // Phase 2: trembling begins, seam particles stream outward
+    else if(sp<=p2){
+      var tp=easeIn((sp-p1)/(p2-p1));
+      var ta=clamp(tp*14,0,16);
+      sox=W*.5+Math.sin(GT*15+tp*7)*ta+Math.sin(GT*23)*ta*.35;
+      soy=H*.5+Math.sin(GT*13)*ta*.7;
+      // Emit purple up, white down continuously
+      if(Math.random()<.4){
+        pts.push(new Pt(sox+rnd(-sor*.6,sor*.6),soy-sor*.2,rnd(-.5,.5),rnd(-1.8,-.3),rnd(1,2.5),rnd(1,2),LTPURPLE,true,.004));
+        pts.push(new Pt(sox+rnd(-sor*.6,sor*.6),soy+sor*.2,rnd(-.5,.5),rnd(.3,1.8),rnd(1,2.5),rnd(1,2),WHITE,true,.004));
+      }
+      drawOrb(sox,soy,sor,PURPLE,1,1,1,1);
+    }
+    // Phase 3: squish/compress
+    else if(sp<=p3){
+      var sq=easeIn((sp-p2)/(p3-p2));
+      sox=W*.5+Math.sin(GT*9)*3;soy=H*.5;
+      ssx=1-sq*.42;ssy=1+sq*.26;
+      // Intensifying escape — streams of particles
+      if(Math.random()<.55){
+        pts.push(new Pt(sox+rnd(-sor*.5,sor*.5),soy-rnd(0,sor*.3),rnd(-1,1),rnd(-2.5,-.5),rnd(1.5,3),rnd(.8,1.8),LTPURPLE,true,.004));
+        pts.push(new Pt(sox+rnd(-sor*.5,sor*.5),soy+rnd(0,sor*.3),rnd(-1,1),rnd(.5,2.5),rnd(1.5,3),rnd(.8,1.8),WHITE,true,.004));
+      }
+      // Light crack
+      ctx.save();ctx.globalAlpha=sq*.35;
+      var crack=ctx.createLinearGradient(sox-sor,soy,sox+sor,soy);
+      crack.addColorStop(0,'rgba('+LTPURPLE+',0)');
+      crack.addColorStop(.3,'rgba('+LTPURPLE+',.8)');
+      crack.addColorStop(.5,'rgba(255,255,255,1)');
+      crack.addColorStop(.7,'rgba('+WHITE+',.8)');
+      crack.addColorStop(1,'rgba('+WHITE+',0)');
+      ctx.strokeStyle=crack;ctx.lineWidth=2+sq*3;
+      ctx.shadowColor='rgba(255,255,255,1)';ctx.shadowBlur=10;
+      ctx.beginPath();ctx.moveTo(sox-sor*.9,soy);ctx.lineTo(sox+sor*.9,soy);ctx.stroke();
+      ctx.shadowBlur=0;ctx.restore();
+      ctx.save();ctx.translate(sox,soy);ctx.scale(ssx,ssy);ctx.translate(-sox,-soy);
+      drawOrb(sox,soy,sor,PURPLE,1,1,1,1);ctx.restore();
+    }
+    // Phase 4: WHITE FLASH at p4 (T=50)
+    else if(sp<=p4){
+      var tp4=(sp-p3)/(p4-p3);
+      // Flash ramps up fast
+      var flashBuild=easeOut4(tp4);
+      // Final burst stream
+      if(Math.random()<.7){
+        pts.push(new Pt(W*.5+rnd(-sor*.4,sor*.4),H*.5-sor*.1,rnd(-2,2),rnd(-3.5,-.8),rnd(2,4),rnd(.6,1.5),LTPURPLE,true,.005));
+        pts.push(new Pt(W*.5+rnd(-sor*.4,sor*.4),H*.5+sor*.1,rnd(-2,2),rnd(.8,3.5),rnd(2,4),rnd(.6,1.5),WHITE,true,.005));
+      }
+      ctx.save();ctx.globalAlpha=flashBuild*.75;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();
+      // Vibrate on flash
+      if(!flashVibrated&&flashBuild>.6){flashVibrated=true;}
+    }
+    // Phase 5: post-flash — two orbs emerge from white
+    else{
+      var postP=easeOut4((sp-p4)/(1-p4));
+      // Flash fades fast
+      var fl2=Math.max(0,1-postP*3);
+      if(fl2>0){ctx.save();ctx.globalAlpha=fl2*.7;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();}
+      // Burst on reveal
+      if(postP<.08&&Math.random()<.8){
+        burst(W*.5,H*.5,8,rnd(3,7),LTPURPLE,true,.006);
+        burst(W*.5,H*.5,8,rnd(3,7),WHITE,true,.006);
+      }
+      // Two orbs drift apart gracefully
+      var driftP=easeOut(postP)*H*.18;
+      var orbAlpha=Math.min(postP*4,1);
+      drawSimpleOrb(W*.5,H*.5-driftP,sor*.88,LTPURPLE,orbAlpha);
+      drawSimpleOrb(W*.5,H*.5+driftP,sor*.88,WHITE,orbAlpha);
+      // Connecting thread fades
+      if(driftP>8){
+        ctx.save();ctx.globalAlpha=(1-postP)*.18;
+        ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;ctx.setLineDash([3,7]);
+        ctx.beginPath();ctx.moveTo(W*.5,H*.5-driftP+sor*.88);ctx.lineTo(W*.5,H*.5+driftP-sor*.88);ctx.stroke();
+        ctx.setLineDash([]);ctx.restore();
+      }
+    }
+    drawVignette(.76);
+  }
+
+  // ── POST-SPLIT: orbs float, title arrives ───────────────
+  else{
+    drawSpace(1);
+    drawPerspGrid(.035,'rgba('+PURPLE+',.5)');
+    // Purple atmosphere
+    ctx.save();ctx.globalAlpha=.07;
+    var datm=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.65);
+    datm.addColorStop(0,'rgba('+PURPLE+',.4)');datm.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=datm;ctx.fillRect(0,0,W,H);ctx.restore();
+
+    // Two orbs drift slowly — no chase, no merge, just breathing
+    var dT=T-TL.danceStart;
+    // Gentle sine drift — peaceful after the storm
+    var oR=W*.072;
+    var oAx=W*.5+Math.sin(dT*.18)*W*.22+Math.sin(dT*.07)*W*.08;
+    var oAy=H*.44+Math.sin(dT*.14)*H*.12+Math.cos(dT*.09)*H*.05;
+    var oBx=W*.5+Math.sin(dT*.18+PI)*W*.22+Math.sin(dT*.07+PI)*W*.08;
+    var oBy=H*.56+Math.sin(dT*.14+PI)*H*.12+Math.cos(dT*.09+PI)*H*.05;
+    // Z depth — sine on opposite phases
+    var zA=Math.sin(dT*.32);
+    var zB=Math.sin(dT*.32+PI);
+    var scaleA=0.82+zA*.22;
+    var scaleB=0.82+zB*.22;
+    var alphaA=clamp(0.55+zA*.45,0.4,1);
+    var alphaB=clamp(0.55+zB*.45,0.4,1);
+
+    // Title arrives — orbs drift apart and slow
+    var tA=phase(T,TL.titleFadeIn,TL.titleFull-TL.titleFadeIn);
+    if(tA>0){
+      document.getElementById('title').style.opacity=easeOut(tA);
+      // Ease orb alpha down slightly as title dominates
+      alphaA*=(1-tA*.3);
+      alphaB*=(1-tA*.3);
+      // Drift A toward upper-left, B toward lower-right
+      var drift=easeOut(tA)*W*.08;
+      oAx-=drift;oAy-=drift*.5;
+      oBx+=drift;oBy+=drift*.5;
+    }
+
+    // Draw farther orb first
+    if(zA>zB){
+      drawSimpleOrb(oBx,oBy,oR*scaleB,WHITE,alphaB);
+      drawSimpleOrb(oAx,oAy,oR*scaleA,LTPURPLE,alphaA);
+    } else {
+      drawSimpleOrb(oAx,oAy,oR*scaleA,LTPURPLE,alphaA);
+      drawSimpleOrb(oBx,oBy,oR*scaleB,WHITE,alphaB);
+    }
+
+    drawVignette(.72);
+  }
+
+  // Tick & draw particles
+  ctx.save();ctx.globalAlpha=1;
+  for(var pi=pts.length-1;pi>=0;pi--){pts[pi].tick();pts[pi].draw();if(pts[pi].life<=0)pts.splice(pi,1);}
+  ctx.restore();
+}
+
+// ── LOOP ───────────────────────────────────────────────────
+var running=true;
+function loop(ts){
+  if(!startMs&&STARTED)startMs=ts;
+  if(startMs)GT=(ts-startMs)/1e3;
+  draw();
+  if(running)requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ── MUSIC ──────────────────────────────────────────────────
+var mus=document.getElementById('mus');
+function fadeMusic(target,dur){
+  var start=mus.volume,s=null;
+  function step(ts){if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);mus.volume=lerp(start,target,p);if(p<1)requestAnimationFrame(step);}
+  requestAnimationFrame(step);
+}
+
+// ── BEGIN ──────────────────────────────────────────────────
+var tapEl=document.getElementById('tap');
+function begin(){
+  if(STARTED)return;STARTED=true;
+  // Fade tap overlay
+  tapEl.style.transition='opacity .9s ease';tapEl.style.opacity=0;
+  setTimeout(function(){tapEl.style.display='none';},900);
+  // Music
+  mus.volume=0;mus.play().catch(function(){});fadeMusic(.75,4000);
+  setTimeout(showReadyBtn,(TL.titleFull+1.5)*1000);
+  // Fire captions on timeline
+  // (captions for pulse/breath are driven by draw loop, not queue)
+}
+tapEl.addEventListener('click',begin);
+// Show ready button at title reveal
+function showReadyBtn(){
+  var btn=document.getElementById('readyBtn');
+  btn.style.pointerEvents='all';
+  animFade(btn,0,1,900,easeOut,null);
+}
+tapEl.addEventListener('touchstart',function(e){e.preventDefault();begin();},{passive:false});
+
+// Ready button
+document.getElementById('readyBtn').addEventListener('click',function(){
+  fadeMusic(0,700);
+  document.body.style.transition='opacity .8s';document.body.style.opacity=0;
+  setTimeout(function(){window.location.href='https://split.games';},800);
+});</script>
+</body>
+</html>
