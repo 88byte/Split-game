@@ -301,7 +301,7 @@ var by2=y+Math.sin(p.bs*GT+p.oy*TAU)*pr*(p.oy*.65+.12);
 var bsz=pr*p.sz*(0.65+.35*Math.sin(GT*p.bs*2.5+p.seed));
 var bal=p.al*(0.55+.45*Math.sin(GT*.4+p.seed));
 
-
+```
 var bCol;
 if(typeof innerBlend==='number'&&innerBlend>0){
   // Smooth continuous blend: 0=all purple plasma, 1=purple top / white bottom
@@ -329,7 +329,7 @@ bg.addColorStop(.5,'rgba('+bCol+','+bal*.3+')');
 bg.addColorStop(1,'rgba(0,0,0,0)');
 ctx.globalAlpha=alpha;ctx.fillStyle=bg;
 ctx.beginPath();ctx.arc(bx,by2,bsz,0,TAU);ctx.fill();
-
+```
 
 }
 
@@ -501,7 +501,7 @@ DA.x=clamp(DA.x,W*.08,W*.92);DA.y=clamp(DA.y,H*.08,H*.92);
 DB.x=DA.x;DB.y=DA.y;
 DMX=DA.x;DMY=DA.y;
 
-
+```
 // Title collision when merged → SPLIT
 if(DTITLE&&now-DMERGE_T>1.2){
   var inM=Math.abs(DA.x-DTITLE.cx)<DTITLE.hw&&Math.abs(DA.y-DTITLE.cy)<DTITLE.hh;
@@ -544,6 +544,7 @@ if(dist<DOR*1.8&&now-DSPLIT_T>1.5){
   DA.x=DMX;DA.y=DMY;DB.x=DMX;DB.y=DMY;
   burst(DMX,DMY,8,2.5,PURPLE,true,.005);
 }
+```
 
 }
 
@@ -630,10 +631,11 @@ ctx.beginPath();ctx.arc(W*.5,H*.5,W*.12*(1+rp*5),0,TAU);ctx.stroke();ctx.restore
 // Vibrate on breath peak
 var bPeak=Math.sin(GT*BREATH_FREQ*TAU)>.92;
 
-
+```
 drawOrb(W*.5,H*.5,W*.12,PURPLE,1,0,0);
 cText('Breath',W*.5,H*.65,clamp(W*.062,30,46),breathA,'255,255,255');
 drawVignette(.8);
+```
 
 }
 
@@ -700,7 +702,7 @@ var satm=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.6);
 satm.addColorStop(0,‘rgba(’+PURPLE+’,.4)’);satm.addColorStop(1,‘rgba(0,0,0,0)’);
 ctx.fillStyle=satm;ctx.fillRect(0,0,W,H);ctx.restore();
 
-
+```
 var p0=SP.p0,p1=SP.p1,p2=SP.p2,p3=SP.p3,p4=SP.p4;
 var sox=W*.5,soy=H*.5,sor=W*.12;
 var ssx=1,ssy=1;
@@ -793,7 +795,7 @@ else{
   }
 }
 drawVignette(.76);
-
+```
 
 }
 
@@ -808,7 +810,7 @@ var datm=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.65);
 datm.addColorStop(0,‘rgba(’+PURPLE+’,.4)’);datm.addColorStop(1,‘rgba(0,0,0,0)’);
 ctx.fillStyle=datm;ctx.fillRect(0,0,W,H);ctx.restore();
 
-
+```
 tickDance();
 
 // Merge flash
@@ -869,7 +871,7 @@ if(T>=TL.titleFadeIn){
 }
 
 drawVignette(.72);
-
+```
 
 }
 
