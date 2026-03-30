@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Split</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+canvas{position:fixed;inset:0;width:100%;height:100%;}
+#tap{
+  position:fixed;inset:0;z-index:99;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#000;cursor:pointer;
+}
+#tapLogo{
+  font:900 clamp(62px,16vw,112px)/1 'Cormorant Garamond','Georgia',serif;
+  color:#fff;letter-spacing:.28em;text-transform:uppercase;
+  margin-bottom:clamp(28px,7vh,56px);
+  opacity:0;animation:riseIn 1.6s cubic-bezier(.16,1,.3,1) forwards .3s;
+}
+#tapDot{
+  width:6px;height:6px;border-radius:50%;background:rgba(180,80,255,.5);
+  animation:pulseDot 2.2s ease-in-out infinite 1.8s;opacity:0;
+}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+@keyframes pulseDot{0%,100%{opacity:.18;transform:scale(1);}50%{opacity:.7;transform:scale(1.6);}}
+/* Final title — DOM for crisp rendering */
+#title{
+  position:fixed;inset:0;z-index:30;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;
+}
+#titleWord{
+  font:900 clamp(62px,16vw,120px)/1 'Cormorant Garamond','Georgia',serif;
+  color:#fff;letter-spacing:.28em;text-transform:uppercase;
+  text-shadow:0 0 120px rgba(180,80,255,.18),0 0 40px rgba(255,255,255,.06);
+  margin-bottom:clamp(10px,2vh,18px);
+}
+#tagA{
+  font:400 clamp(10px,2.5vw,14px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(255,255,255,.38);letter-spacing:.3em;text-transform:uppercase;
+  margin-bottom:5px;
+}
+#tagB{
+  font:400 clamp(10px,2.5vw,14px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(180,80,255,.55);letter-spacing:.3em;text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+<div id="tap"><div id="tapLogo">SPLIT</div><div id="tapDot"></div></div>
+<canvas id="c"></canvas>
+<div id="title">
+  <div id="titleWord">SPLIT</div>
+  <div id="tagA">Nothing stays whole.</div>
+  <div id="tagB">Everything transforms.</div>
+</div>
+<audio id="mus" loop preload="auto">
+  <source src="https://dl.dropboxusercontent.com/scl/fi/ofizgf1f67ew7da9wqrqe/ES_Pillow-Magic-Valante.mp3?rlkey=l8ph4trcq9cbxs0w4qmtovem4&st=a6qgi5gk" type="audio/mpeg">
+</audio>
+<button id="skipBtn" style="position:fixed;bottom:24px;right:24px;z-index:50;font-family:'Cormorant Garamond','Georgia',serif;font-size:9px;letter-spacing:0.32em;text-transform:uppercase;color:rgba(255,255,255,0.14);background:none;border:none;cursor:pointer;">Skip</button>
+<script>
+'use strict';
+var C=document.getElementById('c'),ctx=C.getContext('2d');
+var W,H;
+function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+
+var PI=Math.PI,TAU=PI*2;
+function lerp(a,b,t){return a+(b-a)*t;}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function easeOut(t){return 1-Math.pow(1-t,3);}
+function easeOut4(t){return 1-Math.pow(1-t,4);}
+function easeIn(t){return t*t*t;}
+function easeIO(t){return t<.5?4*t*t*t:(t-1)*(2*t-2)*(2*t-2)+1;}
+function rnd(a,b){return a+Math.random()*(b-a);}
+function phase(t,start,dur){return clamp((t-start)/dur,0,1);}
+
+// Colors — Origin palette
+var PURPLE='180,80,255';
+var LTPURPLE='204,102,255';
+var WHITE='255,255,255';
+var DPURPLE='120,40,200';
+
+// Global time (seconds elapsed)
+var GT=0,startMs=null;
+
+// ── TIMELINE ─────────────────────────────────────────────────
+// All values in seconds
+var TL={
+  voidEnd:3,
+  entryEnd:6.5,
+  breathStart:6.5,
+  breathEnd:27.5,   // 3 * 7s cycles
+  pulseTextIn:27.5, // "Feel the pulse"
+  pulseScatter:32,  // scatter starts
+  pulseEnd:34,
+  bigTextIn:34,     // "The split is not a game..."
+  bigTextOut:42,
+  innerExpose:36,   // inner particles change color
+  splitStart:42,
+  splitEnd:51,
+  danceStart:51,
+  // Caption timing
+  c1s:51, c1e:58,   // Not Destroyed. Transformed.
+  c2s:59, c2e:67,   // The rhythm was always there...
+  c3s:68, c3e:78,   // Those who reach the third state...
+  c4s:79, c4e:86,   // The universe remembers them differently
+  c5s:87, c5e:95,   // You'll know it when you feel it
+  titleFadeIn:90,
+  titleFull:94,
+  holdEnd:102
+};
+
+// Breathing parameters
+var BREATH_FREQ=0.2;  // cycles/sec — one slow breath every 5s
+var BREATH_AMP=0.06;  // amplitude
+
+// ── PARTICLES ────────────────────────────────────────────────
+var pts=[];
+function Pt(x,y,vx,vy,r,life,col,glow,gravity){
+  this.x=x;this.y=y;this.vx=vx;this.vy=vy;
+  this.r=r;this.life=life;this.ml=life;
+  this.col=col||WHITE;this.glow=!!glow;
+  this.grav=gravity||0.006;
+}
+Pt.prototype.tick=function(){
+  this.x+=this.vx;this.y+=this.vy;
+  this.vy+=this.grav;this.vx*=0.97;
+  this.life-=0.008;
+};
+Pt.prototype.draw=function(){
+  var al=clamp(this.life/this.ml,0,1);
+  ctx.save();
+  if(this.glow){ctx.shadowColor='rgba('+this.col+',1)';ctx.shadowBlur=this.r*4;}
+  ctx.globalAlpha=al*0.82;
+  ctx.beginPath();ctx.arc(this.x,this.y,Math.max(.1,this.r*al),0,TAU);
+  ctx.fillStyle='rgba('+this.col+',1)';ctx.fill();
+  ctx.restore();
+};
+function burst(x,y,n,spd,col,glow,grav){
+  for(var i=0;i<n;i++){
+    var a=rnd(0,TAU),s=rnd(spd*.25,spd);
+    pts.push(new Pt(x,y,Math.cos(a)*s,Math.sin(a)*s,rnd(1,3.5),rnd(1,2.2),col,glow,grav));
+  }
+}
+function burstUp(x,y,n,spd,col){
+  // Chaff — particles drift upward like smoke
+  for(var i=0;i<n;i++){
+    var vx=rnd(-spd*.5,spd*.5);
+    var vy=rnd(-spd,-spd*.2);
+    pts.push(new Pt(x+rnd(-80,80),y+rnd(-20,20),vx,vy,rnd(.8,2),rnd(1.5,3.5),col,false,-0.003));
+  }
+}
+
+// ── SPACE BACKGROUND ─────────────────────────────────────────
+var stars=[],dust=[];
+(function(){
+  for(var i=0;i<420;i++){
+    stars.push({x:Math.random(),y:Math.random(),r:rnd(.3,1.4),
+      al:rnd(.04,.22),spd:rnd(.00002,.0001),
+      col:Math.random()<.12?LTPURPLE:Math.random()<.08?'200,180,255':WHITE});
+  }
+  var dc=[DPURPLE,'100,40,180','60,20,130','160,70,240','90,30,160'];
+  for(var j=0;j<70;j++){
+    dust.push({x:Math.random(),y:Math.random(),r:rnd(60,160),
+      al:rnd(.01,.048),spd:rnd(.00001,.00006),col:dc[j%dc.length]});
+  }
+})();
+
+function drawSpace(tint){
+  var t=clamp(tint,0,1);
+  for(var i=0;i<stars.length;i++){
+    var s=stars[i];s.x=(s.x+s.spd)%1;
+    ctx.globalAlpha=s.al*t;
+    ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,TAU);
+    ctx.fillStyle='rgba('+s.col+',1)';ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  for(var j=0;j<dust.length;j++){
+    var d=dust[j];d.x=(d.x+d.spd)%1;
+    var dg=ctx.createRadialGradient(d.x*W,d.y*H,0,d.x*W,d.y*H,d.r);
+    dg.addColorStop(0,'rgba('+d.col+','+d.al*t+')');dg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(d.x*W,d.y*H,d.r,0,TAU);ctx.fill();
+  }
+}
+function drawVignette(s){
+  var vg=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,Math.max(W,H)*.72);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(.5,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,'+(s||.8)+')');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+function drawPerspGrid(al,col){
+  if(al<=0)return;
+  ctx.save();ctx.globalAlpha=al;
+  var vx=W*.5,vy=H*.4;
+  ctx.strokeStyle=col||'rgba('+PURPLE+',0.8)';ctx.lineWidth=.7;
+  for(var i=0;i<=18;i++){ctx.beginPath();ctx.moveTo(W*i/18,H);ctx.lineTo(vx,vy);ctx.stroke();}
+  for(var j=0;j<=12;j++){
+    var rp=Math.pow(j/12,1.6);
+    var ry=lerp(H,vy,rp);
+    ctx.beginPath();ctx.moveTo(lerp(0,vx,rp),ry);ctx.lineTo(lerp(W,vx,rp),ry);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── INNER ORB PARTICLES ──────────────────────────────────────
+var INNER=[];
+(function(){
+  for(var i=0;i<22;i++){
+    INNER.push({
+      ba:rnd(0,TAU),      // base angle
+      as:rnd(.2,.65)*(Math.random()<.5?1:-1), // angular speed
+      d:rnd(.18,.72),     // dist fraction
+      vm:rnd(.55,1),      // vertical mod (ellipse)
+      sz:rnd(1.1,2.6),    // dot size
+      ps:rnd(0,TAU)       // phase seed
+    });
+  }
+})();
+
+// ── RICH ORB ─────────────────────────────────────────────────
+function drawRichOrb(x,y,r,col,alpha,innerState,glowMult,innerBlend){
+  if(alpha<=0||r<=0)return;
+  ctx.save();
+  var bAmp=BREATH_AMP+(GT>TL.pulseEnd?.04:0);
+  var pr=r*(1+Math.sin(GT*BREATH_FREQ*TAU)*bAmp);
+  var gm=glowMult||1;
+
+  // Outer glow — tight
+  ctx.globalAlpha=alpha;
+  var og=ctx.createRadialGradient(x,y,pr*.2,x,y,pr*2.3*gm);
+  og.addColorStop(0,'rgba('+col+',.16)');og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.3*gm,0,TAU);ctx.fill();
+
+  // Shell ring — breathing
+  ctx.beginPath();ctx.arc(x,y,pr+2.5+Math.sin(GT*1.9)*1.6,0,TAU);
+  ctx.strokeStyle='rgba('+col+',.08)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Interior clip region
+  ctx.save();
+  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.clip();
+
+  // Dark base — space inside
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle='rgba(4,2,14,.92)';
+  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.fill();
+
+  // PLASMA BLOBS — 8 morphing radial gradient clouds
+  var blobDefs=[
+    {ax:.55,ay:.4,as:.18,bx:.32,by:.28,bs:.22,sz:.52,col:'140,60,255',al:.55},
+    {ax:.22,ay:.6,as:-.14,bx:.5,by:.42,bs:.19,sz:.48,col:'180,80,255',al:.5},
+    {ax:.65,ay:.62,as:.21,bx:.28,by:.55,bs:.16,sz:.44,col:'100,40,200',al:.45},
+    {ax:.38,ay:.32,as:-.17,bx:.6,by:.38,bs:.23,sz:.42,col:'200,120,255',al:.4},
+    {ax:.5,ay:.72,as:.13,bx:.42,by:.25,bs:.18,sz:.38,col:'220,160,255',al:.38},
+    {ax:.28,ay:.44,as:-.22,bx:.55,by:.65,bs:.14,sz:.35,col:'255,255,255',al:.22},
+    {ax:.7,ay:.38,as:.16,bx:.35,by:.7,bs:.21,sz:.32,col:'160,80,240',al:.3},
+    {ax:.42,ay:.55,as:-.12,bx:.62,by:.44,bs:.17,sz:.28,col:'240,200,255',al:.25},
+  ];
+
+  for(var bi=0;bi<blobDefs.length;bi++){
+    var bd=blobDefs[bi];
+    var bpx=x+Math.cos(bd.as*GT+bd.ax*TAU)*pr*(bd.ax*.7+.15);
+    var bpy=y+Math.sin(bd.bs*GT+bd.by*TAU)*pr*(bd.by*.7+.12);
+    var bsz=pr*bd.sz*(0.7+.3*Math.sin(GT*bd.bs*3+bi));
+    var bAl;
+    if(innerState===1){
+      // Color split — top half purple, bottom white/silver
+      if(bpy<y){
+        var pc=bi<5?'180,80,255':'140,60,220';
+        bAl=bd.al*(0.7+.3*Math.sin(GT*.4+bi));
+        var bg2=ctx.createRadialGradient(bpx,bpy,0,bpx,bpy,bsz);
+        bg2.addColorStop(0,'rgba('+pc+','+(bAl*.9)+')');
+        bg2.addColorStop(.5,'rgba('+pc+','+(bAl*.35)+')');
+        bg2.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.globalAlpha=alpha;ctx.fillStyle=bg2;
+        ctx.beginPath();ctx.arc(bpx,bpy,bsz,0,TAU);ctx.fill();
+      } else {
+        var wc=bi%2===0?'255,255,255':'200,180,255';
+        bAl=bd.al*(0.6+.4*Math.sin(GT*.35+bi));
+        var bg3=ctx.createRadialGradient(bpx,bpy,0,bpx,bpy,bsz);
+        bg3.addColorStop(0,'rgba('+wc+','+(bAl*.85)+')');
+        bg3.addColorStop(.5,'rgba('+wc+','+(bAl*.3)+')');
+        bg3.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.globalAlpha=alpha;ctx.fillStyle=bg3;
+        ctx.beginPath();ctx.arc(bpx,bpy,bsz,0,TAU);ctx.fill();
+      }
+    } else {
+      // Pure purple plasma
+      bAl=bd.al*(0.6+.4*Math.sin(GT*.38+bi));
+      var bg4=ctx.createRadialGradient(bpx,bpy,0,bpx,bpy,bsz);
+      bg4.addColorStop(0,'rgba('+bd.col+','+(bAl*.9)+')');
+      bg4.addColorStop(.5,'rgba('+bd.col+','+(bAl*.3)+')');
+      bg4.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.globalAlpha=alpha;ctx.fillStyle=bg4;
+      ctx.beginPath();ctx.arc(bpx,bpy,bsz,0,TAU);ctx.fill();
+    }
+  }
+
+  // Plasma tendrils — thin arcing lines
+  ctx.globalAlpha=alpha*.22;
+  for(var ti=0;ti<5;ti++){
+    var ta=GT*.25+ti*TAU/5;
+    var tr2=pr*(0.3+.2*Math.sin(GT*.4+ti*1.3));
+    ctx.strokeStyle='rgba(180,80,255,.6)';ctx.lineWidth=1;
+    ctx.shadowColor='rgba(180,80,255,1)';ctx.shadowBlur=4;
+    ctx.beginPath();
+    ctx.moveTo(x+Math.cos(ta)*tr2*.3,y+Math.sin(ta)*tr2*.3);
+    ctx.quadraticCurveTo(
+      x+Math.cos(ta+.8)*tr2*.7,y+Math.sin(ta+.5)*tr2*.6,
+      x+Math.cos(ta+1.4)*tr2,y+Math.sin(ta+1.1)*tr2*.85
+    );
+    ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+
+  // Bright core — pulsing with breath
+  var coreR=pr*.18*(1+Math.sin(GT*BREATH_FREQ*TAU)*.25);
+  var cg=ctx.createRadialGradient(x,y,0,x,y,coreR);
+  cg.addColorStop(0,'rgba(255,255,255,.95)');
+  cg.addColorStop(.4,'rgba(200,140,255,.6)');
+  cg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.globalAlpha=alpha*.85;ctx.fillStyle=cg;
+  ctx.beginPath();ctx.arc(x,y,coreR,0,TAU);ctx.fill();
+
+  // SEAM when innerState===1 — glowing horizontal divide
+  if(innerState===1){
+    var seamA=clamp(innerBlend||.5,0,1);
+    ctx.globalAlpha=alpha*seamA*.75;
+    var seamGrad=ctx.createLinearGradient(x-pr,y,x+pr,y);
+    seamGrad.addColorStop(0,'rgba(255,255,255,0)');
+    seamGrad.addColorStop(.25,'rgba(180,80,255,.9)');
+    seamGrad.addColorStop(.5,'rgba(255,255,255,1)');
+    seamGrad.addColorStop(.75,'rgba(255,255,255,.9)');
+    seamGrad.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.strokeStyle=seamGrad;ctx.lineWidth=1.5;
+    ctx.shadowColor='rgba(255,255,255,1)';ctx.shadowBlur=8;
+    ctx.beginPath();ctx.moveTo(x-pr*.85,y);ctx.lineTo(x+pr*.85,y);ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+
+  ctx.restore(); // end clip
+
+  // Specular highlight
+  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);
+  var sp=ctx.createRadialGradient(x-pr*.28,y-pr*.36,0,x-pr*.1,y-pr*.18,pr*.5);
+  sp.addColorStop(0,'rgba(255,255,255,.45)');sp.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalAlpha=alpha*.5;ctx.fillStyle=sp;ctx.fill();
+
+  ctx.restore();
+}
+
+// Small version of orb for dance — no clip trick, just draw
+function drawSimpleOrb(x,y,r,col,alpha){
+  if(alpha<=0||r<=0)return;
+  ctx.save();ctx.globalAlpha=alpha;
+  var pr=r*(1+Math.sin(GT*2.1)*.034);
+  // Glow
+  var og=ctx.createRadialGradient(x,y,pr*.2,x,y,pr*2.4);
+  og.addColorStop(0,'rgba('+col+',.16)');og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.4,0,TAU);ctx.fill();
+  // Body
+  var bg=ctx.createRadialGradient(x-pr*.25,y-pr*.3,0,x,y,pr);
+  bg.addColorStop(0,'rgba(255,255,255,.92)');
+  bg.addColorStop(.28,'rgba('+col+',.96)');
+  bg.addColorStop(1,'rgba(0,0,0,.55)');
+  ctx.globalAlpha=alpha*.88;ctx.fillStyle=bg;
+  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.fill();
+  // Spec
+  var sp=ctx.createRadialGradient(x-pr*.28,y-pr*.35,0,x-pr*.1,y-pr*.18,pr*.5);
+  sp.addColorStop(0,'rgba(255,255,255,.52)');sp.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalAlpha=alpha*.55;ctx.fillStyle=sp;ctx.fill();
+  ctx.restore();
+}
+
+// ── CANVAS TEXT ──────────────────────────────────────────────
+function cText(text,x,y,sizePx,alpha,italic,col,spacing){
+  if(alpha<=0)return;
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle='rgba('+(col||WHITE)+',1)';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font=(italic?'italic ':'')+'400 '+Math.round(sizePx)+'px Georgia,serif';
+  if(spacing){ctx.letterSpacing=spacing+'px';}
+  var lines=text.split('\n');
+  var lh=sizePx*1.85;
+  var top=y-(lines.length-1)*lh*.5;
+  for(var i=0;i<lines.length;i++)ctx.fillText(lines[i],x,top+i*lh);
+  ctx.restore();
+}
+
+// ── DANCING ORBS ────────────────────────────────────────────
+// Returns {o1:{x,y,z,s}, o2:{x,y,z,s}} — z is depth -1..1, s is scale
+function getDance(t){
+  var cx=W*.5,cy=H*.44;
+  var RX=W*.2,RY=H*.13;
+  var o1={
+    x:cx+Math.cos(t*.32)*RX*(0.65+.28*Math.cos(t*.58)),
+    y:cy+Math.sin(t*.32)*RY+Math.sin(t*.81)*H*.055,
+    z:Math.sin(t*.44)
+  };
+  o1.s=1+o1.z*.28;
+  var o2={
+    x:cx+Math.cos(t*.32+PI)*RX*(0.65+.28*Math.cos(t*.58+PI)),
+    y:cy+Math.sin(t*.32+PI)*RY+Math.sin(t*.81+PI)*H*.055,
+    z:Math.sin(t*.44+PI)
+  };
+  o2.s=1+o2.z*.28;
+  return {o1:o1,o2:o2};
+}
+
+// Merge state for background loop during title (periodic)
+var MERGE_PERIOD=8;
+function getMergeBlend(t){
+  var ph=(t%MERGE_PERIOD)/MERGE_PERIOD;
+  if(ph<.3)return 0;
+  if(ph<.42)return(ph-.3)/.12;
+  if(ph<.58)return 1;
+  if(ph<.7)return 1-(ph-.58)/.12;
+  return 0;
+}
+
+// ── CINEMATIC WALL (side scroll) ─────────────────────────────
+function drawWall(x,topH,botY,alpha,gapCol){
+  if(alpha<=0)return;
+  var ww=clamp(W*.048,26,52);
+  var gc=gapCol||'100,160,200';
+  ctx.save();
+  for(var d=3;d>=1;d--){
+    ctx.globalAlpha=alpha*.07*d;
+    ctx.fillStyle='rgba(4,6,12,'+(0.9-d*.07)+')';
+    ctx.fillRect(x-ww*.5+d*4,0,ww,topH);
+    ctx.fillRect(x-ww*.5+d*4,botY,ww,H-botY);
+  }
+  var wg=ctx.createLinearGradient(x-ww*.5,0,x+ww*.5,0);
+  wg.addColorStop(0,'rgba(6,9,16,.97)');wg.addColorStop(.48,'rgba(16,20,32,.97)');
+  wg.addColorStop(.52,'rgba(16,20,32,.97)');wg.addColorStop(1,'rgba(4,7,13,.97)');
+  ctx.globalAlpha=alpha;ctx.fillStyle=wg;
+  ctx.fillRect(x-ww*.5,0,ww,topH);ctx.fillRect(x-ww*.5,botY,ww,H-botY);
+  ctx.shadowColor='rgba('+gc+',.9)';ctx.shadowBlur=14;
+  ctx.strokeStyle='rgba('+gc+',.42)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(x-ww*.5,topH);ctx.lineTo(x+ww*.5,topH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-ww*.5,botY);ctx.lineTo(x+ww*.5,botY);ctx.stroke();
+  ctx.shadowBlur=0;
+  var gapH=botY-topH,gcy=topH+gapH*.5;
+  if(gapH>0){
+    var gg=ctx.createRadialGradient(x,gcy,0,x,gcy,gapH*.8);
+    gg.addColorStop(0,'rgba('+gc+',.05)');gg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=gg;ctx.fillRect(x-gapH,gcy-gapH,gapH*2,gapH*2);
+  }
+  ctx.restore();
+}
+
+// ── CHAFF STATE ──────────────────────────────────────────────
+var chaffFired=false;
+
+// ── MAIN DRAW ────────────────────────────────────────────────
+function draw(){
+  var T=GT;
+
+  // Clear
+  ctx.fillStyle='#06080d';ctx.fillRect(0,0,W,H);
+
+  // ── SCENE: VOID (0-3) ────────────────────────────────────
+  if(T<TL.voidEnd){
+    var p=T/TL.voidEnd;
+    drawSpace(easeOut(p)*.4);
+    // Purple shockwave ring from center
+    var rr=W*.75*p;
+    ctx.save();ctx.globalAlpha=easeOut(p*2.5)*.07*(1-p*.85);
+    ctx.strokeStyle='rgba('+PURPLE+',.8)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(W*.5,H*.5,rr,0,TAU);ctx.stroke();ctx.restore();
+    drawVignette(.95);
+    return;
+  }
+
+  // ── SCENE: ORB ENTRANCE (3-6.5) ──────────────────────────
+  if(T<TL.entryEnd){
+    var ep=phase(T,TL.voidEnd,TL.entryEnd-TL.voidEnd);
+    drawSpace(.55);
+    // Orb grows from a single point of light
+    var er=W*.12*easeOut4(ep);
+    var ea=easeOut(ep);
+    // Entrance burst
+    if(ep<.05&&Math.random()<.6)burst(W*.5,H*.5,4,rnd(2,5),PURPLE,true,.008);
+    // Purple bloom blooms in first
+    ctx.save();ctx.globalAlpha=ea*.12;
+    var pb=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.5);
+    pb.addColorStop(0,'rgba('+PURPLE+',.4)');pb.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb;ctx.fillRect(0,0,W,H);ctx.restore();
+
+    drawRichOrb(W*.5,H*.5,er,PURPLE,ea,0);
+    drawVignette(.82);
+    return;
+  }
+
+  // ── SHARED SPACE FOR PHASES > 6.5 ───────────────────────
+  drawSpace(.58);
+
+  // Purple bloom behind orb — persistent
+  ctx.save();ctx.globalAlpha=.1;
+  var pb2=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.55);
+  pb2.addColorStop(0,'rgba('+PURPLE+',.35)');pb2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=pb2;ctx.fillRect(0,0,W,H);ctx.restore();
+
+  // ── SCENE: BREATH (6.5-27.5) — orb + cycling "Breath" text
+  if(T<TL.breathEnd){
+    var bT=T-TL.breathStart;
+    var cycleDur=7;
+    var cycle=Math.floor(bT/cycleDur);
+    var cT=bT%cycleDur;
+    var breathTextAlpha=0;
+    if(cycle<3){
+      if(cT<1)breathTextAlpha=cT;
+      else if(cT<4)breathTextAlpha=1;
+      else if(cT<6)breathTextAlpha=1-(cT-4)/2;
+      else breathTextAlpha=0;
+    }
+    // Orb — just pulses and breathes
+    drawRichOrb(W*.5,H*.5,W*.12,PURPLE,1,0);
+    // "Breath" text — positioned below orb center so orb is clear
+    cText('Breath',W*.5,H*.64,clamp(W*.055,28,42),breathTextAlpha,true,WHITE,2);
+    drawVignette(.8);
+    return;
+  }
+
+  // ── SCENE: FEEL THE PULSE (27.5-34) ─────────────────────
+  if(T<TL.pulseEnd){
+    var scatterP=phase(T,TL.pulseScatter,2);
+    // Chaff particles fire once
+    if(!chaffFired&&T>=TL.pulseScatter){
+      chaffFired=true;
+      burstUp(W*.5,H*.62,50,2.5,WHITE);
+    }
+    var pulseA;
+    if(T<TL.pulseScatter){
+      pulseA=Math.min(phase(T,TL.pulseTextIn,.8),1);
+    } else {
+      pulseA=Math.max(1-scatterP*1.5,0);
+    }
+    // Orb glows stronger as scatter begins
+    var extraGlow=1+scatterP*.4;
+    drawRichOrb(W*.5,H*.5,W*.12,PURPLE,1,0,extraGlow);
+    cText('Feel the pulse',W*.5,H*.63,clamp(W*.04,20,32),pulseA,true,WHITE,1);
+    drawVignette(.78);
+    return;
+  }
+
+  // ── SCENE: THE SPLIT IS NOT A GAME (34-42) ───────────────
+  if(T<TL.bigTextOut){
+    var btp=phase(T,TL.bigTextIn,.8);
+    var bta;
+    if(T<TL.bigTextOut-.8)bta=easeOut(btp);
+    else bta=1-phase(T,TL.bigTextOut-.8,.8);
+    // Inner state transitions at 38s
+    var iState=(T>=TL.innerExpose)?1:0;
+    var iBlend=clamp(phase(T,TL.innerExpose,2.5),0,1);
+    // Orb has growing energy
+    var bigGlow=1+iBlend*.5;
+    drawRichOrb(W*.5,H*.5,W*.12,PURPLE,1,iState,bigGlow,iBlend);
+    // Extra particle burst as inner state changes
+    if(iBlend>.04&&iBlend<.5&&Math.random()<.2){
+      burst(W*.5+rnd(-W*.12,W*.12),H*.5-rnd(0,W*.04),2,rnd(2,4),LTPURPLE,true,.005);
+      burst(W*.5+rnd(-W*.12,W*.12),H*.5+rnd(0,W*.04),2,rnd(2,4),WHITE,true,.005);
+    }
+    var txtSize=clamp(W*.038,18,30);
+    cText('The split is not a game.\nIt is something that happens\nwhen you\'re ready\nto pay attention.',W*.5,H*.71,txtSize,bta*clamp(btp*2,0,1),true,WHITE,1);
+    drawVignette(.8);
+    return;
+  }
+
+  // ── SCENE: SPLIT TRANSITION (42-46) ──────────────────────
+  if(T<TL.splitEnd){
+    var sp=phase(T,TL.splitStart,TL.splitEnd-TL.splitStart);
+    // Wall approach during split — two gap wall rises
+    var wallAlpha=Math.min(sp*3,.85);
+    var wallX=W*.65;
+    var g1CY=H*.3,g1H=H*.17;
+    var g2CY=H*.7,g2H=H*.17;
+    drawWall(wallX,0,g1CY-g1H*.5,wallAlpha,LTPURPLE);
+    drawWall(wallX,g1CY+g1H*.5,g2CY-g2H*.5,wallAlpha,'200,180,255');
+    drawWall(wallX,g2CY+g2H*.5,H,wallAlpha,WHITE);
+
+    // Orb approaches, trembles, compresses, TEARS
+    var p0=.12,p1=.24,p2=.46,p3=.62,p4=.75;
+    var sox,soy,sor=W*.1,ssx=1,ssy=1;
+    var isSplit=false,topY=H*.5,botY2=H*.5;
+
+    if(sp<=p0){sox=lerp(W*.1,wallX-W*.22,easeOut(sp/p0));soy=H*.5;}
+    else if(sp<=p1){sox=wallX-W*.22;soy=H*.5;}
+    else if(sp<=p2){
+      var tp=sp-p1;var ta=clamp(tp/.03*2,0,16);
+      sox=wallX-W*.22+Math.sin(GT*16+tp*8)*ta+Math.sin(GT*24)*ta*.35;
+      soy=H*.5+Math.sin(GT*14)*ta*.7+Math.sin(GT*22)*ta*.28;
+      // Wall shudder back
+      var wsh=Math.sin(GT*12)*ta*.3;
+      drawWall(wallX+wsh,0,g1CY-g1H*.5,wallAlpha,LTPURPLE);
+      if(Math.random()<.25)burst(sox,soy,3,1.8,PURPLE,false,.008);
+    }
+    else if(sp<=p3){
+      var sq=easeIn((sp-p2)/(p3-p2));
+      sox=wallX-W*.22+Math.sin(GT*9)*3;soy=H*.5;
+      ssx=1-sq*.42;ssy=1+sq*.26;
+      // Color seam
+      ctx.save();ctx.globalAlpha=sq*.4;
+      var seam=ctx.createLinearGradient(sox,soy-sor*2.2,sox,soy+sor*2.2);
+      seam.addColorStop(0,'rgba('+LTPURPLE+',.9)');
+      seam.addColorStop(.5,'rgba(255,255,255,1)');
+      seam.addColorStop(1,'rgba('+WHITE+',.9)');
+      ctx.strokeStyle=seam;ctx.lineWidth=2.5+sq*3;
+      ctx.beginPath();ctx.moveTo(sox,soy-sor*2.2);ctx.lineTo(sox,soy+sor*2.2);ctx.stroke();
+      ctx.restore();
+      if(Math.random()<.3)burst(sox,soy,2,1.2,PURPLE,false,.006);
+    }
+    else if(sp<=p4){
+      var tp3=(sp-p3)/(p4-p3),fl=1-tp3;
+      ctx.save();ctx.globalAlpha=fl*.5;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();
+      if(tp3<.35&&Math.random()<.9){
+        burst(wallX-W*.22,H*.5,7,rnd(2.5,6),LTPURPLE,true,.007);
+        burst(wallX-W*.22,H*.5,7,rnd(2.5,6),WHITE,true,.007);
+      }
+      isSplit=true;
+      topY=H*.5-tp3*H*.2;botY2=H*.5+tp3*H*.2;
+      sox=wallX-W*.22;
+    }
+    else{
+      isSplit=true;
+      var np=easeOut4((sp-p4)/(1-p4));
+      topY=lerp(H*.5-H*.2,g1CY,phase(sp,p4,1-p4)*3);
+      botY2=lerp(H*.5+H*.2,g2CY,phase(sp,p4,1-p4)*3);
+      sox=lerp(wallX-W*.22,wallX+W*.28,np);
+      if(Math.random()<.2){
+        burst(sox,topY,2,1,LTPURPLE,true,.006);
+        burst(sox,botY2,2,1,WHITE,true,.006);
+      }
+    }
+
+    if(!isSplit){
+      ctx.save();ctx.translate(sox,soy);ctx.scale(ssx,ssy);ctx.translate(-sox,-soy);
+      drawRichOrb(sox,soy,sor,PURPLE,1,1);ctx.restore();
+    } else {
+      drawSimpleOrb(sox,topY,sor*.88,LTPURPLE,1);
+      drawSimpleOrb(sox,botY2,sor*.88,WHITE,1);
+      if(Math.abs(topY-botY2)>sor*2){
+        ctx.save();ctx.globalAlpha=.14;ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;
+        ctx.setLineDash([3,7]);ctx.beginPath();ctx.moveTo(sox,topY+sor);ctx.lineTo(sox,botY2-sor);ctx.stroke();
+        ctx.setLineDash([]);ctx.restore();
+      }
+    }
+    drawVignette(.78);
+    return;
+  }
+
+  // ── DANCE + CAPTIONS + TITLE (46+) ───────────────────────
+  var dT=T-TL.danceStart;
+  drawPerspGrid(.04,'rgba('+PURPLE+',.55)');
+
+  // Get orb dance positions
+  var pos=getDance(dT);
+  var o1=pos.o1,o2=pos.o2;
+  var baseR=W*.08;
+
+  // Merge blend (for title hold loop)
+  var mergeBlend=T>=TL.titleFull?getMergeBlend(dT):0;
+  var mx=lerp((o1.x+o2.x)*.5,W*.5,mergeBlend);
+  var my=lerp((o1.y+o2.y)*.5,H*.5,mergeBlend);
+
+  // Emit trails
+  if(mergeBlend<.5&&Math.random()<.35){
+    pts.push(new Pt(o1.x+rnd(-3,3),o1.y+rnd(-3,3),rnd(-.3,.3),rnd(-.5,-.1),rnd(.8,1.8),rnd(1,2.2),LTPURPLE,false,.004));
+    pts.push(new Pt(o2.x+rnd(-3,3),o2.y+rnd(-3,3),rnd(-.3,.3),rnd(-.5,-.1),rnd(.8,1.8),rnd(1,2.2),WHITE,false,.004));
+  }
+
+  // Draw orbs in Z order (farther one first)
+  if(mergeBlend>.8){
+    // Merging into single orb
+    var mfl=(mergeBlend>.9)?Math.sin((mergeBlend-.9)/.1*PI)*.3:0;
+    if(mfl>.05){ctx.save();ctx.globalAlpha=mfl*.35;ctx.fillStyle='rgba('+PURPLE+',.5)';ctx.fillRect(0,0,W,H);ctx.restore();}
+    if(mergeBlend>.9&&Math.random()<.4){burst(mx,my,3,rnd(1.5,3.5),PURPLE,true,.006);}
+    drawSimpleOrb(mx,my,baseR*(1+mergeBlend*.15),PURPLE,1);
+  } else {
+    var o1first=o1.z<o2.z;
+    var fa=o1first?[o1,o2]:[o2,o1];
+    var fc=[o1first?LTPURPLE:WHITE,o1first?WHITE:LTPURPLE];
+    for(var oi=0;oi<2;oi++){
+      var ob=fa[oi],oc=fc[oi];
+      var dAlpha=clamp(1-mergeBlend*3,0,1)+mergeBlend*.3;
+      drawSimpleOrb(ob.x,ob.y,baseR*clamp(ob.s,.6,1.4),oc,dAlpha);
+    }
+  }
+
+  // ── CAPTIONS ─────────────────────────────────────────────
+  var capts=[
+    {s:TL.c1s,e:TL.c1e,t:'Not Destroyed.\n\nTransformed.'},
+    {s:TL.c2s,e:TL.c2e,t:'The rhythm was always there.\nIt took everything to hear it.'},
+    {s:TL.c3s,e:TL.c3e,t:'Those who reach the third state,\nthe oldest light.\n\nDo not speak about what they saw.'},
+    {s:TL.c4s,e:TL.c4e,t:'The universe remembers them\ndifferently.'},
+    {s:TL.c5s,e:TL.c5e,t:'You\'ll know it\nwhen you feel it.'},
+  ];
+  var captSz=clamp(W*.038,18,28);
+  for(var ci=0;ci<capts.length;ci++){
+    var ca=capts[ci];
+    if(T<ca.s||T>ca.e)continue;
+    var cfa=Math.min(phase(T,ca.s,.8),1)*Math.min(1-phase(T,ca.e-.8,.8),1);
+    // Captions live in bottom third — always below orbs
+    cText(ca.t,W*.5,H*.76,captSz,cfa,true,WHITE,1);
+  }
+
+  // Fade out everything except title when last caption starts
+  if(T>=TL.c5s){
+    var fadeBack=Math.min(phase(T,TL.c5s,1.5),1)*.65;
+    ctx.save();ctx.globalAlpha=fadeBack;ctx.fillStyle='#06080d';ctx.fillRect(0,0,W,H);ctx.restore();
+  }
+
+  // Title fade in
+  if(T>=TL.titleFadeIn){
+    var titleAlpha=phase(T,TL.titleFadeIn,TL.titleFull-TL.titleFadeIn);
+    document.getElementById('title').style.opacity=easeOut(titleAlpha);
+  }
+
+  drawVignette(.75);
+
+  // Tick and draw particles
+  ctx.save();ctx.globalAlpha=1;
+  for(var pi=pts.length-1;pi>=0;pi--){
+    pts[pi].tick();pts[pi].draw();
+    if(pts[pi].life<=0)pts.splice(pi,1);
+  }
+  ctx.restore();
+}
+
+// ── LOOP ────────────────────────────────────────────────────
+var running=false;
+function loop(ts){
+  if(!startMs)startMs=ts;
+  GT=(ts-startMs)/1e3;
+  draw();
+  if(running)requestAnimationFrame(loop);
+}
+
+// ── MUSIC FADE ───────────────────────────────────────────────
+var mus=document.getElementById('mus');
+function fadeMusic(target,dur){
+  var start=mus.volume,s=null;
+  function step(ts){
+    if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);
+    mus.volume=lerp(start,target,p);
+    if(p<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── TAP TO BEGIN ─────────────────────────────────────────────
+var tapEl=document.getElementById('tap');
+var started=false;
+function begin(){
+  if(started)return;started=true;
+  // Fade tap screen
+  tapEl.style.transition='opacity .8s ease';tapEl.style.opacity=0;
+  setTimeout(function(){tapEl.style.display='none';},800);
+  // Start music soft, ease in
+  if(mus){mus.volume=0;mus.play().catch(function(){});}
+  if(mus)fadeMusic(.72,3000);
+  // Start loop
+  running=true;requestAnimationFrame(loop);
+}
+tapEl.addEventListener('click',begin);
+tapEl.addEventListener('touchstart',function(e){e.preventDefault();begin();},{passive:false});
+var skipEl=document.getElementById('skipBtn');
+if(skipEl){skipEl.addEventListener('click',function(){
+  if(!started){begin();return;}
+  clearTimeout(window._scTimer);
+  GT=TL.titleFadeIn;startMs=performance.now()-TL.titleFadeIn*1000;
+  document.getElementById('title').style.opacity=1;
+});}
+</script>
+</body>
+</html>
