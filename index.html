@@ -538,7 +538,7 @@ function showPaySuccess(tier){
       fetch(BACKEND_URL+'/confirm-purchase',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({username:savedUser,tier:tier})
+        body:JSON.stringify({username:savedUser,tier:tier,email:googleUser?googleUser.email:''})
       }).catch(function(){});
     }
     // Try silent Google re-auth (works on desktop, may fail on iOS Chrome)
@@ -2318,9 +2318,8 @@ function drawAcctOrb(){
     actx.beginPath();actx.arc(cx,cy,r*1.05,0,Math.PI*2);
     actx.fillStyle='rgba(6,8,14,1)';actx.fill();
     actx.clip();
-    var cs=CS();
-    // Always show merged orb — cleaner at small size
-    drawOrb(cx,cy,r,cs.m,true);
+    // Fixed profile color — independent of game skin
+    drawOrb(cx,cy,r,'#ffffff',true);
     actx.restore();
     ctx=savedCtx;GT=savedGT;
     if(document.getElementById('accountMenu')&&!document.getElementById('accountMenu').classList.contains('hidden')){
