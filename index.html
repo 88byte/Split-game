@@ -1206,12 +1206,12 @@ function drawOrb(x,y,r,hexColor,isMergedOrb){
   var bi=skinState.body;
   var isFounders=(bi===7);
   var pr=r*(1+Math.sin(GT*2.2)*0.04);
-  var glA=bi===6?0.42:bi===5?0.18:isFounders?0.35:0.28;
+  var glA=bi===6?0.32:bi===5?0.12:isFounders?0.25:0.15;
   var shellA=bi===5?0.22:bi===3?0.28:bi===1?0.32:isFounders?0.3:0.52;
 
-  var og=ctx.createRadialGradient(x,y,pr*0.4,x,y,pr*(bi===6?5.5:4.2));
+  var og=ctx.createRadialGradient(x,y,pr*0.4,x,y,pr*(bi===6?3.5:2.8));
   og.addColorStop(0,rgba(hexColor,glA));og.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*(bi===6?5.5:4.2),0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*(bi===6?3.5:2.8),0,Math.PI*2);ctx.fill();
 
   ctx.beginPath();ctx.arc(x,y,pr+4+Math.sin(GT*1.9)*2,0,Math.PI*2);
   ctx.strokeStyle=rgba(hexColor,0.13);ctx.lineWidth=1.4;ctx.stroke();
@@ -1244,9 +1244,9 @@ function drawAmoebaOrb(x,y,r,hexColor){
   var pr=r*(1+Math.sin(t*2.2)*0.04);
 
   // Outer glow
-  var og=ctx.createRadialGradient(x,y,pr*0.3,x,y,pr*5);
-  og.addColorStop(0,rgba(hexColor,0.35));og.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*5,0,Math.PI*2);ctx.fill();
+  var og=ctx.createRadialGradient(x,y,pr*0.3,x,y,pr*2.8);
+  og.addColorStop(0,rgba(hexColor,0.18));og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.8,0,Math.PI*2);ctx.fill();
 
   // Amoeba shape - blob with organic bumps
   ctx.save();
@@ -1919,7 +1919,7 @@ function shareRun(){
     c.fillRect(0,0,sw,sh);
 
     // Single subtle bloom behind orb — tight radius, low opacity
-    var bloom=c.createRadialGradient(sw*0.5,sh*0.63,0,sw*0.5,sh*0.63,sw*0.22);
+    var bloom=c.createRadialGradient(sw*0.5,sh*0.63,0,sw*0.5,sh*0.63,sw*0.10);
     bloom.addColorStop(0,'rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.10)');
     bloom.addColorStop(1,'rgba(0,0,0,0)');
     c.fillStyle=bloom;c.fillRect(0,0,sw,sh);
@@ -1972,12 +1972,15 @@ function shareRun(){
     c.fillText(name+' · '+formatTime(runElapsed),sw*0.5,infoTop);
 
     // ── ORB — below all text, glowing reveal ─────────────────────
-    // ── ORB — single clean draw, shadowBlur for glow only ──────────
+    // ── ORB — clipped to prevent outer glow spread ──────────────────
     var orbY=sh*0.62;
+    var orbR=sw*0.13;
     ctx=c;GT=acctOrbT;
     c.save();
+    // Clip to 1.6x orb radius — lets a small natural halo show, kills the spread
+    c.beginPath();c.arc(sw*0.5,orbY,orbR*1.6,0,Math.PI*2);c.clip();
     c.shadowBlur=0;
-    drawOrb(sw*0.5,orbY,sw*0.14,cm,true);
+    drawOrb(sw*0.5,orbY,orbR,cm,true);
     c.restore();
     ctx=savedCtx;GT=savedGT;
 
@@ -2628,7 +2631,6 @@ function startGoOrb(){
     var cs=CS();
     // Outer glow ring
     actx.save();
-    actx.shadowColor=cs.m;actx.shadowBlur=18;
     drawOrb(cx,cy,r,cs.m,true);
     actx.restore();
     actx.restore();
@@ -2730,12 +2732,9 @@ function startGoOrb(){
   var cs=CS();
   var cm=cs.m;
 
-  // Set card glow background
+  // Card glow — removed, keep card dark and clean
   var glowEl=document.getElementById('goCardGlow');
-  if(glowEl){
-    var cmRGB=hexRGB(cm);
-    glowEl.style.background='radial-gradient(ellipse at 50% 30%,rgba('+cmRGB[0]+','+cmRGB[1]+','+cmRGB[2]+',0.18) 0%,rgba(0,0,0,0) 70%)';
-  }
+  if(glowEl){glowEl.style.background='none';}
 
   // Draw split divider
   var dc=document.getElementById('goDividerCanvas');
