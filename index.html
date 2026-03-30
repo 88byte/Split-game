@@ -2099,6 +2099,8 @@ document.getElementById('acctCustomizeBtn').addEventListener('click',function(){
 });
 document.getElementById('acctSignOutBtn').addEventListener('click',function(){
   googleUser=null;
+  username='';
+  localStorage.removeItem('splitUsername');
   stopAcctOrb();
   document.getElementById('accountMenu').classList.add('hidden');
   if(window.google&&window.google.accounts){
@@ -2112,7 +2114,8 @@ document.getElementById('acctSignOutBtn').addEventListener('click',function(){
   gamesPlayed=0;
   updateAccountBtn();
   toast('Signed out');
-  // Reload after short delay so toast shows
+  // Set flag so auto sign-in is suppressed on reload
+  sessionStorage.setItem('splitSignedOut','1');
   setTimeout(function(){window.location.reload();},1200);
 });
 document.getElementById('acctSaveUsernameBtn').addEventListener('click',function(){
@@ -2193,8 +2196,12 @@ window.addEventListener('load',function(){
   }).catch(function(){});
 
   if(window.google&&window.google.accounts){
-    window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleSignIn,auto_select:true});
-    window.google.accounts.id.prompt(function(){});
+    // Don't auto sign-in if user just signed out
+    if(!sessionStorage.getItem('splitSignedOut')){
+      window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleSignIn,auto_select:true});
+      window.google.accounts.id.prompt(function(){});
+    }
+    sessionStorage.removeItem('splitSignedOut');
   }
 
   // Start menu music on first interaction (iOS requires gesture)
