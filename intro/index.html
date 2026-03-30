@@ -10,23 +10,32 @@
 html,body{width:100%;height:100%;overflow:hidden;background:#000;}
 canvas{position:fixed;inset:0;width:100%;height:100%;}
 #tap{
-  position:fixed;inset:0;z-index:99;
+  position:fixed;inset:0;z-index:50;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:#000;cursor:pointer;
+  cursor:pointer;background:transparent;
 }
-#tapLogo{
-  font:900 clamp(62px,16vw,112px)/1 'Cormorant Garamond','Georgia',serif;
+#tapWord{
+  font:900 clamp(62px,16vw,108px)/1 'Cormorant Garamond','Georgia',serif;
   color:#fff;letter-spacing:.28em;text-transform:uppercase;
-  margin-bottom:clamp(28px,7vh,56px);
-  opacity:0;animation:riseIn 1.6s cubic-bezier(.16,1,.3,1) forwards .3s;
+  margin-bottom:clamp(28px,7vh,52px);
+  opacity:0;animation:riseIn 1.8s cubic-bezier(.16,1,.3,1) forwards .5s;
 }
-#tapDot{
-  width:6px;height:6px;border-radius:50%;background:rgba(180,80,255,.5);
-  animation:pulseDot 2.2s ease-in-out infinite 1.8s;opacity:0;
+#tapHint{
+  font:400 italic clamp(10px,2.4vw,13px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(255,255,255,.18);letter-spacing:.38em;text-transform:uppercase;
+  opacity:0;animation:riseIn 1s ease forwards 2s,blink 2.8s ease-in-out infinite 3s;
 }
-@keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
-@keyframes pulseDot{0%,100%{opacity:.18;transform:scale(1);}50%{opacity:.7;transform:scale(1.6);}}
-/* Final title — DOM for crisp rendering */
+@keyframes riseIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+@keyframes blink{0%,100%{opacity:.18;}50%{opacity:.5;}}
+#caption{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:0 9vw clamp(44px,10vh,84px);
+  text-align:center;z-index:20;pointer-events:none;opacity:0;
+}
+#captInner{
+  font:400 italic clamp(15px,3.8vw,22px)/2 'Cormorant Garamond','Georgia',serif;
+  color:rgba(255,255,255,.86);letter-spacing:.04em;
+}
 #title{
   position:fixed;inset:0;z-index:30;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -35,32 +44,43 @@ canvas{position:fixed;inset:0;width:100%;height:100%;}
 #titleWord{
   font:900 clamp(62px,16vw,120px)/1 'Cormorant Garamond','Georgia',serif;
   color:#fff;letter-spacing:.28em;text-transform:uppercase;
-  text-shadow:0 0 120px rgba(180,80,255,.18),0 0 40px rgba(255,255,255,.06);
+  text-shadow:0 0 100px rgba(180,80,255,.16),0 0 40px rgba(255,255,255,.06);
   margin-bottom:clamp(10px,2vh,18px);
 }
 #tagA{
-  font:400 clamp(10px,2.5vw,14px)/1 'Cormorant Garamond','Georgia',serif;
-  color:rgba(255,255,255,.38);letter-spacing:.3em;text-transform:uppercase;
+  font:400 italic clamp(10px,2.6vw,14px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(255,255,255,.36);letter-spacing:.3em;text-transform:uppercase;
   margin-bottom:5px;
 }
 #tagB{
-  font:400 clamp(10px,2.5vw,14px)/1 'Cormorant Garamond','Georgia',serif;
-  color:rgba(180,80,255,.55);letter-spacing:.3em;text-transform:uppercase;
+  font:400 italic clamp(10px,2.6vw,14px)/1 'Cormorant Garamond','Georgia',serif;
+  color:rgba(180,80,255,.52);letter-spacing:.3em;text-transform:uppercase;
+  margin-bottom:clamp(44px,10vh,76px);
 }
+#readyBtn{
+  font:400 italic clamp(11px,2.8vw,14px)/1 'Cormorant Garamond','Georgia',serif;
+  letter-spacing:.32em;color:rgba(255,255,255,.7);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);
+  border-radius:50px;padding:14px 48px;
+  cursor:pointer;pointer-events:none;opacity:0;
+  transition:background .3s,border-color .3s,color .3s;
+}
+#readyBtn:hover{background:rgba(180,80,255,.12);border-color:rgba(180,80,255,.3);color:#fff;}
 </style>
 </head>
 <body>
-<div id="tap"><div id="tapLogo">SPLIT</div><div id="tapDot"></div></div>
 <canvas id="c"></canvas>
+<div id="tap"><div id="tapWord">SPLIT</div><div id="tapHint">tap to begin</div></div>
+<div id="caption"><div id="captInner"></div></div>
 <div id="title">
   <div id="titleWord">SPLIT</div>
   <div id="tagA">Nothing stays whole.</div>
   <div id="tagB">Everything transforms.</div>
+  <button id="readyBtn">I'm ready</button>
 </div>
 <audio id="mus" loop preload="auto">
-  <source src="https://dl.dropboxusercontent.com/scl/fi/ofizgf1f67ew7da9wqrqe/ES_Pillow-Magic-Valante.mp3?rlkey=l8ph4trcq9cbxs0w4qmtovem4&st=a6qgi5gk" type="audio/mpeg">
+  <source src="https://dl.dropboxusercontent.com/scl/fi/z4sjuysyg1q5xxvs6tvw6/ES_Space-Whales-Stefan-Ekstrom-Adapted-2026-03-30-at-19.17.52-UTC.mp3?rlkey=lcqzo8d34xjmprckw1nexxu5f&st=cgkrj1dx" type="audio/mpeg">
 </audio>
-<button id="skipBtn" style="position:fixed;bottom:24px;right:24px;z-index:50;font-family:'Cormorant Garamond','Georgia',serif;font-size:9px;letter-spacing:0.32em;text-transform:uppercase;color:rgba(255,255,255,0.14);background:none;border:none;cursor:pointer;">Skip</button>
 <script>
 'use strict';
 var C=document.getElementById('c'),ctx=C.getContext('2d');
@@ -76,66 +96,66 @@ function easeOut4(t){return 1-Math.pow(1-t,4);}
 function easeIn(t){return t*t*t;}
 function easeIO(t){return t<.5?4*t*t*t:(t-1)*(2*t-2)*(2*t-2)+1;}
 function rnd(a,b){return a+Math.random()*(b-a);}
-function phase(t,start,dur){return clamp((t-start)/dur,0,1);}
+function phase(T,start,dur){return clamp((T-start)/dur,0,1);}
 
-// Colors — Origin palette
+// Origin palette
 var PURPLE='180,80,255';
 var LTPURPLE='204,102,255';
 var WHITE='255,255,255';
 var DPURPLE='120,40,200';
 
-// Global time (seconds elapsed)
+// Global time
 var GT=0,startMs=null;
+var STARTED=false;
 
-// ── TIMELINE ─────────────────────────────────────────────────
-// All values in seconds
+// ── TIMELINE (seconds) ─────────────────────────────────────
+// Musical drop at T=50 → WHITE FLASH at T=50
+// splitStart=36, scene=18s, p4=0.778 → flash at 36+14=50s ✓
 var TL={
   voidEnd:3,
   entryEnd:6.5,
   breathStart:6.5,
-  breathEnd:27.5,   // 3 * 7s cycles
-  pulseTextIn:27.5, // "Feel the pulse"
-  pulseScatter:32,  // scatter starts
-  pulseEnd:34,
-  bigTextIn:34,     // "The split is not a game..."
-  bigTextOut:42,
-  innerExpose:36,   // inner particles change color
-  splitStart:42,
-  splitEnd:51,
-  danceStart:51,
-  // Caption timing
-  c1s:51, c1e:58,   // Not Destroyed. Transformed.
-  c2s:59, c2e:67,   // The rhythm was always there...
-  c3s:68, c3e:78,   // Those who reach the third state...
-  c4s:79, c4e:86,   // The universe remembers them differently
-  c5s:87, c5e:95,   // You'll know it when you feel it
+  breathEnd:20.5,
+  pulseTextIn:20.5,
+  pulseScatter:24,
+  pulseEnd:26,
+  bigTextIn:26,
+  bigTextLine2:30,
+  bigTextOut:36,
+  innerExpose:31,
+  splitStart:36,
+  splitEnd:54,
+  danceStart:54,
+  c1s:54,c1e:61,
+  c2s:62,c2e:70,
+  c3s:71,c3e:80,
+  c4s:81,c4e:87,
+  c5s:88,c5e:95,
   titleFadeIn:90,
   titleFull:94,
-  holdEnd:102
+  holdEnd:99
 };
+var BREATH_FREQ=0.2; // one breath every 5s
+var BREATH_AMP=0.06;
+// Split phases
+var SP={p0:.10,p1:.22,p2:.45,p3:.65,p4:.778};
 
-// Breathing parameters
-var BREATH_FREQ=0.2;  // cycles/sec — one slow breath every 5s
-var BREATH_AMP=0.06;  // amplitude
-
-// ── PARTICLES ────────────────────────────────────────────────
+// ── PARTICLES ──────────────────────────────────────────────
 var pts=[];
-function Pt(x,y,vx,vy,r,life,col,glow,gravity){
+function Pt(x,y,vx,vy,r,life,col,glow,grav){
   this.x=x;this.y=y;this.vx=vx;this.vy=vy;
   this.r=r;this.life=life;this.ml=life;
-  this.col=col||WHITE;this.glow=!!glow;
-  this.grav=gravity||0.006;
+  this.col=col||WHITE;this.glow=!!glow;this.grav=grav||.006;
 }
 Pt.prototype.tick=function(){
   this.x+=this.vx;this.y+=this.vy;
-  this.vy+=this.grav;this.vx*=0.97;
-  this.life-=0.008;
+  this.vy+=this.grav;this.vx*=.97;this.life-=.008;
 };
 Pt.prototype.draw=function(){
   var al=clamp(this.life/this.ml,0,1);
   ctx.save();
   if(this.glow){ctx.shadowColor='rgba('+this.col+',1)';ctx.shadowBlur=this.r*4;}
-  ctx.globalAlpha=al*0.82;
+  ctx.globalAlpha=al*.8;
   ctx.beginPath();ctx.arc(this.x,this.y,Math.max(.1,this.r*al),0,TAU);
   ctx.fillStyle='rgba('+this.col+',1)';ctx.fill();
   ctx.restore();
@@ -146,46 +166,66 @@ function burst(x,y,n,spd,col,glow,grav){
     pts.push(new Pt(x,y,Math.cos(a)*s,Math.sin(a)*s,rnd(1,3.5),rnd(1,2.2),col,glow,grav));
   }
 }
-function burstUp(x,y,n,spd,col){
-  // Chaff — particles drift upward like smoke
-  for(var i=0;i<n;i++){
-    var vx=rnd(-spd*.5,spd*.5);
-    var vy=rnd(-spd,-spd*.2);
-    pts.push(new Pt(x+rnd(-80,80),y+rnd(-20,20),vx,vy,rnd(.8,2),rnd(1.5,3.5),col,false,-0.003));
-  }
-}
 
-// ── SPACE BACKGROUND ─────────────────────────────────────────
-var stars=[],dust=[];
+// ── SPACE — dual temperature ────────────────────────────────
+var coolStars=[],warmStars=[];
+var coolDust=[],warmDust=[];
 (function(){
   for(var i=0;i<420;i++){
-    stars.push({x:Math.random(),y:Math.random(),r:rnd(.3,1.4),
-      al:rnd(.04,.22),spd:rnd(.00002,.0001),
-      col:Math.random()<.12?LTPURPLE:Math.random()<.08?'200,180,255':WHITE});
+    var r=rnd(.3,1.4),al=rnd(.04,.22),spd=rnd(.00002,.0001);
+    coolStars.push({x:Math.random(),y:Math.random(),r:r,al:al,spd:spd,col:'200,220,255'});
+    warmStars.push({x:Math.random(),y:Math.random(),r:r*0.8,al:al*.8,spd:spd,
+      col:Math.random()<.14?LTPURPLE:'255,255,255'});
   }
-  var dc=[DPURPLE,'100,40,180','60,20,130','160,70,240','90,30,160'];
+  var cc=['60,100,200','80,130,220','50,90,180','70,110,210','90,120,230'];
+  var wc=[DPURPLE,'100,40,180','60,20,140','160,70,240','90,30,160'];
   for(var j=0;j<70;j++){
-    dust.push({x:Math.random(),y:Math.random(),r:rnd(60,160),
-      al:rnd(.01,.048),spd:rnd(.00001,.00006),col:dc[j%dc.length]});
+    coolDust.push({x:Math.random(),y:Math.random(),r:rnd(60,155),
+      al:rnd(.012,.048),spd:rnd(.00001,.00006),col:cc[j%cc.length]});
+    warmDust.push({x:Math.random(),y:Math.random(),r:rnd(60,155),
+      al:rnd(.012,.048),spd:rnd(.00001,.00006),col:wc[j%wc.length]});
   }
 })();
 
-function drawSpace(tint){
-  var t=clamp(tint,0,1);
-  for(var i=0;i<stars.length;i++){
-    var s=stars[i];s.x=(s.x+s.spd)%1;
-    ctx.globalAlpha=s.al*t;
+function drawSpace(temp){
+  // temp 0=cold blue, 1=warm purple
+  var t=clamp(temp,0,1);
+  var ct=1-t,wt=t;
+  // Cool stars
+  for(var i=0;i<coolStars.length;i++){
+    var s=coolStars[i];s.x=(s.x+s.spd)%1;
+    if(ct<=0)continue;
+    ctx.globalAlpha=s.al*ct;
+    ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,TAU);
+    ctx.fillStyle='rgba('+s.col+',1)';ctx.fill();
+  }
+  // Warm stars
+  for(var i=0;i<warmStars.length;i++){
+    var s=warmStars[i];s.x=(s.x+s.spd)%1;
+    if(wt<=0)continue;
+    ctx.globalAlpha=s.al*wt;
     ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,TAU);
     ctx.fillStyle='rgba('+s.col+',1)';ctx.fill();
   }
   ctx.globalAlpha=1;
-  for(var j=0;j<dust.length;j++){
-    var d=dust[j];d.x=(d.x+d.spd)%1;
+  // Cool dust
+  for(var j=0;j<coolDust.length;j++){
+    var d=coolDust[j];d.x=(d.x+d.spd)%1;
+    if(ct<=0)continue;
     var dg=ctx.createRadialGradient(d.x*W,d.y*H,0,d.x*W,d.y*H,d.r);
-    dg.addColorStop(0,'rgba('+d.col+','+d.al*t+')');dg.addColorStop(1,'rgba(0,0,0,0)');
+    dg.addColorStop(0,'rgba('+d.col+','+d.al*ct+')');dg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(d.x*W,d.y*H,d.r,0,TAU);ctx.fill();
+  }
+  // Warm dust
+  for(var j=0;j<warmDust.length;j++){
+    var d=warmDust[j];d.x=(d.x+d.spd)%1;
+    if(wt<=0)continue;
+    var dg=ctx.createRadialGradient(d.x*W,d.y*H,0,d.x*W,d.y*H,d.r);
+    dg.addColorStop(0,'rgba('+d.col+','+d.al*wt+')');dg.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=dg;ctx.beginPath();ctx.arc(d.x*W,d.y*H,d.r,0,TAU);ctx.fill();
   }
 }
+
 function drawVignette(s){
   var vg=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,Math.max(W,H)*.72);
   vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(.5,'rgba(0,0,0,0)');
@@ -196,585 +236,628 @@ function drawPerspGrid(al,col){
   if(al<=0)return;
   ctx.save();ctx.globalAlpha=al;
   var vx=W*.5,vy=H*.4;
-  ctx.strokeStyle=col||'rgba('+PURPLE+',0.8)';ctx.lineWidth=.7;
+  ctx.strokeStyle=col||'rgba('+PURPLE+',.8)';ctx.lineWidth=.7;
   for(var i=0;i<=18;i++){ctx.beginPath();ctx.moveTo(W*i/18,H);ctx.lineTo(vx,vy);ctx.stroke();}
   for(var j=0;j<=12;j++){
-    var rp=Math.pow(j/12,1.6);
-    var ry=lerp(H,vy,rp);
+    var rp=Math.pow(j/12,1.6),ry=lerp(H,vy,rp);
     ctx.beginPath();ctx.moveTo(lerp(0,vx,rp),ry);ctx.lineTo(lerp(W,vx,rp),ry);ctx.stroke();
   }
   ctx.restore();
 }
 
-// ── INNER ORB PARTICLES ──────────────────────────────────────
-var INNER=[];
+// ── PLASMA ORB ─────────────────────────────────────────────
+var PLASMA=[];
 (function(){
-  for(var i=0;i<22;i++){
-    INNER.push({
-      ba:rnd(0,TAU),      // base angle
-      as:rnd(.2,.65)*(Math.random()<.5?1:-1), // angular speed
-      d:rnd(.18,.72),     // dist fraction
-      vm:rnd(.55,1),      // vertical mod (ellipse)
-      sz:rnd(1.1,2.6),    // dot size
-      ps:rnd(0,TAU)       // phase seed
+  var cols=['140,60,255','180,80,255','100,40,200','200,120,255','220,160,255','160,80,240','240,200,255','255,255,255'];
+  for(var i=0;i<8;i++){
+    PLASMA.push({
+      as:rnd(.12,.28)*(Math.random()<.5?1:-1),
+      bs:rnd(.14,.32)*(Math.random()<.5?1:-1),
+      ox:rnd(.2,.8),oy:rnd(.2,.8),
+      sz:rnd(.32,.56),al:rnd(.35,.58),
+      col:cols[i],seed:rnd(0,TAU)
     });
   }
 })();
 
-// ── RICH ORB ─────────────────────────────────────────────────
-function drawRichOrb(x,y,r,col,alpha,innerState,glowMult,innerBlend){
+function drawOrb(x,y,r,col,alpha,innerState,innerBlend,glowMult){
   if(alpha<=0||r<=0)return;
-  ctx.save();
-  var bAmp=BREATH_AMP+(GT>TL.pulseEnd?.04:0);
-  var pr=r*(1+Math.sin(GT*BREATH_FREQ*TAU)*bAmp);
+  ctx.save();ctx.globalAlpha=alpha;
+  var breathe=1+Math.sin(GT*BREATH_FREQ*TAU)*BREATH_AMP;
+  var pr=r*breathe;
   var gm=glowMult||1;
 
-  // Outer glow — tight
-  ctx.globalAlpha=alpha;
+  // Outer glow
   var og=ctx.createRadialGradient(x,y,pr*.2,x,y,pr*2.3*gm);
-  og.addColorStop(0,'rgba('+col+',.16)');og.addColorStop(1,'rgba(0,0,0,0)');
+  og.addColorStop(0,'rgba('+col+',.15)');og.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.3*gm,0,TAU);ctx.fill();
 
-  // Shell ring — breathing
-  ctx.beginPath();ctx.arc(x,y,pr+2.5+Math.sin(GT*1.9)*1.6,0,TAU);
-  ctx.strokeStyle='rgba('+col+',.08)';ctx.lineWidth=1.5;ctx.stroke();
+  // Shell ring
+  ctx.beginPath();ctx.arc(x,y,pr+2.5+Math.sin(GT*1.9)*1.5,0,TAU);
+  ctx.strokeStyle='rgba('+col+',.09)';ctx.lineWidth=1.5;ctx.stroke();
 
-  // Interior clip region
-  ctx.save();
-  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.clip();
+  // Clip to interior
+  ctx.save();ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.clip();
 
-  // Dark base — space inside
+  // Dark space base
   ctx.globalAlpha=alpha;
-  ctx.fillStyle='rgba(4,2,14,.92)';
+  ctx.fillStyle='rgba(3,1,12,.92)';
   ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.fill();
 
-  // PLASMA BLOBS — 8 morphing radial gradient clouds
-  var blobDefs=[
-    {ax:.55,ay:.4,as:.18,bx:.32,by:.28,bs:.22,sz:.52,col:'140,60,255',al:.55},
-    {ax:.22,ay:.6,as:-.14,bx:.5,by:.42,bs:.19,sz:.48,col:'180,80,255',al:.5},
-    {ax:.65,ay:.62,as:.21,bx:.28,by:.55,bs:.16,sz:.44,col:'100,40,200',al:.45},
-    {ax:.38,ay:.32,as:-.17,bx:.6,by:.38,bs:.23,sz:.42,col:'200,120,255',al:.4},
-    {ax:.5,ay:.72,as:.13,bx:.42,by:.25,bs:.18,sz:.38,col:'220,160,255',al:.38},
-    {ax:.28,ay:.44,as:-.22,bx:.55,by:.65,bs:.14,sz:.35,col:'255,255,255',al:.22},
-    {ax:.7,ay:.38,as:.16,bx:.35,by:.7,bs:.21,sz:.32,col:'160,80,240',al:.3},
-    {ax:.42,ay:.55,as:-.12,bx:.62,by:.44,bs:.17,sz:.28,col:'240,200,255',al:.25},
-  ];
+  // Plasma blobs
+  for(var i=0;i<PLASMA.length;i++){
+    var p=PLASMA[i];
+    var bx=x+Math.cos(p.as*GT+p.ox*TAU)*pr*(p.ox*.65+.12);
+    var by2=y+Math.sin(p.bs*GT+p.oy*TAU)*pr*(p.oy*.65+.12);
+    var bsz=pr*p.sz*(0.65+.35*Math.sin(GT*p.bs*2.5+p.seed));
+    var bal=p.al*(0.55+.45*Math.sin(GT*.4+p.seed));
 
-  for(var bi=0;bi<blobDefs.length;bi++){
-    var bd=blobDefs[bi];
-    var bpx=x+Math.cos(bd.as*GT+bd.ax*TAU)*pr*(bd.ax*.7+.15);
-    var bpy=y+Math.sin(bd.bs*GT+bd.by*TAU)*pr*(bd.by*.7+.12);
-    var bsz=pr*bd.sz*(0.7+.3*Math.sin(GT*bd.bs*3+bi));
-    var bAl;
-    if(innerState===1){
-      // Color split — top half purple, bottom white/silver
-      if(bpy<y){
-        var pc=bi<5?'180,80,255':'140,60,220';
-        bAl=bd.al*(0.7+.3*Math.sin(GT*.4+bi));
-        var bg2=ctx.createRadialGradient(bpx,bpy,0,bpx,bpy,bsz);
-        bg2.addColorStop(0,'rgba('+pc+','+(bAl*.9)+')');
-        bg2.addColorStop(.5,'rgba('+pc+','+(bAl*.35)+')');
-        bg2.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.globalAlpha=alpha;ctx.fillStyle=bg2;
-        ctx.beginPath();ctx.arc(bpx,bpy,bsz,0,TAU);ctx.fill();
-      } else {
-        var wc=bi%2===0?'255,255,255':'200,180,255';
-        bAl=bd.al*(0.6+.4*Math.sin(GT*.35+bi));
-        var bg3=ctx.createRadialGradient(bpx,bpy,0,bpx,bpy,bsz);
-        bg3.addColorStop(0,'rgba('+wc+','+(bAl*.85)+')');
-        bg3.addColorStop(.5,'rgba('+wc+','+(bAl*.3)+')');
-        bg3.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.globalAlpha=alpha;ctx.fillStyle=bg3;
-        ctx.beginPath();ctx.arc(bpx,bpy,bsz,0,TAU);ctx.fill();
-      }
+    var bCol;
+    if(innerState===1&&typeof innerBlend==='number'){
+      // Split reveal — top half purple, bottom half white/silver
+      var blend=clamp(innerBlend,0,1);
+      bCol=(by2<y)?LTPURPLE:(i%2===0?'220,210,255':WHITE);
+      bal*=(0.7+blend*.6);
     } else {
-      // Pure purple plasma
-      bAl=bd.al*(0.6+.4*Math.sin(GT*.38+bi));
-      var bg4=ctx.createRadialGradient(bpx,bpy,0,bpx,bpy,bsz);
-      bg4.addColorStop(0,'rgba('+bd.col+','+(bAl*.9)+')');
-      bg4.addColorStop(.5,'rgba('+bd.col+','+(bAl*.3)+')');
-      bg4.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.globalAlpha=alpha;ctx.fillStyle=bg4;
-      ctx.beginPath();ctx.arc(bpx,bpy,bsz,0,TAU);ctx.fill();
+      bCol=p.col;
     }
+    var bg=ctx.createRadialGradient(bx,by2,0,bx,by2,bsz);
+    bg.addColorStop(0,'rgba('+bCol+','+bal*.9+')');
+    bg.addColorStop(.5,'rgba('+bCol+','+bal*.3+')');
+    bg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=alpha;ctx.fillStyle=bg;
+    ctx.beginPath();ctx.arc(bx,by2,bsz,0,TAU);ctx.fill();
   }
 
-  // Plasma tendrils — thin arcing lines
-  ctx.globalAlpha=alpha*.22;
+  // Plasma tendrils
+  ctx.globalAlpha=alpha*.2;
   for(var ti=0;ti<5;ti++){
-    var ta=GT*.25+ti*TAU/5;
-    var tr2=pr*(0.3+.2*Math.sin(GT*.4+ti*1.3));
-    ctx.strokeStyle='rgba(180,80,255,.6)';ctx.lineWidth=1;
-    ctx.shadowColor='rgba(180,80,255,1)';ctx.shadowBlur=4;
+    var ta=GT*.22+ti*TAU/5;
+    var tr=pr*(0.28+.18*Math.sin(GT*.4+ti*1.2));
+    ctx.strokeStyle='rgba('+PURPLE+',.6)';ctx.lineWidth=.9;
+    ctx.shadowColor='rgba('+PURPLE+',1)';ctx.shadowBlur=4;
     ctx.beginPath();
-    ctx.moveTo(x+Math.cos(ta)*tr2*.3,y+Math.sin(ta)*tr2*.3);
+    ctx.moveTo(x+Math.cos(ta)*tr*.25,y+Math.sin(ta)*tr*.25);
     ctx.quadraticCurveTo(
-      x+Math.cos(ta+.8)*tr2*.7,y+Math.sin(ta+.5)*tr2*.6,
-      x+Math.cos(ta+1.4)*tr2,y+Math.sin(ta+1.1)*tr2*.85
+      x+Math.cos(ta+.7)*tr*.65,y+Math.sin(ta+.45)*tr*.55,
+      x+Math.cos(ta+1.3)*tr,y+Math.sin(ta+1.0)*tr*.82
     );
     ctx.stroke();
   }
   ctx.shadowBlur=0;
 
-  // Bright core — pulsing with breath
-  var coreR=pr*.18*(1+Math.sin(GT*BREATH_FREQ*TAU)*.25);
+  // Pulsing bright core
+  var coreR=pr*.18*(1+Math.sin(GT*BREATH_FREQ*TAU)*.22);
   var cg=ctx.createRadialGradient(x,y,0,x,y,coreR);
-  cg.addColorStop(0,'rgba(255,255,255,.95)');
-  cg.addColorStop(.4,'rgba(200,140,255,.6)');
+  cg.addColorStop(0,'rgba(255,255,255,.96)');
+  cg.addColorStop(.4,'rgba(200,140,255,.55)');
   cg.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.globalAlpha=alpha*.85;ctx.fillStyle=cg;
+  ctx.globalAlpha=alpha*.88;ctx.fillStyle=cg;
   ctx.beginPath();ctx.arc(x,y,coreR,0,TAU);ctx.fill();
 
-  // SEAM when innerState===1 — glowing horizontal divide
-  if(innerState===1){
-    var seamA=clamp(innerBlend||.5,0,1);
-    ctx.globalAlpha=alpha*seamA*.75;
-    var seamGrad=ctx.createLinearGradient(x-pr,y,x+pr,y);
-    seamGrad.addColorStop(0,'rgba(255,255,255,0)');
-    seamGrad.addColorStop(.25,'rgba(180,80,255,.9)');
-    seamGrad.addColorStop(.5,'rgba(255,255,255,1)');
-    seamGrad.addColorStop(.75,'rgba(255,255,255,.9)');
-    seamGrad.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.strokeStyle=seamGrad;ctx.lineWidth=1.5;
-    ctx.shadowColor='rgba(255,255,255,1)';ctx.shadowBlur=8;
-    ctx.beginPath();ctx.moveTo(x-pr*.85,y);ctx.lineTo(x+pr*.85,y);ctx.stroke();
+  // Seam reveal — PARTICLES not a line
+  if(innerState===1&&innerBlend>0){
+    var ib=clamp(innerBlend,0,1);
+    var seamN=32;
+    for(var si=0;si<seamN;si++){
+      var sa=si/seamN*TAU+GT*.15;
+      var isPurple=si<seamN/2;
+      // Particles escape from equator toward their color's half
+      var esc=ib*(0.3+.5*Math.sin(GT*1.8+si*.4+1));
+      var spx=x+Math.cos(sa)*pr*(0.55+.3*Math.abs(Math.cos(sa)));
+      var spy=y+Math.sin(sa)*pr*.12-isPurple*pr*esc+(!isPurple)*pr*esc;
+      spy+=Math.sin(GT*2.5+si*.7)*ib*pr*.08;
+      spx+=Math.cos(GT*1.8+si*.5)*ib*pr*.06;
+      var sal=ib*(.35+.3*Math.sin(GT*1.5+si));
+      ctx.globalAlpha=alpha*sal;
+      ctx.shadowColor='rgba('+(isPurple?LTPURPLE:WHITE)+',1)';ctx.shadowBlur=3;
+      ctx.beginPath();ctx.arc(spx,spy,isPurple?1.8:1.4,0,TAU);
+      ctx.fillStyle='rgba('+(isPurple?LTPURPLE:WHITE)+',1)';ctx.fill();
+    }
     ctx.shadowBlur=0;
   }
 
   ctx.restore(); // end clip
 
-  // Specular highlight
+  // Specular
   ctx.beginPath();ctx.arc(x,y,pr,0,TAU);
-  var sp=ctx.createRadialGradient(x-pr*.28,y-pr*.36,0,x-pr*.1,y-pr*.18,pr*.5);
-  sp.addColorStop(0,'rgba(255,255,255,.45)');sp.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.globalAlpha=alpha*.5;ctx.fillStyle=sp;ctx.fill();
+  var sp2=ctx.createRadialGradient(x-pr*.28,y-pr*.36,0,x-pr*.1,y-pr*.18,pr*.5);
+  sp2.addColorStop(0,'rgba(255,255,255,.44)');sp2.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalAlpha=alpha*.5;ctx.fillStyle=sp2;ctx.fill();
 
   ctx.restore();
 }
 
-// Small version of orb for dance — no clip trick, just draw
+// Simple orb — for dance (no clip complexity)
 function drawSimpleOrb(x,y,r,col,alpha){
   if(alpha<=0||r<=0)return;
   ctx.save();ctx.globalAlpha=alpha;
   var pr=r*(1+Math.sin(GT*2.1)*.034);
-  // Glow
-  var og=ctx.createRadialGradient(x,y,pr*.2,x,y,pr*2.4);
-  og.addColorStop(0,'rgba('+col+',.16)');og.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.4,0,TAU);ctx.fill();
-  // Body
+  var og=ctx.createRadialGradient(x,y,pr*.2,x,y,pr*2.3);
+  og.addColorStop(0,'rgba('+col+',.15)');og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(x,y,pr*2.3,0,TAU);ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,pr+2,0,TAU);
+  ctx.strokeStyle='rgba('+col+',.08)';ctx.lineWidth=1.5;ctx.stroke();
   var bg=ctx.createRadialGradient(x-pr*.25,y-pr*.3,0,x,y,pr);
   bg.addColorStop(0,'rgba(255,255,255,.92)');
   bg.addColorStop(.28,'rgba('+col+',.96)');
   bg.addColorStop(1,'rgba(0,0,0,.55)');
-  ctx.globalAlpha=alpha*.88;ctx.fillStyle=bg;
-  ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.fill();
-  // Spec
+  ctx.globalAlpha=alpha*.88;ctx.fillStyle=bg;ctx.beginPath();ctx.arc(x,y,pr,0,TAU);ctx.fill();
   var sp=ctx.createRadialGradient(x-pr*.28,y-pr*.35,0,x-pr*.1,y-pr*.18,pr*.5);
-  sp.addColorStop(0,'rgba(255,255,255,.52)');sp.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.globalAlpha=alpha*.55;ctx.fillStyle=sp;ctx.fill();
+  sp.addColorStop(0,'rgba(255,255,255,.5)');sp.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalAlpha=alpha*.54;ctx.fillStyle=sp;ctx.fill();
   ctx.restore();
 }
 
-// ── CANVAS TEXT ──────────────────────────────────────────────
-function cText(text,x,y,sizePx,alpha,italic,col,spacing){
+// ── CAPTIONS ───────────────────────────────────────────────
+var captEl=document.getElementById('caption');
+var captInner=document.getElementById('captInner');
+var captQ=[],captRunning=false,captT=[];
+function qC(text,hold,delay){captQ.push({text:text,hold:hold||4000,delay:delay||0});if(!captRunning)nextCap();}
+function nextCap(){
+  if(!captQ.length){captRunning=false;return;}
+  captRunning=true;
+  var item=captQ.shift();
+  captT.push(setTimeout(function(){
+    captInner.innerHTML=item.text.replace(/\n/g,'<br>');
+    fadeTo(captEl,1,650,function(){
+      captT.push(setTimeout(function(){
+        fadeTo(captEl,0,800,function(){captT.push(setTimeout(nextCap,200));});
+      },item.hold));
+    });
+  },item.delay));
+}
+function fadeTo(el,to,dur,cb){
+  var from=parseFloat(el.style.opacity)||0,s=null;
+  function step(ts){if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);el.style.opacity=lerp(from,to,easeIO(p));if(p<1)requestAnimationFrame(step);else if(cb)cb();}
+  requestAnimationFrame(step);
+}
+function clearCaps(){captT.forEach(clearTimeout);captT=[];captQ=[];captRunning=false;captEl.style.opacity=0;captInner.textContent='';}
+function animFade(el,from,to,dur,ease,cb){
+  var s=null;
+  function step(ts){if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);el.style.opacity=lerp(from,to,(ease||easeOut)(p));if(p<1)requestAnimationFrame(step);else if(cb)cb();}
+  requestAnimationFrame(step);
+}
+
+// ── CANVAS TEXT ────────────────────────────────────────────
+function cText(text,x,y,sz,alpha,col){
   if(alpha<=0)return;
-  ctx.save();
-  ctx.globalAlpha=alpha;
+  ctx.save();ctx.globalAlpha=alpha;
   ctx.fillStyle='rgba('+(col||WHITE)+',1)';
   ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.font=(italic?'italic ':'')+'400 '+Math.round(sizePx)+'px Georgia,serif';
-  if(spacing){ctx.letterSpacing=spacing+'px';}
-  var lines=text.split('\n');
-  var lh=sizePx*1.85;
+  ctx.font='italic 400 '+Math.round(sz)+'px "Cormorant Garamond",Georgia,serif';
+  var lines=text.split('\n'),lh=sz*1.9;
   var top=y-(lines.length-1)*lh*.5;
   for(var i=0;i<lines.length;i++)ctx.fillText(lines[i],x,top+i*lh);
   ctx.restore();
 }
 
-// ── DANCING ORBS ────────────────────────────────────────────
-// Returns {o1:{x,y,z,s}, o2:{x,y,z,s}} — z is depth -1..1, s is scale
-function getDance(t){
-  var cx=W*.5,cy=H*.44;
-  var RX=W*.2,RY=H*.13;
-  var o1={
-    x:cx+Math.cos(t*.32)*RX*(0.65+.28*Math.cos(t*.58)),
-    y:cy+Math.sin(t*.32)*RY+Math.sin(t*.81)*H*.055,
-    z:Math.sin(t*.44)
-  };
-  o1.s=1+o1.z*.28;
-  var o2={
-    x:cx+Math.cos(t*.32+PI)*RX*(0.65+.28*Math.cos(t*.58+PI)),
-    y:cy+Math.sin(t*.32+PI)*RY+Math.sin(t*.81+PI)*H*.055,
-    z:Math.sin(t*.44+PI)
-  };
-  o2.s=1+o2.z*.28;
-  return {o1:o1,o2:o2};
+// ── VIBRATION ──────────────────────────────────────────────
+var lastVibBreath=0,flashVibrated=false;
+function vibrate(pattern){if(navigator.vibrate)navigator.vibrate(pattern);}
+
+// ── DANCE ORBS ────────────────────────────────────────────
+var DA={x:0,y:0,vx:.9,vy:.5};
+var DB={x:0,y:0,vx:-.8,vy:-.6};
+var DBLEND=0;       // 0=split 1=merged
+var DFLASH=0;       // merge flash alpha
+var DTITLE=null;    // title bounds {cx,cy,hw,hh}
+var DANCE_INIT=false;
+var DOR=0;          // dance orb radius (set at runtime)
+
+function initDance(){
+  if(DANCE_INIT)return;
+  DANCE_INIT=true;
+  DA.x=W*.28;DA.y=H*.44;
+  DB.x=W*.72;DB.y=H*.56;
+  DOR=W*.065;
+  // Approximate title bounds (center screen, roughly)
+  DTITLE={cx:W*.5,cy:H*.5,hw:W*.26,hh:H*.09};
 }
 
-// Merge state for background loop during title (periodic)
-var MERGE_PERIOD=8;
-function getMergeBlend(t){
-  var ph=(t%MERGE_PERIOD)/MERGE_PERIOD;
-  if(ph<.3)return 0;
-  if(ph<.42)return(ph-.3)/.12;
-  if(ph<.58)return 1;
-  if(ph<.7)return 1-(ph-.58)/.12;
-  return 0;
-}
+function tickDance(){
+  initDance();
+  // Random wander
+  if(Math.random()<.022){DA.vx+=rnd(-.35,.35);}
+  if(Math.random()<.022){DA.vy+=rnd(-.35,.35);}
+  if(Math.random()<.022){DB.vx+=rnd(-.35,.35);}
+  if(Math.random()<.022){DB.vy+=rnd(-.35,.35);}
+  // Speed limit
+  var ms=1.8;
+  DA.vx=clamp(DA.vx,-ms,ms);DA.vy=clamp(DA.vy,-ms,ms);
+  DB.vx=clamp(DB.vx,-ms,ms);DB.vy=clamp(DB.vy,-ms,ms);
+  // Soft boundary
+  var mg=.1;
+  if(DA.x<W*mg)DA.vx+=.18;if(DA.x>W*(1-mg))DA.vx-=.18;
+  if(DA.y<H*mg)DA.vy+=.18;if(DA.y>H*(1-mg))DA.vy-=.18;
+  if(DB.x<W*mg)DB.vx+=.18;if(DB.x>W*(1-mg))DB.vx-=.18;
+  if(DB.y<H*mg)DB.vy+=.18;if(DB.y>H*(1-mg))DB.vy-=.18;
+  DA.x+=DA.vx;DA.y+=DA.vy;
+  DB.x+=DB.vx;DB.y+=DB.vy;
 
-// ── CINEMATIC WALL (side scroll) ─────────────────────────────
-function drawWall(x,topH,botY,alpha,gapCol){
-  if(alpha<=0)return;
-  var ww=clamp(W*.048,26,52);
-  var gc=gapCol||'100,160,200';
-  ctx.save();
-  for(var d=3;d>=1;d--){
-    ctx.globalAlpha=alpha*.07*d;
-    ctx.fillStyle='rgba(4,6,12,'+(0.9-d*.07)+')';
-    ctx.fillRect(x-ww*.5+d*4,0,ww,topH);
-    ctx.fillRect(x-ww*.5+d*4,botY,ww,H-botY);
+  var dx=DA.x-DB.x,dy=DA.y-DB.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+
+  // Title collision → SPLIT apart
+  if(DTITLE&&DBLEND>.35){
+    var inA=Math.abs(DA.x-DTITLE.cx)<DTITLE.hw+DOR&&Math.abs(DA.y-DTITLE.cy)<DTITLE.hh+DOR;
+    var inB=Math.abs(DB.x-DTITLE.cx)<DTITLE.hw+DOR&&Math.abs(DB.y-DTITLE.cy)<DTITLE.hh+DOR;
+    if(inA||inB){
+      DBLEND=Math.max(0,DBLEND-.12);
+      if(inA){DA.vx*=-1.15;DA.vy+=rnd(-.3,.3);}
+      if(inB){DB.vx*=-1.15;DB.vy+=rnd(-.3,.3);}
+      burst(inA?DA.x:DB.x,inA?DA.y:DB.y,4,2,LTPURPLE,true,.005);
+      burst(inA?DA.x:DB.x,inA?DA.y:DB.y,4,2,WHITE,true,.005);
+    }
   }
-  var wg=ctx.createLinearGradient(x-ww*.5,0,x+ww*.5,0);
-  wg.addColorStop(0,'rgba(6,9,16,.97)');wg.addColorStop(.48,'rgba(16,20,32,.97)');
-  wg.addColorStop(.52,'rgba(16,20,32,.97)');wg.addColorStop(1,'rgba(4,7,13,.97)');
-  ctx.globalAlpha=alpha;ctx.fillStyle=wg;
-  ctx.fillRect(x-ww*.5,0,ww,topH);ctx.fillRect(x-ww*.5,botY,ww,H-botY);
-  ctx.shadowColor='rgba('+gc+',.9)';ctx.shadowBlur=14;
-  ctx.strokeStyle='rgba('+gc+',.42)';ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.moveTo(x-ww*.5,topH);ctx.lineTo(x+ww*.5,topH);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x-ww*.5,botY);ctx.lineTo(x+ww*.5,botY);ctx.stroke();
-  ctx.shadowBlur=0;
-  var gapH=botY-topH,gcy=topH+gapH*.5;
-  if(gapH>0){
-    var gg=ctx.createRadialGradient(x,gcy,0,x,gcy,gapH*.8);
-    gg.addColorStop(0,'rgba('+gc+',.05)');gg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=gg;ctx.fillRect(x-gapH,gcy-gapH,gapH*2,gapH*2);
+  // Orb collision → MERGE
+  if(dist<DOR*2.2&&DBLEND<.4){
+    DBLEND=Math.min(DBLEND+.06,1);
+    DFLASH=Math.min(DFLASH+.12,1);
+    if(DBLEND>.9){burst((DA.x+DB.x)*.5,(DA.y+DB.y)*.5,6,2,PURPLE,true,.005);}
   }
-  ctx.restore();
+  // Natural split when far
+  if(dist>DOR*7&&DBLEND>.6){DBLEND=Math.max(DBLEND-.025,0);}
+
+  DFLASH=Math.max(0,DFLASH-.04);
 }
 
-// ── CHAFF STATE ──────────────────────────────────────────────
-var chaffFired=false;
+// ── SCENE STATE ────────────────────────────────────────────
+var bigLine2Shown=false;
+var bigLine2Alpha=0;
+var flashFired=false;
 
-// ── MAIN DRAW ────────────────────────────────────────────────
+// ── MAIN DRAW ──────────────────────────────────────────────
 function draw(){
   var T=GT;
-
-  // Clear
   ctx.fillStyle='#06080d';ctx.fillRect(0,0,W,H);
 
-  // ── SCENE: VOID (0-3) ────────────────────────────────────
-  if(T<TL.voidEnd){
-    var p=T/TL.voidEnd;
-    drawSpace(easeOut(p)*.4);
-    // Purple shockwave ring from center
-    var rr=W*.75*p;
-    ctx.save();ctx.globalAlpha=easeOut(p*2.5)*.07*(1-p*.85);
-    ctx.strokeStyle='rgba('+PURPLE+',.8)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.arc(W*.5,H*.5,rr,0,TAU);ctx.stroke();ctx.restore();
-    drawVignette(.95);
+  // Color temperature — cold blue early, warm purple by split
+  var temp=clamp(T/TL.splitStart,0,1);
+
+  // PRE-START ambient (tap screen)
+  if(!STARTED){
+    drawSpace(.5);
+    // Single dim orb behind tap text
+    drawOrb(W*.5,H*.5,W*.09,PURPLE,.18,0,0,1);
+    drawVignette(.88);
+    // Tick particles
+    for(var pi=pts.length-1;pi>=0;pi--){pts[pi].tick();pts[pi].draw();if(pts[pi].life<=0)pts.splice(pi,1);}
     return;
   }
 
-  // ── SCENE: ORB ENTRANCE (3-6.5) ──────────────────────────
-  if(T<TL.entryEnd){
+  // ── VOID (0-3) ──────────────────────────────────────────
+  if(T<TL.voidEnd){
+    var p=T/TL.voidEnd;
+    drawSpace(easeOut(p)*.45);
+    var rr=W*.75*p;
+    ctx.save();ctx.globalAlpha=easeOut(p*2.5)*.07*(1-p*.88);
+    ctx.strokeStyle='rgba('+PURPLE+',.8)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(W*.5,H*.5,rr,0,TAU);ctx.stroke();ctx.restore();
+    drawVignette(.94);
+  }
+
+  // ── ENTRY (3-6.5) ───────────────────────────────────────
+  else if(T<TL.entryEnd){
     var ep=phase(T,TL.voidEnd,TL.entryEnd-TL.voidEnd);
-    drawSpace(.55);
-    // Orb grows from a single point of light
+    drawSpace(.5);
     var er=W*.12*easeOut4(ep);
-    var ea=easeOut(ep);
-    // Entrance burst
-    if(ep<.05&&Math.random()<.6)burst(W*.5,H*.5,4,rnd(2,5),PURPLE,true,.008);
-    // Purple bloom blooms in first
-    ctx.save();ctx.globalAlpha=ea*.12;
+    if(ep<.06&&Math.random()<.5)burst(W*.5,H*.5,3,rnd(2,5),PURPLE,true,.007);
+    // Purple bloom blooms in
+    ctx.save();ctx.globalAlpha=easeOut(ep)*.1;
     var pb=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.5);
     pb.addColorStop(0,'rgba('+PURPLE+',.4)');pb.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=pb;ctx.fillRect(0,0,W,H);ctx.restore();
-
-    drawRichOrb(W*.5,H*.5,er,PURPLE,ea,0);
+    drawOrb(W*.5,H*.5,er,PURPLE,easeOut(ep),0,0);
     drawVignette(.82);
-    return;
   }
 
-  // ── SHARED SPACE FOR PHASES > 6.5 ───────────────────────
-  drawSpace(.58);
-
-  // Purple bloom behind orb — persistent
-  ctx.save();ctx.globalAlpha=.1;
-  var pb2=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.55);
-  pb2.addColorStop(0,'rgba('+PURPLE+',.35)');pb2.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=pb2;ctx.fillRect(0,0,W,H);ctx.restore();
-
-  // ── SCENE: BREATH (6.5-27.5) — orb + cycling "Breath" text
-  if(T<TL.breathEnd){
+  // ── BREATH (6.5-20.5) ───────────────────────────────────
+  else if(T<TL.breathEnd){
     var bT=T-TL.breathStart;
-    var cycleDur=7;
-    var cycle=Math.floor(bT/cycleDur);
-    var cT=bT%cycleDur;
-    var breathTextAlpha=0;
-    if(cycle<3){
-      if(cT<1)breathTextAlpha=cT;
-      else if(cT<4)breathTextAlpha=1;
-      else if(cT<6)breathTextAlpha=1-(cT-4)/2;
-      else breathTextAlpha=0;
+    var cycle=Math.floor(bT/7);
+    var cT=bT%7;
+    var breathA=0;
+    if(cycle<2){
+      if(cT<1)breathA=cT;
+      else if(cT<4)breathA=1;
+      else if(cT<6)breathA=1-(cT-4)/2;
     }
-    // Orb — just pulses and breathes
-    drawRichOrb(W*.5,H*.5,W*.12,PURPLE,1,0);
-    // "Breath" text — positioned below orb center so orb is clear
-    cText('Breath',W*.5,H*.64,clamp(W*.055,28,42),breathTextAlpha,true,WHITE,2);
+    drawSpace(temp*.7);
+    // Ambient bloom
+    ctx.save();ctx.globalAlpha=.08;
+    var pb2=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.5);
+    pb2.addColorStop(0,'rgba('+PURPLE+',.32)');pb2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb2;ctx.fillRect(0,0,W,H);ctx.restore();
+    // Breath rings
+    for(var ri=0;ri<5;ri++){
+      var rp=((GT*BREATH_FREQ+ri*.2)%1);
+      ctx.save();ctx.globalAlpha=Math.max(0,(1-rp)*.09);
+      ctx.strokeStyle='rgba('+PURPLE+',.7)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(W*.5,H*.5,W*.12*(1+rp*5),0,TAU);ctx.stroke();ctx.restore();
+    }
+    // Vibrate on breath peak
+    var bPeak=Math.sin(GT*BREATH_FREQ*TAU)>.92;
+    if(bPeak&&GT-lastVibBreath>2){vibrate(55);lastVibBreath=GT;}
+    drawOrb(W*.5,H*.5,W*.12,PURPLE,1,0,0);
+    cText('Breath',W*.5,H*.65,clamp(W*.054,26,40),breathA,'255,255,255');
     drawVignette(.8);
-    return;
   }
 
-  // ── SCENE: FEEL THE PULSE (27.5-34) ─────────────────────
-  if(T<TL.pulseEnd){
-    var scatterP=phase(T,TL.pulseScatter,2);
-    // Chaff particles fire once
-    if(!chaffFired&&T>=TL.pulseScatter){
-      chaffFired=true;
-      burstUp(W*.5,H*.62,50,2.5,WHITE);
-    }
+  // ── FEEL THE PULSE (20.5-26) ─────────────────────────────
+  else if(T<TL.pulseEnd){
+    drawSpace(temp*.8);
+    ctx.save();ctx.globalAlpha=.09;
+    var pb3=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.52);
+    pb3.addColorStop(0,'rgba('+PURPLE+',.32)');pb3.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb3;ctx.fillRect(0,0,W,H);ctx.restore();
+    var scatterP=phase(T,TL.pulseScatter,1.8);
+    // Text
     var pulseA;
-    if(T<TL.pulseScatter){
-      pulseA=Math.min(phase(T,TL.pulseTextIn,.8),1);
-    } else {
-      pulseA=Math.max(1-scatterP*1.5,0);
+    if(T<TL.pulseScatter)pulseA=Math.min(phase(T,TL.pulseTextIn,.8),1);
+    else pulseA=Math.max(1-scatterP*1.8,0);
+    // Scatter: emit from text position outward
+    if(scatterP>.02&&scatterP<.7&&Math.random()<.6){
+      var tx2=W*.5+rnd(-W*.25,W*.25);
+      var ty2=H*.65+rnd(-20,20);
+      pts.push(new Pt(tx2,ty2,rnd(-1.5,1.5),rnd(-3,-0.5),rnd(.8,2),rnd(1.2,2.8),WHITE,true,-.003));
     }
-    // Orb glows stronger as scatter begins
-    var extraGlow=1+scatterP*.4;
-    drawRichOrb(W*.5,H*.5,W*.12,PURPLE,1,0,extraGlow);
-    cText('Feel the pulse',W*.5,H*.63,clamp(W*.04,20,32),pulseA,true,WHITE,1);
+    var extraG=1+scatterP*.45;
+    drawOrb(W*.5,H*.5,W*.12,PURPLE,1,0,0,extraG);
+    cText('Feel the pulse',W*.5,H*.65,clamp(W*.042,20,32),pulseA,'255,255,255');
     drawVignette(.78);
-    return;
   }
 
-  // ── SCENE: THE SPLIT IS NOT A GAME (34-42) ───────────────
-  if(T<TL.bigTextOut){
-    var btp=phase(T,TL.bigTextIn,.8);
-    var bta;
-    if(T<TL.bigTextOut-.8)bta=easeOut(btp);
-    else bta=1-phase(T,TL.bigTextOut-.8,.8);
-    // Inner state transitions at 38s
+  // ── BIG TEXT (26-36) ─────────────────────────────────────
+  else if(T<TL.bigTextOut){
+    drawSpace(temp*.9);
+    ctx.save();ctx.globalAlpha=.1;
+    var pb4=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.55);
+    pb4.addColorStop(0,'rgba('+PURPLE+',.35)');pb4.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pb4;ctx.fillRect(0,0,W,H);ctx.restore();
+    // Two-stage text reveal
+    var line1A,line2A;
+    var l1in=phase(T,TL.bigTextIn,.8);
+    var l1out=T>=TL.bigTextOut-.9?1-phase(T,TL.bigTextOut-.9,.9):0;
+    line1A=easeOut(l1in)*(1-easeIn(l1out));
+    var l2in=phase(T,TL.bigTextLine2,.9);
+    var l2out=T>=TL.bigTextOut-.9?1-phase(T,TL.bigTextOut-.9,.9):0;
+    line2A=easeOut(l2in)*(1-easeIn(l2out));
     var iState=(T>=TL.innerExpose)?1:0;
     var iBlend=clamp(phase(T,TL.innerExpose,2.5),0,1);
-    // Orb has growing energy
-    var bigGlow=1+iBlend*.5;
-    drawRichOrb(W*.5,H*.5,W*.12,PURPLE,1,iState,bigGlow,iBlend);
-    // Extra particle burst as inner state changes
-    if(iBlend>.04&&iBlend<.5&&Math.random()<.2){
-      burst(W*.5+rnd(-W*.12,W*.12),H*.5-rnd(0,W*.04),2,rnd(2,4),LTPURPLE,true,.005);
-      burst(W*.5+rnd(-W*.12,W*.12),H*.5+rnd(0,W*.04),2,rnd(2,4),WHITE,true,.005);
+    var bigGlow=1+iBlend*.55;
+    // Emit colored particles as reveal happens
+    if(iBlend>.06&&iBlend<.55&&Math.random()<.22){
+      burst(W*.5+rnd(-W*.12,W*.12),H*.5-rnd(0,W*.06),3,rnd(1.8,3.8),LTPURPLE,true,.005);
+      burst(W*.5+rnd(-W*.12,W*.12),H*.5+rnd(0,W*.06),3,rnd(1.8,3.8),WHITE,true,.005);
     }
-    var txtSize=clamp(W*.038,18,30);
-    cText('The split is not a game.\nIt is something that happens\nwhen you\'re ready\nto pay attention.',W*.5,H*.71,txtSize,bta*clamp(btp*2,0,1),true,WHITE,1);
+    drawOrb(W*.5,H*.5,W*.12,PURPLE,1,iState,iBlend,bigGlow);
+    var sz=clamp(W*.04,18,30);
+    cText('The split is not a game.',W*.5,H*.67,sz,line1A,'255,255,255');
+    cText('It is something that happens\nwhen you\'re ready\nto pay attention.',W*.5,H*.78,sz*.88,line2A,'220,200,255');
     drawVignette(.8);
-    return;
   }
 
-  // ── SCENE: SPLIT TRANSITION (42-46) ──────────────────────
-  if(T<TL.splitEnd){
+  // ── SELF TEAR (36-54, flash at T=50) ────────────────────
+  else if(T<TL.splitEnd){
     var sp=phase(T,TL.splitStart,TL.splitEnd-TL.splitStart);
-    // Wall approach during split — two gap wall rises
-    var wallAlpha=Math.min(sp*3,.85);
-    var wallX=W*.65;
-    var g1CY=H*.3,g1H=H*.17;
-    var g2CY=H*.7,g2H=H*.17;
-    drawWall(wallX,0,g1CY-g1H*.5,wallAlpha,LTPURPLE);
-    drawWall(wallX,g1CY+g1H*.5,g2CY-g2H*.5,wallAlpha,'200,180,255');
-    drawWall(wallX,g2CY+g2H*.5,H,wallAlpha,WHITE);
+    drawSpace(1);
+    // Purple atmosphere
+    ctx.save();ctx.globalAlpha=.1;
+    var satm=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.6);
+    satm.addColorStop(0,'rgba('+PURPLE+',.4)');satm.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=satm;ctx.fillRect(0,0,W,H);ctx.restore();
 
-    // Orb approaches, trembles, compresses, TEARS
-    var p0=.12,p1=.24,p2=.46,p3=.62,p4=.75;
-    var sox,soy,sor=W*.1,ssx=1,ssy=1;
-    var isSplit=false,topY=H*.5,botY2=H*.5;
+    var p0=SP.p0,p1=SP.p1,p2=SP.p2,p3=SP.p3,p4=SP.p4;
+    var sox=W*.5,soy=H*.5,sor=W*.12;
+    var ssx=1,ssy=1;
+    var isSplit=false,topOY=H*.5,botOY=H*.5;
 
-    if(sp<=p0){sox=lerp(W*.1,wallX-W*.22,easeOut(sp/p0));soy=H*.5;}
-    else if(sp<=p1){sox=wallX-W*.22;soy=H*.5;}
-    else if(sp<=p2){
-      var tp=sp-p1;var ta=clamp(tp/.03*2,0,16);
-      sox=wallX-W*.22+Math.sin(GT*16+tp*8)*ta+Math.sin(GT*24)*ta*.35;
-      soy=H*.5+Math.sin(GT*14)*ta*.7+Math.sin(GT*22)*ta*.28;
-      // Wall shudder back
-      var wsh=Math.sin(GT*12)*ta*.3;
-      drawWall(wallX+wsh,0,g1CY-g1H*.5,wallAlpha,LTPURPLE);
-      if(Math.random()<.25)burst(sox,soy,3,1.8,PURPLE,false,.008);
+    // Phase 0: stable orb
+    if(sp<=p0){
+      // Just show orb with full inner split reveal
+      drawOrb(sox,soy,sor,PURPLE,1,1,1,1);
     }
+    // Phase 1: seam particles intensify — handled inside drawOrb
+    else if(sp<=p1){
+      var ib2=clamp((sp-p0)/(p1-p0),0,1);
+      drawOrb(sox,soy,sor,PURPLE,1,1,ib2,1);
+    }
+    // Phase 2: trembling begins, seam particles stream outward
+    else if(sp<=p2){
+      var tp=easeIn((sp-p1)/(p2-p1));
+      var ta=clamp(tp*14,0,16);
+      sox=W*.5+Math.sin(GT*15+tp*7)*ta+Math.sin(GT*23)*ta*.35;
+      soy=H*.5+Math.sin(GT*13)*ta*.7;
+      // Emit purple up, white down continuously
+      if(Math.random()<.4){
+        pts.push(new Pt(sox+rnd(-sor*.6,sor*.6),soy-sor*.2,rnd(-.5,.5),rnd(-1.8,-.3),rnd(1,2.5),rnd(1,2),LTPURPLE,true,.004));
+        pts.push(new Pt(sox+rnd(-sor*.6,sor*.6),soy+sor*.2,rnd(-.5,.5),rnd(.3,1.8),rnd(1,2.5),rnd(1,2),WHITE,true,.004));
+      }
+      drawOrb(sox,soy,sor,PURPLE,1,1,1,1);
+    }
+    // Phase 3: squish/compress
     else if(sp<=p3){
       var sq=easeIn((sp-p2)/(p3-p2));
-      sox=wallX-W*.22+Math.sin(GT*9)*3;soy=H*.5;
+      sox=W*.5+Math.sin(GT*9)*3;soy=H*.5;
       ssx=1-sq*.42;ssy=1+sq*.26;
-      // Color seam
-      ctx.save();ctx.globalAlpha=sq*.4;
-      var seam=ctx.createLinearGradient(sox,soy-sor*2.2,sox,soy+sor*2.2);
-      seam.addColorStop(0,'rgba('+LTPURPLE+',.9)');
-      seam.addColorStop(.5,'rgba(255,255,255,1)');
-      seam.addColorStop(1,'rgba('+WHITE+',.9)');
-      ctx.strokeStyle=seam;ctx.lineWidth=2.5+sq*3;
-      ctx.beginPath();ctx.moveTo(sox,soy-sor*2.2);ctx.lineTo(sox,soy+sor*2.2);ctx.stroke();
-      ctx.restore();
-      if(Math.random()<.3)burst(sox,soy,2,1.2,PURPLE,false,.006);
-    }
-    else if(sp<=p4){
-      var tp3=(sp-p3)/(p4-p3),fl=1-tp3;
-      ctx.save();ctx.globalAlpha=fl*.5;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();
-      if(tp3<.35&&Math.random()<.9){
-        burst(wallX-W*.22,H*.5,7,rnd(2.5,6),LTPURPLE,true,.007);
-        burst(wallX-W*.22,H*.5,7,rnd(2.5,6),WHITE,true,.007);
+      // Intensifying escape — streams of particles
+      if(Math.random()<.55){
+        pts.push(new Pt(sox+rnd(-sor*.5,sor*.5),soy-rnd(0,sor*.3),rnd(-1,1),rnd(-2.5,-.5),rnd(1.5,3),rnd(.8,1.8),LTPURPLE,true,.004));
+        pts.push(new Pt(sox+rnd(-sor*.5,sor*.5),soy+rnd(0,sor*.3),rnd(-1,1),rnd(.5,2.5),rnd(1.5,3),rnd(.8,1.8),WHITE,true,.004));
       }
-      isSplit=true;
-      topY=H*.5-tp3*H*.2;botY2=H*.5+tp3*H*.2;
-      sox=wallX-W*.22;
-    }
-    else{
-      isSplit=true;
-      var np=easeOut4((sp-p4)/(1-p4));
-      topY=lerp(H*.5-H*.2,g1CY,phase(sp,p4,1-p4)*3);
-      botY2=lerp(H*.5+H*.2,g2CY,phase(sp,p4,1-p4)*3);
-      sox=lerp(wallX-W*.22,wallX+W*.28,np);
-      if(Math.random()<.2){
-        burst(sox,topY,2,1,LTPURPLE,true,.006);
-        burst(sox,botY2,2,1,WHITE,true,.006);
-      }
-    }
-
-    if(!isSplit){
+      // Light crack
+      ctx.save();ctx.globalAlpha=sq*.35;
+      var crack=ctx.createLinearGradient(sox-sor,soy,sox+sor,soy);
+      crack.addColorStop(0,'rgba('+LTPURPLE+',0)');
+      crack.addColorStop(.3,'rgba('+LTPURPLE+',.8)');
+      crack.addColorStop(.5,'rgba(255,255,255,1)');
+      crack.addColorStop(.7,'rgba('+WHITE+',.8)');
+      crack.addColorStop(1,'rgba('+WHITE+',0)');
+      ctx.strokeStyle=crack;ctx.lineWidth=2+sq*3;
+      ctx.shadowColor='rgba(255,255,255,1)';ctx.shadowBlur=10;
+      ctx.beginPath();ctx.moveTo(sox-sor*.9,soy);ctx.lineTo(sox+sor*.9,soy);ctx.stroke();
+      ctx.shadowBlur=0;ctx.restore();
       ctx.save();ctx.translate(sox,soy);ctx.scale(ssx,ssy);ctx.translate(-sox,-soy);
-      drawRichOrb(sox,soy,sor,PURPLE,1,1);ctx.restore();
-    } else {
-      drawSimpleOrb(sox,topY,sor*.88,LTPURPLE,1);
-      drawSimpleOrb(sox,botY2,sor*.88,WHITE,1);
-      if(Math.abs(topY-botY2)>sor*2){
-        ctx.save();ctx.globalAlpha=.14;ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;
-        ctx.setLineDash([3,7]);ctx.beginPath();ctx.moveTo(sox,topY+sor);ctx.lineTo(sox,botY2-sor);ctx.stroke();
+      drawOrb(sox,soy,sor,PURPLE,1,1,1,1);ctx.restore();
+    }
+    // Phase 4: WHITE FLASH at p4 (T=50)
+    else if(sp<=p4){
+      var tp4=(sp-p3)/(p4-p3);
+      // Flash ramps up fast
+      var flashBuild=easeOut4(tp4);
+      // Final burst stream
+      if(Math.random()<.7){
+        pts.push(new Pt(W*.5+rnd(-sor*.4,sor*.4),H*.5-sor*.1,rnd(-2,2),rnd(-3.5,-.8),rnd(2,4),rnd(.6,1.5),LTPURPLE,true,.005));
+        pts.push(new Pt(W*.5+rnd(-sor*.4,sor*.4),H*.5+sor*.1,rnd(-2,2),rnd(.8,3.5),rnd(2,4),rnd(.6,1.5),WHITE,true,.005));
+      }
+      ctx.save();ctx.globalAlpha=flashBuild*.75;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();
+      // Vibrate on flash
+      if(!flashVibrated&&flashBuild>.6){vibrate(350);flashVibrated=true;}
+    }
+    // Phase 5: post-flash — two orbs emerge from white
+    else{
+      var postP=easeOut4((sp-p4)/(1-p4));
+      // Flash fades fast
+      var fl2=Math.max(0,1-postP*3);
+      if(fl2>0){ctx.save();ctx.globalAlpha=fl2*.7;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();}
+      // Burst on reveal
+      if(postP<.08&&Math.random()<.8){
+        burst(W*.5,H*.5,8,rnd(3,7),LTPURPLE,true,.006);
+        burst(W*.5,H*.5,8,rnd(3,7),WHITE,true,.006);
+      }
+      // Two orbs drift apart gracefully
+      var driftP=easeOut(postP)*H*.18;
+      var orbAlpha=Math.min(postP*4,1);
+      drawSimpleOrb(W*.5,H*.5-driftP,sor*.88,LTPURPLE,orbAlpha);
+      drawSimpleOrb(W*.5,H*.5+driftP,sor*.88,WHITE,orbAlpha);
+      // Connecting thread fades
+      if(driftP>8){
+        ctx.save();ctx.globalAlpha=(1-postP)*.18;
+        ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;ctx.setLineDash([3,7]);
+        ctx.beginPath();ctx.moveTo(W*.5,H*.5-driftP+sor*.88);ctx.lineTo(W*.5,H*.5+driftP-sor*.88);ctx.stroke();
         ctx.setLineDash([]);ctx.restore();
       }
     }
-    drawVignette(.78);
-    return;
+    drawVignette(.76);
   }
 
-  // ── DANCE + CAPTIONS + TITLE (46+) ───────────────────────
-  var dT=T-TL.danceStart;
-  drawPerspGrid(.04,'rgba('+PURPLE+',.55)');
+  // ── DANCE + CAPTIONS + TITLE (54+) ──────────────────────
+  else{
+    var dT=T-TL.danceStart;
+    drawSpace(1);
+    drawPerspGrid(.035,'rgba('+PURPLE+',.5)');
+    // Background purple atmosphere
+    ctx.save();ctx.globalAlpha=.07;
+    var datm=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.65);
+    datm.addColorStop(0,'rgba('+PURPLE+',.4)');datm.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=datm;ctx.fillRect(0,0,W,H);ctx.restore();
 
-  // Get orb dance positions
-  var pos=getDance(dT);
-  var o1=pos.o1,o2=pos.o2;
-  var baseR=W*.08;
+    tickDance();
 
-  // Merge blend (for title hold loop)
-  var mergeBlend=T>=TL.titleFull?getMergeBlend(dT):0;
-  var mx=lerp((o1.x+o2.x)*.5,W*.5,mergeBlend);
-  var my=lerp((o1.y+o2.y)*.5,H*.5,mergeBlend);
-
-  // Emit trails
-  if(mergeBlend<.5&&Math.random()<.35){
-    pts.push(new Pt(o1.x+rnd(-3,3),o1.y+rnd(-3,3),rnd(-.3,.3),rnd(-.5,-.1),rnd(.8,1.8),rnd(1,2.2),LTPURPLE,false,.004));
-    pts.push(new Pt(o2.x+rnd(-3,3),o2.y+rnd(-3,3),rnd(-.3,.3),rnd(-.5,-.1),rnd(.8,1.8),rnd(1,2.2),WHITE,false,.004));
-  }
-
-  // Draw orbs in Z order (farther one first)
-  if(mergeBlend>.8){
-    // Merging into single orb
-    var mfl=(mergeBlend>.9)?Math.sin((mergeBlend-.9)/.1*PI)*.3:0;
-    if(mfl>.05){ctx.save();ctx.globalAlpha=mfl*.35;ctx.fillStyle='rgba('+PURPLE+',.5)';ctx.fillRect(0,0,W,H);ctx.restore();}
-    if(mergeBlend>.9&&Math.random()<.4){burst(mx,my,3,rnd(1.5,3.5),PURPLE,true,.006);}
-    drawSimpleOrb(mx,my,baseR*(1+mergeBlend*.15),PURPLE,1);
-  } else {
-    var o1first=o1.z<o2.z;
-    var fa=o1first?[o1,o2]:[o2,o1];
-    var fc=[o1first?LTPURPLE:WHITE,o1first?WHITE:LTPURPLE];
-    for(var oi=0;oi<2;oi++){
-      var ob=fa[oi],oc=fc[oi];
-      var dAlpha=clamp(1-mergeBlend*3,0,1)+mergeBlend*.3;
-      drawSimpleOrb(ob.x,ob.y,baseR*clamp(ob.s,.6,1.4),oc,dAlpha);
+    // Merge flash
+    if(DFLASH>.02){
+      ctx.save();ctx.globalAlpha=DFLASH*.3;ctx.fillStyle='rgba('+PURPLE+',.6)';ctx.fillRect(0,0,W,H);ctx.restore();
     }
+
+    // Draw orbs in Z order — use DA.vy as proxy for depth
+    var aFront=DA.vy>0;
+    if(DBLEND>.85){
+      // Merged
+      var mc={x:lerp(DA.x,DB.x,.5),y:lerp(DA.y,DB.y,.5)};
+      drawSimpleOrb(mc.x,mc.y,DOR*(1+DBLEND*.12),PURPLE,1);
+    } else {
+      var first=aFront?DB:DA,second=aFront?DA:DB;
+      var fcol=aFront?WHITE:LTPURPLE,scol=aFront?LTPURPLE:WHITE;
+      var fAlpha=clamp(1-DBLEND*.6,.4,1);
+      drawSimpleOrb(first.x,first.y,DOR,fcol,fAlpha);
+      drawSimpleOrb(second.x,second.y,DOR,scol,fAlpha);
+    }
+
+    // Captions
+    var capts=[
+      {s:TL.c1s,e:TL.c1e,t:'Not Destroyed.\n\nTransformed.'},
+      {s:TL.c2s,e:TL.c2e,t:'The rhythm was always there.\nIt took everything to hear it.'},
+      {s:TL.c3s,e:TL.c3e,t:'Those who reach the third state,\nthe oldest light,\n\ndo not speak of what they saw.'},
+      {s:TL.c4s,e:TL.c4e,t:'The universe remembers them\ndifferently.'},
+      {s:TL.c5s,e:TL.c5e,t:'You\'ll know it\nwhen you feel it.'},
+    ];
+    var csz=clamp(W*.038,18,27);
+    for(var ci=0;ci<capts.length;ci++){
+      var ca=capts[ci];
+      if(T<ca.s||T>ca.e)continue;
+      var cfa=Math.min(phase(T,ca.s,.85),1)*Math.min(1-phase(T,ca.e-.85,.85),1);
+      cText(ca.t,W*.5,H*.77,csz,cfa,'255,255,255');
+    }
+
+    // Background dims as title approaches
+    if(T>=TL.c5s){
+      var dBack=Math.min(phase(T,TL.c5s,1.5),1)*.6;
+      ctx.save();ctx.globalAlpha=dBack;ctx.fillStyle='#06080d';ctx.fillRect(0,0,W,H);ctx.restore();
+    }
+
+    // Title
+    if(T>=TL.titleFadeIn){
+      var tA=phase(T,TL.titleFadeIn,TL.titleFull-TL.titleFadeIn);
+      document.getElementById('title').style.opacity=easeOut(tA);
+      if(tA>.85){
+        var btn=document.getElementById('readyBtn');
+        if(parseFloat(btn.style.opacity||0)<.01){
+          btn.style.pointerEvents='all';
+          animFade(btn,0,1,700,easeOut,null);
+        }
+      }
+    }
+
+    drawVignette(.72);
   }
 
-  // ── CAPTIONS ─────────────────────────────────────────────
-  var capts=[
-    {s:TL.c1s,e:TL.c1e,t:'Not Destroyed.\n\nTransformed.'},
-    {s:TL.c2s,e:TL.c2e,t:'The rhythm was always there.\nIt took everything to hear it.'},
-    {s:TL.c3s,e:TL.c3e,t:'Those who reach the third state,\nthe oldest light.\n\nDo not speak about what they saw.'},
-    {s:TL.c4s,e:TL.c4e,t:'The universe remembers them\ndifferently.'},
-    {s:TL.c5s,e:TL.c5e,t:'You\'ll know it\nwhen you feel it.'},
-  ];
-  var captSz=clamp(W*.038,18,28);
-  for(var ci=0;ci<capts.length;ci++){
-    var ca=capts[ci];
-    if(T<ca.s||T>ca.e)continue;
-    var cfa=Math.min(phase(T,ca.s,.8),1)*Math.min(1-phase(T,ca.e-.8,.8),1);
-    // Captions live in bottom third — always below orbs
-    cText(ca.t,W*.5,H*.76,captSz,cfa,true,WHITE,1);
-  }
-
-  // Fade out everything except title when last caption starts
-  if(T>=TL.c5s){
-    var fadeBack=Math.min(phase(T,TL.c5s,1.5),1)*.65;
-    ctx.save();ctx.globalAlpha=fadeBack;ctx.fillStyle='#06080d';ctx.fillRect(0,0,W,H);ctx.restore();
-  }
-
-  // Title fade in
-  if(T>=TL.titleFadeIn){
-    var titleAlpha=phase(T,TL.titleFadeIn,TL.titleFull-TL.titleFadeIn);
-    document.getElementById('title').style.opacity=easeOut(titleAlpha);
-  }
-
-  drawVignette(.75);
-
-  // Tick and draw particles
+  // Tick & draw particles
   ctx.save();ctx.globalAlpha=1;
-  for(var pi=pts.length-1;pi>=0;pi--){
-    pts[pi].tick();pts[pi].draw();
-    if(pts[pi].life<=0)pts.splice(pi,1);
-  }
+  for(var pi=pts.length-1;pi>=0;pi--){pts[pi].tick();pts[pi].draw();if(pts[pi].life<=0)pts.splice(pi,1);}
   ctx.restore();
 }
 
-// ── LOOP ────────────────────────────────────────────────────
-var running=false;
+// ── LOOP ───────────────────────────────────────────────────
+var running=true;
 function loop(ts){
-  if(!startMs)startMs=ts;
-  GT=(ts-startMs)/1e3;
+  if(!startMs&&STARTED)startMs=ts;
+  if(startMs)GT=(ts-startMs)/1e3;
   draw();
   if(running)requestAnimationFrame(loop);
 }
+requestAnimationFrame(loop);
 
-// ── MUSIC FADE ───────────────────────────────────────────────
+// ── MUSIC ──────────────────────────────────────────────────
 var mus=document.getElementById('mus');
 function fadeMusic(target,dur){
   var start=mus.volume,s=null;
-  function step(ts){
-    if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);
-    mus.volume=lerp(start,target,p);
-    if(p<1)requestAnimationFrame(step);
-  }
+  function step(ts){if(!s)s=ts;var p=clamp((ts-s)/dur,0,1);mus.volume=lerp(start,target,p);if(p<1)requestAnimationFrame(step);}
   requestAnimationFrame(step);
 }
 
-// ── TAP TO BEGIN ─────────────────────────────────────────────
+// ── BEGIN ──────────────────────────────────────────────────
 var tapEl=document.getElementById('tap');
-var started=false;
 function begin(){
-  if(started)return;started=true;
-  // Fade tap screen
-  tapEl.style.transition='opacity .8s ease';tapEl.style.opacity=0;
-  setTimeout(function(){tapEl.style.display='none';},800);
-  // Start music soft, ease in
-  if(mus){mus.volume=0;mus.play().catch(function(){});}
-  if(mus)fadeMusic(.72,3000);
-  // Start loop
-  running=true;requestAnimationFrame(loop);
+  if(STARTED)return;STARTED=true;
+  // Fade tap overlay
+  tapEl.style.transition='opacity .9s ease';tapEl.style.opacity=0;
+  setTimeout(function(){tapEl.style.display='none';},900);
+  // Music
+  mus.volume=0;mus.play().catch(function(){});fadeMusic(.75,4000);
+  // Fire captions on timeline
+  setTimeout(function(){qC('In the beginning',3400,0);},6500*1000/1000);
+  // (captions for pulse/breath are driven by draw loop, not queue)
 }
 tapEl.addEventListener('click',begin);
 tapEl.addEventListener('touchstart',function(e){e.preventDefault();begin();},{passive:false});
-var skipEl=document.getElementById('skipBtn');
-if(skipEl){skipEl.addEventListener('click',function(){
-  if(!started){begin();return;}
-  clearTimeout(window._scTimer);
-  GT=TL.titleFadeIn;startMs=performance.now()-TL.titleFadeIn*1000;
-  document.getElementById('title').style.opacity=1;
-});}
+
+// Ready button
+document.getElementById('readyBtn').addEventListener('click',function(){
+  fadeMusic(0,700);
+  document.body.style.transition='opacity .8s';document.body.style.opacity=0;
+  setTimeout(function(){window.location.href='https://split.games';},800);
+});
 </script>
 </body>
 </html>
