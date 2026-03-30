@@ -1954,15 +1954,15 @@ document.getElementById('tutNextBtn').addEventListener('click',function(e){
   }
 });
 
-// Paywall buttons
-document.getElementById('pwStandardBtn').addEventListener('click',function(e){
-  e.stopPropagation();
-  stripeCheckout('standard');
-});
-document.getElementById('pwPremiumBtn').addEventListener('click',function(e){
-  e.stopPropagation();
-  stripeCheckout('origin');
-});
+// Paywall buttons — use both click and touchend for iOS div tap reliability
+function bindPayBtn(id,tier){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('click',function(e){e.stopPropagation();stripeCheckout(tier);});
+  el.addEventListener('touchend',function(e){e.stopPropagation();e.preventDefault();stripeCheckout(tier);},{passive:false});
+}
+bindPayBtn('pwStandardBtn','standard');
+bindPayBtn('pwPremiumBtn','origin');
 
 // Username modal
 document.getElementById('usernameSaveBtn').addEventListener('click',function(){
