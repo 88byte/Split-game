@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Split · Mission Control</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080d;--s1:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);
+  --border:rgba(255,255,255,.08);--text:rgba(255,255,255,.85);
+  --dim:rgba(255,255,255,.32);--dim2:rgba(255,255,255,.18);
+  --purple:rgba(180,80,255,1);--purpleD:rgba(180,80,255,.14);
+  --purpleB:rgba(180,80,255,.25);
+  --gold:#c8a850;--goldD:rgba(200,168,80,.14);--goldB:rgba(200,168,80,.28);
+  --green:rgba(80,220,140,1);--greenD:rgba(80,220,140,.12);
+  --red:rgba(255,90,90,1);
+}
+body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;min-height:100vh;font-size:13px;}
+
+/* ── LAYOUT ─────────────────────────────────────── */
+.layout{display:grid;grid-template-columns:260px 1fr;grid-template-rows:auto 1fr;min-height:100vh;}
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border);height:52px;}
+.sidebar{border-right:1px solid var(--border);padding:16px 0;overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);}
+.main{padding:24px 28px;overflow-y:auto;}
+
+/* ── TOPBAR ─────────────────────────────────────── */
+.tb-logo{padding:0 20px;font-size:16px;font-weight:900;letter-spacing:5px;text-transform:uppercase;border-right:1px solid var(--border);height:100%;display:flex;align-items:center;}
+.tb-logo span{color:var(--purple);}
+.tb-pulse{display:flex;align-items:center;gap:20px;padding:0 20px;flex:1;}
+.tb-stat{display:flex;flex-direction:column;gap:1px;}
+.tb-val{font-size:16px;font-weight:900;letter-spacing:-0.5px;}
+.tb-lbl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+.tb-val.gold{color:var(--gold);}
+.tb-val.purple{color:var(--purple);}
+.tb-sep{width:1px;height:28px;background:var(--border);}
+.tb-right{padding:0 20px;display:flex;align-items:center;gap:14px;margin-left:auto;}
+.health-dot{width:7px;height:7px;border-radius:50%;}
+.health-dot.ok{background:var(--green);box-shadow:0 0 6px rgba(80,220,140,.6);animation:blink 2s ease-in-out infinite;}
+.health-dot.err{background:var(--red);box-shadow:0 0 6px rgba(255,90,90,.6);}
+@keyframes blink{0%,100%{opacity:.6;}50%{opacity:1;}}
+.refresh-ring{width:20px;height:20px;position:relative;cursor:pointer;}
+.refresh-ring svg{width:20px;height:20px;transform:rotate(-90deg);}
+.refresh-ring circle{fill:none;stroke:var(--border);stroke-width:2;}
+.refresh-ring .arc{stroke:var(--purple);stroke-dasharray:50;stroke-dashoffset:50;stroke-linecap:round;transition:stroke-dashoffset .1s linear;}
+.tb-logout{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:6px;}
+.tb-logout:hover{color:#fff;border-color:rgba(255,255,255,.22);}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.nav-section{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--dim2);padding:12px 18px 6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);cursor:pointer;transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:var(--s1);}
+.nav-item.active{color:#fff;background:var(--purpleD);border-left-color:var(--purple);}
+.nav-item .icon{width:13px;height:13px;opacity:.55;flex-shrink:0;}
+.nav-item.active .icon{opacity:1;}
+
+/* ── PAGES ──────────────────────────────────────── */
+.page{display:none;animation:fadeIn .15s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.page-title{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--dim);margin-bottom:20px;}
+
+/* ── CARDS ──────────────────────────────────────── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+.card-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
+.card-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+
+/* ── STATS GRID ──────────────────────────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+.stat-val{font-size:30px;font-weight:900;line-height:1;letter-spacing:-1px;}
+.stat-lbl{font-size:8px;color:var(--dim);letter-spacing:2.5px;text-transform:uppercase;margin-top:4px;}
+.stat-sub{font-size:10px;color:var(--dim2);margin-top:3px;}
+.stat.gold .stat-val{color:var(--gold);}
+.stat.purple .stat-val{color:var(--purple);}
+.stat.green .stat-val{color:var(--green);}
+
+/* ── GRID LAYOUT ─────────────────────────────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+
+/* ── SEARCH / PLAYER CARD ────────────────────────── */
+.search-wrap{position:relative;margin-bottom:16px;}
+.search-input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:#fff;padding:12px 16px 12px 40px;font-size:14px;font-family:'Georgia',serif;outline:none;transition:border-color .2s;}
+.search-input:focus{border-color:rgba(255,255,255,.22);}
+.search-input::placeholder{color:var(--dim);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--dim);}
+.player-card{background:var(--s2);border:1px solid var(--purpleB);border-radius:14px;padding:20px;display:none;}
+.player-card.visible{display:block;animation:fadeIn .2s ease;}
+.pc-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.pc-avatar{width:46px;height:46px;border-radius:50%;background:var(--purpleD);border:1px solid var(--purpleB);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--purple);flex-shrink:0;}
+.pc-name{font-size:18px;font-weight:900;letter-spacing:-0.5px;}
+.pc-email{font-size:11px;color:var(--dim);margin-top:2px;}
+.pc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.pc-stat{background:var(--s1);border-radius:9px;padding:11px 13px;}
+.pc-val{font-size:18px;font-weight:900;}
+.pc-lbl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:3px;}
+.pc-actions{display:flex;gap:8px;}
+.btn{padding:9px 18px;border-radius:8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'Georgia',serif;transition:all .2s;border:1px solid;}
+.btn-origin{background:var(--goldD);color:var(--gold);border-color:var(--goldB);}
+.btn-origin:hover{background:rgba(200,168,80,.25);}
+.btn-standard{background:var(--s1);color:var(--text);border-color:var(--border);}
+.btn-standard:hover{background:var(--s2);}
+.btn-danger{background:rgba(255,90,90,.1);color:var(--red);border-color:rgba(255,90,90,.25);}
+.btn-primary{background:var(--purpleD);color:var(--purple);border-color:var(--purpleB);}
+.btn-primary:hover{background:rgba(180,80,255,.22);}
+.pc-scores{margin-top:14px;border-top:1px solid var(--border);padding-top:12px;}
+.score-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12px;}
+.score-row:not(:last-child){border-bottom:1px solid var(--border);}
+.pc-loading{text-align:center;padding:24px;color:var(--dim);font-size:11px;letter-spacing:2px;}
+.grant-confirm{display:none;background:rgba(180,80,255,.08);border:1px solid var(--purpleB);border-radius:8px;padding:12px 14px;margin-top:10px;font-size:11px;}
+.grant-confirm.visible{display:block;}
+
+/* ── ACTIVITY FEED ───────────────────────────────── */
+.feed{display:flex;flex-direction:column;gap:1px;}
+.feed-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;transition:background .15s;cursor:default;}
+.feed-item:hover{background:var(--s2);}
+.feed-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;}
+.feed-icon.purchase{background:var(--goldD);}
+.feed-icon.signup{background:var(--purpleD);}
+.feed-icon.score{background:var(--greenD);}
+.feed-body{flex:1;min-width:0;}
+.feed-user{font-weight:700;font-size:12px;}
+.feed-action{font-size:11px;color:var(--dim);margin-top:1px;}
+.feed-time{font-size:10px;color:var(--dim2);white-space:nowrap;}
+
+/* ── SPARKLINE ───────────────────────────────────── */
+.sparkline{display:flex;align-items:flex-end;gap:3px;height:44px;}
+.spark-bar{flex:1;background:var(--purpleD);border-radius:2px 2px 0 0;min-height:2px;transition:background .2s;cursor:default;}
+.spark-bar:hover{background:rgba(180,80,255,.35);}
+.spark-labels{display:flex;gap:3px;margin-top:5px;}
+.spark-labels div{flex:1;font-size:8px;color:var(--dim2);text-align:center;}
+
+/* ── TABLES ──────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;color:var(--dim);font-size:8px;letter-spacing:2.5px;text-transform:uppercase;padding:0 0 9px;font-weight:400;white-space:nowrap;}
+td{padding:8px 0;border-top:1px solid var(--border);font-size:12px;}
+tr:hover td{background:rgba(255,255,255,.015);}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+.badge.origin{background:var(--goldD);color:var(--gold);border:1px solid var(--goldB);}
+.badge.standard{background:var(--s2);color:rgba(255,255,255,.55);border:1px solid var(--border);}
+.badge.free{background:var(--s1);color:var(--dim2);border:1px solid var(--border);}
+
+/* ── MISC ────────────────────────────────────────── */
+.empty{text-align:center;padding:32px;color:var(--dim);font-size:11px;letter-spacing:2px;}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;margin:28px auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.inline-spinner{width:12px;height:12px;border:1.5px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;}
+.toast{position:fixed;bottom:24px;right:24px;background:#fff;color:#000;padding:10px 18px;border-radius:8px;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;z-index:999;display:none;animation:slideUp .2s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ── LOGIN ───────────────────────────────────────── */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;}
+.lbox{width:290px;text-align:center;}
+.lbox-logo{font-size:24px;font-weight:900;letter-spacing:6px;text-transform:uppercase;margin-bottom:6px;}
+.lbox-sub{font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:28px;}
+.lbox input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:#fff;padding:12px 16px;font-size:14px;font-family:'Georgia',serif;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;transition:border-color .2s;}
+.lbox input:focus{border-color:rgba(255,255,255,.2);}
+.lbox-remember{display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;justify-content:center;font-size:11px;color:var(--dim);}
+.lbox-remember input{accent-color:var(--purple);}
+.lbox button{width:100%;background:#fff;color:#000;border:none;border-radius:10px;padding:12px;font-weight:900;font-family:'Georgia',serif;cursor:pointer;letter-spacing:2px;text-transform:uppercase;font-size:11px;transition:opacity .2s;}
+.lbox button:hover{opacity:.88;}
+.lbox-err{color:rgba(255,100,100,.8);font-size:11px;margin-top:8px;min-height:16px;}
+
+@media(max-width:720px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .two-col,.three-col{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="lbox">
+    <div class="lbox-logo">SPLIT</div>
+    <div class="lbox-sub">Mission Control</div>
+    <input type="password" id="keyInput" placeholder="Admin key" autocomplete="current-password">
+    <label class="lbox-remember"><input type="checkbox" id="rememberKey" checked> Remember on this device</label>
+    <button onclick="doLogin()">Enter</button>
+    <div class="lbox-err" id="loginErr"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="layout">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="tb-logo">SPL<span>I</span>T</div>
+      <div class="tb-pulse" id="tbPulse">
+        <div class="tb-stat"><div class="tb-val gold" id="tbRevToday">—</div><div class="tb-lbl">Today</div></div>
+        <div class="tb-sep"></div>
+        <div class="tb-stat"><div class="tb-val" id="tbGamesToday">—</div><div class="tb-lbl">Games today</div></div>
+        <div class="tb-sep"></div>
+        <div class="tb-stat"><div class="tb-val purple" id="tbPlayersToday">—</div><div class="tb-lbl">New players</div></div>
+        <div class="tb-sep"></div>
+        <div class="tb-stat"><div class="tb-val" id="tbLastPurch">—</div><div class="tb-lbl">Last purchase</div></div>
+      </div>
+      <div class="tb-right">
+        <div class="health-dot ok" id="healthDot" title="Backend healthy"></div>
+        <div class="refresh-ring" title="Refresh" onclick="silentRefresh()">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><circle class="arc" id="refreshArc" cx="8" cy="8" r="6"/></svg>
+        </div>
+        <div class="tb-logout" onclick="doLogout()">Sign out</div>
+      </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="showPage('pulse',this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+        Pulse
+      </div>
+      <div class="nav-item" onclick="showPage('activity',this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 8h2l2-5 2 10 2-8 2 3h2"/></svg>
+        Activity Feed
+      </div>
+      <div class="nav-section">Players</div>
+      <div class="nav-item" onclick="showPage('lookup',this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="6.5" cy="6.5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9.5 9.5L14 14"/></svg>
+        Player Lookup
+      </div>
+      <div class="nav-item" onclick="showPage('players',this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="5" r="2.5"/><circle cx="11" cy="5" r="2.5"/><path d="M0 13c0-2.8 2.2-5 5-5"/><path d="M16 13c0-2.8-2.2-5-5-5"/><path d="M5 8h6a5 5 0 015 5H0a5 5 0 015-5z"/></svg>
+        All Players
+      </div>
+      <div class="nav-item" onclick="showPage('leaderboard',this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.8 4.5H15l-4.2 3 1.6 5L8 11l-4.4 2.5 1.6-5L1 5.5h5.2z"/></svg>
+        Leaderboard
+      </div>
+      <div class="nav-section">Revenue</div>
+      <div class="nav-item" onclick="showPage('revenue',this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v14M4 5h8M3 10h10"/></svg>
+        Revenue
+      </div>
+      <div class="nav-section">Sessions</div>
+      <div class="nav-item" onclick="showPage('sessions',this)">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 2"/></svg>
+        Game Sessions
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- PULSE -->
+      <div class="page active" id="page-pulse">
+        <div class="page-title">Pulse — Live Overview</div>
+        <div class="stats-row" id="statsGrid"><div class="spinner"></div></div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Revenue — Last 14 Days</div>
+            <div class="sparkline" id="revenueChart"></div>
+            <div class="spark-labels" id="chartLabels"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Recent Purchases</div>
+            <table><thead><tr><th>User</th><th>Tier</th><th>Amount</th><th>When</th></tr></thead>
+            <tbody id="recentPurchasesBody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY FEED -->
+      <div class="page" id="page-activity">
+        <div class="page-title">Activity Feed — Real Time</div>
+        <div class="card">
+          <div class="card-row">
+            <div class="card-title" style="margin-bottom:0">Latest Events</div>
+            <div style="font-size:10px;color:var(--dim);letter-spacing:1px;cursor:pointer;" onclick="loadActivity()">Refresh</div>
+          </div>
+          <div style="height:12px;"></div>
+          <div id="feedBody"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- PLAYER LOOKUP -->
+      <div class="page" id="page-lookup">
+        <div class="page-title">Player Lookup</div>
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M9.5 9.5L14 14"/></svg>
+          <input class="search-input" id="lookupInput" placeholder="Username or email..." autocomplete="off">
+        </div>
+        <div id="playerCard" class="player-card">
+          <div class="pc-head">
+            <div class="pc-avatar" id="pcAvatar">?</div>
+            <div>
+              <div class="pc-name" id="pcName">—</div>
+              <div class="pc-email" id="pcEmail">—</div>
+            </div>
+            <div style="margin-left:auto;" id="pcBadge"></div>
+          </div>
+          <div class="pc-grid" id="pcGrid"></div>
+          <div class="pc-actions" id="pcActions"></div>
+          <div class="grant-confirm" id="grantConfirm"></div>
+          <div class="pc-scores" id="pcScores"></div>
+        </div>
+        <div id="lookupEmpty" style="display:none;text-align:center;padding:40px;color:var(--dim);font-size:11px;letter-spacing:2px;">No player found</div>
+      </div>
+
+      <!-- ALL PLAYERS -->
+      <div class="page" id="page-players">
+        <div class="page-title">All Players</div>
+        <div style="position:relative;margin-bottom:14px;">
+          <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--dim);" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M9.5 9.5L14 14"/></svg>
+          <input style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:9px;color:#fff;padding:10px 14px 10px 36px;font-size:12px;font-family:'Georgia',serif;outline:none;" id="playerSearch" placeholder="Search..." oninput="filterPlayers()">
+        </div>
+        <div class="card">
+          <div class="card-row">
+            <div class="card-title" style="margin-bottom:0">Players</div>
+            <div style="font-size:10px;color:var(--purple);letter-spacing:1px;" id="playerCountLabel"></div>
+          </div>
+          <div style="height:12px;"></div>
+          <table><thead><tr><th>Username</th><th>Email</th><th>Tier</th><th>Joined</th><th></th></tr></thead>
+          <tbody id="playersBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD -->
+      <div class="page" id="page-leaderboard">
+        <div class="page-title">Global Leaderboard</div>
+        <div class="card">
+          <table><thead><tr><th>#</th><th>Player</th><th>Score</th><th>Level</th><th>Tier</th></tr></thead>
+          <tbody id="lbBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- REVENUE -->
+      <div class="page" id="page-revenue">
+        <div class="page-title">Revenue</div>
+        <div class="stats-row" id="revStatsGrid"></div>
+        <div class="card">
+          <div class="card-title">All Purchases</div>
+          <table><thead><tr><th>Username</th><th>Email</th><th>Tier</th><th>Amount</th><th>Date</th></tr></thead>
+          <tbody id="allPurchasesBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- SESSIONS -->
+      <div class="page" id="page-sessions">
+        <div class="page-title">Game Sessions</div>
+        <div class="card">
+          <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>Obstacles</th><th>When</th></tr></thead>
+          <tbody id="sessionsBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var B='https://split-backend-production-18a8.up.railway.app';
+var KEY='';
+var CACHE={};
+var ALL_PLAYERS=[];
+var REFRESH_SEC=15,cdVal=REFRESH_SEC,cdTimer=null;
+
+// ── AUTH ──────────────────────────────────────────
+(function(){try{var k=localStorage.getItem('splitAdminKey');if(k)document.getElementById('keyInput').value=k;}catch(e){}})();
+document.getElementById('keyInput').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+function doLogin(){
+  var key=document.getElementById('keyInput').value.trim();
+  if(!key)return;
+  KEY=key;
+  document.getElementById('loginErr').textContent='';
+  loadAll(function(ok){
+    if(!ok){KEY='';document.getElementById('loginErr').textContent='Invalid key or connection error.';}
+    else{
+      if(document.getElementById('rememberKey').checked)try{localStorage.setItem('splitAdminKey',key);}catch(e){}
+    }
+  });
+}
+function doLogout(){KEY='';try{localStorage.removeItem('splitAdminKey');}catch(e){}location.reload();}
+
+// ── NAVIGATION ────────────────────────────────────
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='activity')loadActivity();
+}
+
+// ── LOAD ALL ──────────────────────────────────────
+function loadAll(cb){
+  apiGet('/admin/stats',function(ok,data){
+    if(!ok){if(cb)cb(false);setHealth(false);return;}
+    setHealth(true);
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    CACHE=data;
+    renderAll(data);
+    startCountdown();
+    if(cb)cb(true);
+  });
+}
+
+function renderAll(d){
+  renderTopbar(d.today,d.recent_purchases);
+  renderStats(d.stats,d.today);
+  renderChart(d.revenue_by_day);
+  renderRecentPurchases(d.recent_purchases);
+  renderLeaderboard(d.leaderboard);
+  renderPlayers(d.players||[]);
+  renderSessions(d.recent_sessions||[]);
+  renderRevStats(d.stats,d.all_purchases||d.recent_purchases);
+}
+
+// ── TOPBAR ────────────────────────────────────────
+function renderTopbar(today,purchases){
+  if(!today)return;
+  set('tbRevToday','$'+((today.revenue_cents||0)/100).toFixed(2));
+  set('tbGamesToday',today.games||0);
+  set('tbPlayersToday',today.new_players||0);
+  if(purchases&&purchases.length){
+    set('tbLastPurch',ago(purchases[0].created_at));
+  } else {
+    set('tbLastPurch','—');
+  }
+}
+
+// ── STATS ─────────────────────────────────────────
+function renderStats(s,today){
+  if(!s)return;
+  var rev=((s.total_revenue_cents||0)/100).toFixed(2);
+  var conv=s.total_page_views>0?((s.total_purchases/s.total_page_views)*100).toFixed(1)+'%':'—';
+  var items=[
+    {v:'$'+rev,l:'Total Revenue',sub:'All time',c:'gold'},
+    {v:s.total_purchases||0,l:'Total Sales',sub:'',c:''},
+    {v:s.origin_pass_sales||0,l:'Origin Pass',sub:'Founders sold',c:'purple'},
+    {v:s.split_pass_sales||0,l:'Split Pass',sub:'',c:''},
+    {v:s.total_users||0,l:'Players',sub:'Registered',c:''},
+    {v:s.total_games_played||0,l:'Games Played',sub:'All time',c:''},
+    {v:s.total_page_views||0,l:'Total Visits',sub:'All time',c:''},
+    {v:conv,l:'Conversion',sub:'Visit to sale',c:''},
+  ];
+  document.getElementById('statsGrid').innerHTML=items.map(function(i){
+    return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div>'+(i.sub?'<div class="stat-sub">'+i.sub+'</div>':'')+'</div>';
+  }).join('');
+}
+
+// ── CHART ─────────────────────────────────────────
+function renderChart(days){
+  var c=document.getElementById('revenueChart'),lb=document.getElementById('chartLabels');
+  if(!days||!days.length){c.innerHTML='<div style="color:var(--dim);font-size:11px;">No data yet</div>';return;}
+  var max=Math.max.apply(null,days.map(function(d){return d.amount_cents||0;}));if(max===0)max=1;
+  c.innerHTML=days.map(function(d){var h=Math.max(2,Math.round(((d.amount_cents||0)/max)*42));var tip='$'+((d.amount_cents||0)/100).toFixed(2);return '<div class="spark-bar" style="height:'+h+'px" title="'+d.day+': '+tip+'"></div>';}).join('');
+  lb.innerHTML='<div class="spark-labels">'+days.map(function(d){var dt=new Date(d.day);return '<div>'+(dt.getMonth()+1)+'/'+(dt.getDate())+'</div>';}).join('')+'</div>';
+}
+
+// ── PURCHASES ─────────────────────────────────────
+function renderRecentPurchases(rows){
+  var tb=document.getElementById('recentPurchasesBody');
+  if(!rows||!rows.length){tb.innerHTML='<tr><td colspan="4" class="empty">No purchases yet</td></tr>';return;}
+  tb.innerHTML=rows.slice(0,10).map(function(p){
+    return '<tr><td style="font-weight:700">'+esc(p.username||'—')+'</td><td>'+badge(p.tier)+'</td><td>'+(p.amount_cents?'$'+(p.amount_cents/100).toFixed(2):'—')+'</td><td style="color:var(--dim)">'+ago(p.created_at)+'</td></tr>';
+  }).join('');
+}
+
+// ── ACTIVITY FEED ─────────────────────────────────
+function loadActivity(){
+  document.getElementById('feedBody').innerHTML='<div class="spinner"></div>';
+  apiGet('/admin/activity',function(ok,data){
+    if(!ok){document.getElementById('feedBody').innerHTML='<div class="empty">Could not load feed</div>';return;}
+    var events=data.events||[];
+    if(!events.length){document.getElementById('feedBody').innerHTML='<div class="empty">No events yet</div>';return;}
+    document.getElementById('feedBody').innerHTML='<div class="feed">'+events.map(function(e){
+      var icon='',label='',detail='';
+      if(e.type==='purchase'){
+        icon='💰';label=esc(e.username||'—')+' purchased';detail='<span class="badge '+(e.tier||'free')+'">'+(e.tier||'—')+'</span>'+(e.amount_cents?' · $'+(e.amount_cents/100).toFixed(2):'');
+      } else if(e.type==='signup'){
+        icon='✨';label=esc(e.username||'—')+' signed up';detail=esc(e.email||'');
+      } else if(e.type==='score'){
+        icon='⚡';label=esc(e.username||'—')+' scored';detail='<strong>'+num(e.score)+'</strong> · '+esc(e.level||'—');
+      }
+      return '<div class="feed-item"><div class="feed-icon '+e.type+'">'+icon+'</div><div class="feed-body"><div class="feed-user">'+label+'</div><div class="feed-action">'+detail+'</div></div><div class="feed-time">'+ago(e.at)+'</div></div>';
+    }).join('')+'</div>';
+  });
+}
+
+// ── PLAYER LOOKUP ─────────────────────────────────
+var lookupTimer=null;
+document.getElementById('lookupInput').addEventListener('input',function(){
+  clearTimeout(lookupTimer);
+  var q=this.value.trim();
+  if(!q){hidePlayerCard();return;}
+  lookupTimer=setTimeout(function(){doLookup(q);},400);
+});
+function doLookup(q){
+  // Find in cached player list first
+  var found=ALL_PLAYERS.filter(function(p){
+    return (p.username||'').toLowerCase()===q.toLowerCase()||(p.email||'').toLowerCase()===q.toLowerCase();
+  });
+  if(found.length){
+    lookupUsername(found[0].username);
+  } else {
+    // Try direct fetch
+    lookupUsername(q);
+  }
+}
+function lookupUsername(username){
+  showPlayerCardLoading();
+  apiGet('/admin/user/'+encodeURIComponent(username),function(ok,data){
+    if(!ok||!data.user){
+      hidePlayerCard();
+      document.getElementById('lookupEmpty').style.display='block';
+      return;
+    }
+    document.getElementById('lookupEmpty').style.display='none';
+    renderPlayerCard(data);
+  });
+}
+function showPlayerCardLoading(){
+  document.getElementById('lookupEmpty').style.display='none';
+  var card=document.getElementById('playerCard');
+  card.classList.add('visible');
+  document.getElementById('pcAvatar').textContent='…';
+  document.getElementById('pcName').textContent='Loading';
+  document.getElementById('pcEmail').textContent='';
+  document.getElementById('pcGrid').innerHTML='';
+  document.getElementById('pcActions').innerHTML='';
+  document.getElementById('pcScores').innerHTML='';
+  document.getElementById('pcBadge').innerHTML='';
+  document.getElementById('grantConfirm').classList.remove('visible');
+}
+function hidePlayerCard(){
+  document.getElementById('playerCard').classList.remove('visible');
+  document.getElementById('lookupEmpty').style.display='none';
+}
+function renderPlayerCard(data){
+  var u=data.user||{},purchase=data.purchase,topScores=data.top_scores||[],games=data.games_played||0;
+  var tier=u.tier||'free';
+  var card=document.getElementById('playerCard');
+  card.classList.add('visible');
+  document.getElementById('pcAvatar').textContent=(u.username||'?').slice(0,2).toUpperCase();
+  document.getElementById('pcName').textContent=u.username||'Unknown';
+  document.getElementById('pcEmail').textContent=u.email||'No email';
+  document.getElementById('pcBadge').innerHTML=badge(tier);
+  var bestScore=topScores.length?topScores[0].score:0;
+  document.getElementById('pcGrid').innerHTML=[
+    {v:num(games),l:'Games Played'},
+    {v:num(bestScore),l:'Best Score'},
+    {v:u.created_at?new Date(u.created_at).toLocaleDateString():'—',l:'Joined'},
+  ].map(function(s){return '<div class="pc-stat"><div class="pc-val">'+s.v+'</div><div class="pc-lbl">'+s.l+'</div></div>';}).join('');
+
+  // Actions
+  var actions='';
+  if(tier!=='origin')actions+='<button class="btn btn-origin" onclick="grantTier(\''+esc(u.username)+'\',\'origin\')">Grant Origin Pass</button>';
+  if(tier!=='standard'&&tier!=='origin')actions+='<button class="btn btn-standard" onclick="grantTier(\''+esc(u.username)+'\',\'standard\')">Grant Split Pass</button>';
+  document.getElementById('pcActions').innerHTML=actions;
+
+  // Top scores
+  if(topScores.length){
+    document.getElementById('pcScores').innerHTML='<div style="font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;">Top Scores</div>'+
+      topScores.slice(0,5).map(function(s,i){
+        return '<div class="score-row"><span style="color:var(--dim);font-size:11px;width:16px;">'+(i+1)+'</span><span style="font-weight:700">'+num(s.score)+'</span><span style="color:var(--dim)">'+esc(s.level||'—')+'</span><span style="color:var(--dim2)">'+ago(s.created_at)+'</span></div>';
+      }).join('');
+  }
+}
+function grantTier(username,tier){
+  var label=tier==='origin'?'Origin Pass':'Split Pass';
+  var confirm=document.getElementById('grantConfirm');
+  confirm.innerHTML='Grant <strong>'+label+'</strong> to <strong>'+esc(username)+'</strong>? This will update their account immediately. <button class="btn btn-primary" style="margin-left:10px;padding:5px 12px;" onclick="confirmGrant(\''+esc(username)+'\',\''+tier+'\')">Confirm</button> <button class="btn btn-standard" style="padding:5px 12px;" onclick="document.getElementById(\'grantConfirm\').classList.remove(\'visible\')">Cancel</button>';
+  confirm.classList.add('visible');
+}
+function confirmGrant(username,tier){
+  document.getElementById('grantConfirm').innerHTML='<span class="inline-spinner"></span>Granting…';
+  apiPost('/admin/grant-tier',{username:username,tier:tier,note:'admin_manual'},function(ok){
+    if(ok){
+      showToast(tier.toUpperCase()+' granted to '+username);
+      document.getElementById('grantConfirm').classList.remove('visible');
+      lookupUsername(username);// Refresh card
+    } else {
+      document.getElementById('grantConfirm').innerHTML='Error — could not grant. <button class="btn btn-standard" onclick="document.getElementById(\'grantConfirm\').classList.remove(\'visible\')">Close</button>';
+    }
+  });
+}
+
+// ── ALL PLAYERS ───────────────────────────────────
+function renderPlayers(rows){
+  ALL_PLAYERS=rows;
+  document.getElementById('playerCountLabel').textContent=rows.length+' total';
+  renderFilteredPlayers(rows);
+}
+function filterPlayers(){
+  var q=document.getElementById('playerSearch').value.toLowerCase();
+  renderFilteredPlayers(q?ALL_PLAYERS.filter(function(p){return(p.username||'').toLowerCase().indexOf(q)>-1||(p.email||'').toLowerCase().indexOf(q)>-1;}):ALL_PLAYERS);
+}
+function renderFilteredPlayers(rows){
+  var tb=document.getElementById('playersBody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">No players found</td></tr>';return;}
+  tb.innerHTML=rows.map(function(p){
+    var d=p.created_at?new Date(p.created_at).toLocaleDateString():'—';
+    return '<tr><td style="font-weight:700">'+esc(p.username||'—')+'</td><td style="color:var(--dim);font-size:11px">'+esc(p.email||'—')+'</td><td>'+badge(p.tier||'free')+'</td><td style="color:var(--dim)">'+d+'</td><td><span style="cursor:pointer;color:var(--purple);font-size:10px;" onclick="quickLookup(\''+esc(p.username)+'\')">→ View</span></td></tr>';
+  }).join('');
+}
+function quickLookup(username){
+  showPage('lookup',document.querySelectorAll('.nav-item')[3]);
+  document.getElementById('lookupInput').value=username;
+  lookupUsername(username);
+}
+
+// ── LEADERBOARD ───────────────────────────────────
+function renderLeaderboard(rows){
+  var tb=document.getElementById('lbBody');
+  if(!rows||!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">No scores yet</td></tr>';return;}
+  var medals=['','🥇','🥈','🥉'];
+  tb.innerHTML=rows.map(function(r,i){
+    var rank=i+1,rm=rank<=3?medals[rank]:rank;
+    return '<tr><td style="font-size:12px;min-width:28px">'+rm+'</td><td style="font-weight:700;cursor:pointer;color:var(--purple);" onclick="quickLookup(\''+esc(r.username||'')+'\')">'+ esc(r.username||'—')+'</td><td style="font-weight:900;letter-spacing:-0.5px">'+num(r.score)+'</td><td style="color:var(--dim)">'+esc(r.level||'—')+'</td><td>'+badge(r.tier||'free')+'</td></tr>';
+  }).join('');
+}
+
+// ── REVENUE ───────────────────────────────────────
+function renderRevStats(s,purchases){
+  if(!s)return;
+  var rev=((s.total_revenue_cents||0)/100);
+  var items=[
+    {v:'$'+rev.toFixed(2),l:'Total Revenue',c:'gold'},
+    {v:s.total_purchases||0,l:'Total Sales',c:''},
+    {v:s.origin_pass_sales||0,l:'Origin Pass Sold',c:'purple'},
+    {v:'$'+((s.origin_pass_sales||0)*7.99).toFixed(2),l:'Origin Revenue',c:'gold'},
+    {v:s.split_pass_sales||0,l:'Split Pass Sold',c:''},
+    {v:'$'+((s.split_pass_sales||0)*2.99).toFixed(2),l:'Split Revenue',c:'gold'},
+  ];
+  document.getElementById('revStatsGrid').innerHTML=items.map(function(i){return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div></div>';}).join('');
+  var tb=document.getElementById('allPurchasesBody');
+  if(!purchases||!purchases.length){tb.innerHTML='<tr><td colspan="5" class="empty">No purchases yet</td></tr>';return;}
+  tb.innerHTML=purchases.map(function(p){
+    var d=p.created_at?new Date(p.created_at).toLocaleDateString():'—';
+    return '<tr><td style="font-weight:700">'+esc(p.username||'—')+'</td><td style="color:var(--dim);font-size:11px">'+esc(p.email||'—')+'</td><td>'+badge(p.tier||'free')+'</td><td>'+(p.amount_cents?'$'+(p.amount_cents/100).toFixed(2):'—')+'</td><td style="color:var(--dim)">'+d+'</td></tr>';
+  }).join('');
+}
+
+// ── SESSIONS ──────────────────────────────────────
+function renderSessions(rows){
+  var tb=document.getElementById('sessionsBody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">No sessions yet</td></tr>';return;}
+  tb.innerHTML=rows.map(function(s){
+    return '<tr><td style="cursor:pointer;color:var(--purple);" onclick="quickLookup(\''+esc(s.username||'')+'\')">'+ esc(s.username||'—')+'</td><td style="font-weight:900">'+num(s.score)+'</td><td style="color:var(--dim)">'+esc(s.level||'—')+'</td><td>'+(s.obstacles_cleared||'—')+'</td><td style="color:var(--dim)">'+ago(s.created_at||s.played_at)+'</td></tr>';
+  }).join('');
+}
+
+// ── REFRESH ───────────────────────────────────────
+function startCountdown(){
+  clearInterval(cdTimer);cdVal=REFRESH_SEC;
+  cdTimer=setInterval(function(){
+    cdVal--;
+    // Update ring
+    var arc=document.getElementById('refreshArc');
+    var pct=1-(cdVal/REFRESH_SEC);
+    arc.style.strokeDashoffset=50-(50*pct);
+    if(cdVal<=0){cdVal=REFRESH_SEC;arc.style.strokeDashoffset=50;silentRefresh();}
+  },1000);
+}
+function silentRefresh(){
+  apiGet('/admin/stats',function(ok,data){
+    setHealth(ok);
+    if(ok&&data){CACHE=data;renderAll(data);}
+  });
+}
+
+// ── HEALTH ────────────────────────────────────────
+function setHealth(ok){
+  var d=document.getElementById('healthDot');
+  d.className='health-dot '+(ok?'ok':'err');
+  d.title=ok?'Backend healthy':'Backend unreachable';
+}
+
+// ── API HELPERS ───────────────────────────────────
+function apiGet(path,cb){
+  fetch(B+path,{headers:{'x-admin-key':KEY}})
+  .then(function(r){return r.ok?r.json().then(function(d){cb(true,d);}):cb(false,null);})
+  .catch(function(){cb(false,null);});
+}
+function apiPost(path,body,cb){
+  fetch(B+path,{method:'POST',headers:{'x-admin-key':KEY,'Content-Type':'application/json'},body:JSON.stringify(body)})
+  .then(function(r){return r.ok?r.json().then(function(d){cb(true,d);}):cb(false,null);})
+  .catch(function(){cb(false,null);});
+}
+
+// ── UI HELPERS ────────────────────────────────────
+function badge(tier){
+  var t=tier||'free';
+  return '<span class="badge '+t+'">'+t+'</span>';
+}
+function set(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function num(n){return n!=null?Number(n).toLocaleString():0;}
+function ago(iso){
+  if(!iso)return '—';
+  var ms=Date.now()-new Date(iso).getTime(),s=Math.floor(ms/1000);
+  if(s<60)return s+'s ago';var m=Math.floor(s/60);if(m<60)return m+'m ago';
+  var h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';
+}
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
+  clearTimeout(window._toastTimer);window._toastTimer=setTimeout(function(){t.style.display='none';},2400);
+}
+</script>
+</body>
+</html>
