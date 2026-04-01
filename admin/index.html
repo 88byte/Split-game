@@ -533,6 +533,10 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="page" id="page-sessions">
       <div class="pg-title">Game Sessions</div>
       <div class="card">
+        <div class="card-hd" style="margin-bottom:0;">
+          <div class="card-title">Recent Sessions</div>
+          <div class="card-action" onclick="loadSessions()">Refresh</div>
+        </div>
         <div id="sessHeader"></div>
         <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>Obstacles</th><th>When</th></tr></thead>
         <tbody id="sessBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
@@ -651,6 +655,8 @@ function nav(id,el){
       else clearInterval(activityPollTimer);
     },30000);
   }
+  // Sessions tab — always reload fresh when navigating to it
+  if(id==='sessions')loadSessions();
 }
 function mobNav(el){
   document.querySelectorAll('.mob-nav-item').forEach(function(n){n.classList.remove('active');});
@@ -698,7 +704,7 @@ function renderTopbar(today,purchases,stats){
     var gCount=ALL_SESSIONS.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
     var nCount=ALL_SESSIONS.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
     var dtl=document.getElementById('tbGamesDetail');
-    if(dtl)dtl.textContent=nCount+'↑ '+gCount+'g';
+    if(dtl)dtl.textContent=nCount+' reg · '+gCount+' guest';
   }
   if(purchases&&purchases.length){
     LAST_PURCH_ISO=purchases[0].created_at||'';
@@ -1009,13 +1015,23 @@ function renderRevStats(s,purchases){
 // ── SESSIONS ──────────────────────────────────────────────
 var SESSION_FILTER='all';
 var ALL_SESSIONS=[];
+function loadSessions(){
+  document.getElementById('sessBody').innerHTML='<tr><td colspan="5"><div class="spinner"></div></td></tr>';
+  apiGet('/admin/stats',function(ok,data){
+    if(ok&&data&&data.recent_sessions){
+      renderSessions(data.recent_sessions);
+    } else {
+      renderSessions([]);
+    }
+  });
+}
 function renderSessions(rows){
   if(rows&&rows.length){
     ALL_SESSIONS=rows;
     var gCount=rows.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
     var nCount=rows.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
     var dtl=document.getElementById('tbGamesDetail');
-    if(dtl)dtl.textContent=nCount+'↑ '+gCount+'g';
+    if(dtl)dtl.textContent=nCount+' reg · '+gCount+' guest';
     renderSessionsFiltered();
   } else {
     // recent_sessions empty — fall back to activity score events
@@ -1027,13 +1043,13 @@ function renderSessions(rows){
       }
       var scoreRows=data.events.filter(function(e){return e.type==='score';}).map(function(e){
         return{username:e.username,score:e.score,level:e.level,obstacles_cleared:null,created_at:e.at};
-      });
+      }).sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
       ALL_SESSIONS=scoreRows;
       if(scoreRows.length){
         var gc=scoreRows.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
         var nc=scoreRows.length-gc;
         var dtl=document.getElementById('tbGamesDetail');
-        if(dtl)dtl.textContent=nc+'↑ '+gc+'g';
+        if(dtl)dtl.textContent=nc+' reg · '+gc+' guest';
       }
       renderSessionsFiltered();
     });
