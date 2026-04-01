@@ -1688,9 +1688,8 @@ function isPaid(){return localStorage.getItem('splitPaid')==='true';}
 function incrementGameCount(){
   gamesPlayed++;
   localStorage.setItem('splitGamesPlayed',String(gamesPlayed));
-  var trackName=username||'Guest';
-  fetch(BACKEND_URL+'/track-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:trackName})}).catch(function(){});
 }
+
 
 
 function shouldShowPaywall(){return !isPaid()&&gamesPlayed>=FREE_GAMES;}
