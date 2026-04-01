@@ -701,9 +701,10 @@ function renderTopbar(today,purchases,stats){
   }
   // Guest vs named split from recent sessions
   if(ALL_SESSIONS&&ALL_SESSIONS.length){
-    var todaySessions=rows.filter(function(s){var d=new Date(s.created_at);var n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();});
+    var todaySessions=ALL_SESSIONS.filter(function(s){var d=new Date(s.created_at);var n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();});
     var gCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
     var nCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
+    var dtl=document.getElementById('tbGamesDetail');
     if(dtl)dtl.textContent=nCount+' reg · '+gCount+' guest';
   }
   if(purchases&&purchases.length){
@@ -1031,6 +1032,7 @@ function renderSessions(rows){
     var todaySessions=rows.filter(function(s){var d=new Date(s.created_at);var n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();});
     var gCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
     var nCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
+    var dtl=document.getElementById('tbGamesDetail');
     if(dtl)dtl.textContent=nCount+' reg · '+gCount+' guest';
     renderSessionsFiltered();
   } else {
