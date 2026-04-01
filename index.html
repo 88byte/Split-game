@@ -1688,10 +1688,10 @@ function isPaid(){return localStorage.getItem('splitPaid')==='true';}
 function incrementGameCount(){
   gamesPlayed++;
   localStorage.setItem('splitGamesPlayed',String(gamesPlayed));
-  if(username){
-    fetch(BACKEND_URL+'/track-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:username})}).catch(function(){});
-  }
+  var trackName=username||'Guest';
+  fetch(BACKEND_URL+'/track-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:trackName})}).catch(function(){});
 }
+
 
 function shouldShowPaywall(){return !isPaid()&&gamesPlayed>=FREE_GAMES;}
 
@@ -1812,14 +1812,13 @@ function doGameOver(){
       // Save score locally
       var isNew=score>getHS().score;
       if(isNew){setHS(score,username||'Guest');}
-      // Submit score to backend if we have a username (paid or not)
-      if(username){
-        fetch(BACKEND_URL+'/submit-score',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({username:username,score:score,run_time_ms:runElapsed,level:LEVELS[activeLevel].id})
-        }).catch(function(){});
-      }
+      var scoreUser=username||'Guest';
+      fetch(BACKEND_URL+'/submit-score',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:scoreUser,score:score,run_time_ms:runElapsed,level:LEVELS[activeLevel].id})
+      }).catch(function(){});
+
       showGO();
     });
   },1800);
