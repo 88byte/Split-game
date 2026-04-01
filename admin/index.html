@@ -538,7 +538,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
           <div class="card-action" onclick="loadSessions()">Refresh</div>
         </div>
         <div id="sessHeader"></div>
-        <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>Obstacles</th><th>When</th></tr></thead>
+        <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>Score</th><th>When</th></tr></thead>
         <tbody id="sessBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
       </div>
     </div>
@@ -1082,7 +1082,7 @@ function renderSessionsFiltered(){
     var nameCell=isGuest
       ?'<td style="color:var(--dim2)">Guest</td>'
       :'<td style="cursor:pointer;color:var(--purple);" onclick="goLookup(\''+esc(s.username||'')+'\')">'+ esc(s.username||'—')+'</td>';
-    return '<tr>'+nameCell+'<td style="font-weight:900">'+num(s.score)+'</td><td style="color:var(--dim)">'+esc(s.level||'—')+'</td><td>'+(s.obstacles_cleared||'—')+'</td><td style="color:var(--dim)">'+ago(s.created_at||s.played_at)+'</td></tr>';
+    return '<tr>'+nameCell+'<td style="font-weight:900">'+num(s.score)+'</td><td style="color:var(--dim)">'+esc(s.level||'—')+'</td><td>'+(num(s.score))+'</td><td style="color:var(--dim)">'+ago(s.created_at||s.played_at)+'</td></tr>';
   }).join('');
 }
 function setSessFilter(f){SESSION_FILTER=f;renderSessionsFiltered();}
