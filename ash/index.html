@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ASHVEIL — The Understory</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box }
+html, body { width:100%; height:100%; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center; touch-action:none; }
+#c { display:block; }
+.tbtn {
+  position:fixed; border-radius:50%;
+  border:1.5px solid rgba(180,230,180,0.22);
+  background:rgba(180,230,180,0.05);
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(180,230,180,0.45); font-size:20px;
+  touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+//  ASHVEIL — THE UNDERSTORY   vertical slice
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById(‘c’);
+const ctx    = canvas.getContext(‘2d’);
+const GW=800, GH=450, TILE=32;
+
+// Offscreen canvas for dark-zone light mask
+const LC  = document.createElement(‘canvas’);
+LC.width  = GW; LC.height = GH;
+const lctx = LC.getContext(‘2d’);
+
+function resize() {
+const s = Math.min(innerWidth/GW, innerHeight/GH);
+canvas.width=GW; canvas.height=GH;
+canvas.style.width=GW*s+‘px’; canvas.style.height=GH*s+‘px’;
+}
+addEventListener(‘resize’, resize); resize();
+
+// ─── INPUT ──────────────────────────────────────────────────────
+const inp = { left:false, right:false, jump:false, atk:false };
+const jp  = { jump:false, atk:false };
+
+addEventListener(‘keydown’, e=>{
+if(e.repeat) return;
+if([‘ArrowLeft’,‘a’].includes(e.key))  inp.left=true;
+if([‘ArrowRight’,‘d’].includes(e.key)) inp.right=true;
+if([‘ArrowUp’,’ ‘,‘w’,‘z’].includes(e.key)) { inp.jump=true; jp.jump=true; }
+if([‘x’,‘Shift’,‘c’].includes(e.key))       { inp.atk=true;  jp.atk=true; }
+if([‘title’,‘dead’,‘win’].includes(gs)) startGame();
+e.preventDefault();
+}, {passive:false});
+addEventListener(‘keyup’, e=>{
+if([‘ArrowLeft’,‘a’].includes(e.key))  inp.left=false;
+if([‘ArrowRight’,‘d’].includes(e.key)) inp.right=false;
+if([‘ArrowUp’,’ ’,‘w’,‘z’].includes(e.key)) inp.jump=false;
+if([‘x’,‘Shift’,‘c’].includes(e.key))       inp.atk=false;
+});
+
+// Touch buttons
+function mkBtn(label, bottom, right, left, w, extra) {
+const d = document.createElement(‘div’);
+d.className=‘tbtn’; d.textContent=label;
+d.style.cssText=`width:${w}px;height:${w}px;bottom:${bottom}px;`
++(right!=null?`right:${right}px;`:`left:${left}px;`)+extra;
+document.body.appendChild(d);
+return d;
+}
+const tL = mkBtn(‘◀’,28,null,20,54,’’);
+const tR = mkBtn(‘▶’,28,null,86,54,’’);
+const tJ = mkBtn(‘↑’,22,18,null,68,‘background:rgba(140,200,255,0.09);border-color:rgba(140,200,255,0.35);font-size:26px;’);
+const tA = mkBtn(‘✦’,30,98,null,52,‘background:rgba(255,200,60,0.09);border-color:rgba(255,200,60,0.3);’);
+
+function bindT(btn, onD, onU) {
+btn.addEventListener(‘touchstart’, e=>{ e.preventDefault(); onD(); if([‘title’,‘dead’,‘win’].includes(gs)) startGame(); },{passive:false});
+btn.addEventListener(‘touchend’,   e=>{ e.preventDefault(); onU(); },{passive:false});
+btn.addEventListener(‘touchcancel’,e=>{ e.preventDefault(); onU(); },{passive:false});
+}
+bindT(tL, ()=>inp.left=true,  ()=>inp.left=false);
+bindT(tR, ()=>inp.right=true, ()=>inp.right=false);
+bindT(tJ, ()=>{ inp.jump=true; jp.jump=true;  }, ()=>inp.jump=false);
+bindT(tA, ()=>{ inp.atk=true;  jp.atk=true;   }, ()=>inp.atk=false);
+canvas.addEventListener(‘click’,()=>{ if([‘title’,‘dead’,‘win’].includes(gs)) startGame(); });
+
+// ─── TILE MAP ───────────────────────────────────────────────────
+// 0=air  1=solid  2=light_orb  3=boss_gate
+const MC=58, MR=14;
+const T=[];
+for(let r=0;r<MR;r++) T[r]=new Array(MC).fill(0);
+
+function setRow(row,…pairs){ // col,len pairs
+for(let i=0;i<pairs.length;i+=2){
+const c=pairs[i], l=pairs[i+1];
+for(let x=c;x<c+l&&x<MC;x++) T[row][x]=1;
+}
+}
+
+// Ground
+setRow(12, 0,58); setRow(13, 0,58);
+
+// Zone 1 — Opening Forest (cols 0–17)
+setRow(10, 0,4);         // start ledge
+setRow(9,  6,3);
+setRow(7,  3,3);
+setRow(8,  11,4);
+setRow(6,  14,2);
+setRow(10, 14,3);
+setRow(5,  9,2);
+
+// Zone 2 — Dark Forest (cols 18–39)
+setRow(9,  20,3);        // platform under orb 1
+setRow(10, 24,3);
+setRow(9,  27,3);
+setRow(8,  30,3);
+setRow(7,  33,3);        // platform under orb 2
+setRow(9,  36,3);
+setRow(10, 38,3);
+
+// Orbs
+T[8][21]  = 2;           // light orb 1
+T[6][34]  = 2;           // light orb 2
+
+// Boss gate (col 40-41, rows 7-12)
+for(let r=7;r<=12;r++) { T[r][40]=3; T[r][41]=3; }
+
+// Boss arena (cols 42–57)
+setRow(10, 42,3);
+setRow(8,  45,3);
+setRow(10, 49,3);
+setRow(7,  52,3);
+setRow(5,  42,16);       // arena ceiling
+
+// Orb registry
+const ORBS=[]; // {col,row}
+for(let r=0;r<MR;r++) for(let c=0;c<MC;c++) if(T[r][c]===2) ORBS.push({col:c,row:r});
+
+// ─── PHYSICS CONSTANTS ──────────────────────────────────────────
+const GRAV=0.55, JUMP=-12.5, SPD=3.8, MAX_VY=16;
+
+function isSolid(c,r,gateOpen){
+if(c<0||c>=MC||r<0||r>=MR) return r>=MR;
+const t=T[r][c]; return t===1||(t===3&&!gateOpen);
+}
+
+function moveEnt(e, go){
+const ew=e.w, eh=e.h;
+// Horizontal
+e.x+=e.vx;
+if(e.vx>0){
+const c=Math.floor((e.x+ew)/TILE);
+for(let r=Math.ceil(e.y/TILE);r<=Math.floor((e.y+eh-1)/TILE);r++)
+if(isSolid(c,r,go)){ e.x=c*TILE-ew-0.01; e.vx=0; break; }
+} else if(e.vx<0){
+const c=Math.floor(e.x/TILE);
+for(let r=Math.ceil(e.y/TILE);r<=Math.floor((e.y+eh-1)/TILE);r++)
+if(isSolid(c,r,go)){ e.x=(c+1)*TILE+0.01; e.vx=0; break; }
+}
+// Vertical
+e.y+=e.vy; e.onGround=false;
+if(e.vy>0){
+const r=Math.floor((e.y+eh)/TILE);
+for(let c=Math.floor(e.x/TILE);c<=Math.floor((e.x+ew-1)/TILE);c++)
+if(isSolid(c,r,go)){ e.y=r*TILE-eh-0.01; e.vy=0; e.onGround=true; break; }
+} else if(e.vy<0){
+const r=Math.floor(e.y/TILE);
+for(let c=Math.floor(e.x/TILE);c<=Math.floor((e.x+ew-1)/TILE);c++)
+if(isSolid(c,r,go)){ e.y=(r+1)*TILE+0.01; e.vy=0; break; }
+}
+}
+
+function overlaps(a,b){ return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y; }
+
+// ─── ENTITIES ───────────────────────────────────────────────────
+const PW=15, PH=25;
+let player, enemies, boss, projs, parts, orbAct, gateOpen, cam, gs, shakeT;
+
+function mkPlayer(){
+return {x:72,y:11*TILE-PH,vx:0,vy:0,w:PW,h:PH,
+onGround:false,jumps:2,facing:1,hp:5,maxHp:5,
+atkTimer:0,atkCool:0,hitTimer:0};
+}
+function mkBoss(){
+return {x:47*TILE,y:12*TILE-68,vx:0,vy:0,w:54,h:68,
+hp:12,maxHp:12,onGround:false,hitTimer:0,
+state:‘idle’,timer:0,phase:1,active:false,atkCool:0};
+}
+function mkEnemies(){
+return [
+{x:13*TILE,y:12*TILE-20,vx:-0.9,vy:0,w:20,h:20,hp:2,onGround:false,hitTimer:0},
+{x:26*TILE,y:12*TILE-20,vx:0.9, vy:0,w:20,h:20,hp:2,onGround:false,hitTimer:0},
+{x:37*TILE,y:12*TILE-20,vx:-0.7,vy:0,w:20,h:20,hp:2,onGround:false,hitTimer:0},
+];
+}
+
+function startGame(){
+player=mkPlayer(); boss=mkBoss(); enemies=mkEnemies();
+projs=[]; parts=[]; orbAct=[false,false]; gateOpen=false;
+cam={x:0,y:0}; shakeT=0; gs=‘play’;
+}
+
+// ─── PARTICLES ──────────────────────────────────────────────────
+function spawn(x,y,col,n,spd,type=’’){
+for(let i=0;i<n;i++){
+const a=Math.random()*Math.PI*2, s=spd*(0.4+Math.random()*0.8);
+parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-0.5,
+life:18+Math.random()*22, ml:40, r:1.5+Math.random()*2, col, type});
+}
+}
+function wisp(x,y){
+for(let i=0;i<4;i++)
+parts.push({x,y,vx:(Math.random()-.5)*1.2,vy:-1.2-Math.random()*.8,
+life:25+Math.random()*25, ml:50, r:2.5, col:’#88c4ff’, type:‘wisp’});
+}
+
+// ─── UPDATE ─────────────────────────────────────────────────────
+function update(){
+if(gs!==‘play’) return;
+const p=player, b=boss;
+shakeT=Math.max(0,shakeT-1);
+
+// ── Player movement ──
+if(inp.left)  { p.vx=Math.max(p.vx-1,-SPD); p.facing=-1; }
+else if(inp.right) { p.vx=Math.min(p.vx+1,SPD); p.facing=1; }
+else { p.vx*=0.75; if(Math.abs(p.vx)<0.1) p.vx=0; }
+
+// Jump
+if(jp.jump){ if(p.jumps>0){ p.vy=JUMP; p.jumps–; wisp(p.x+PW/2,p.y+PH); } jp.jump=false; }
+
+p.vy=Math.min(p.vy+GRAV, MAX_VY);
+const prevG=p.onGround;
+moveEnt(p, gateOpen);
+if(p.onGround&&!prevG) wisp(p.x+PW/2,p.y+PH);
+if(p.onGround) p.jumps=2;
+
+// Kill below map
+if(p.y>MR*TILE+50){ gs=‘dead’; return; }
+p.x=Math.max(0,Math.min(MC*TILE-PW,p.x));
+
+// Attack
+if(p.atkCool>0) p.atkCool–;
+if(jp.atk&&p.atkCool<=0){
+p.atkTimer=14; p.atkCool=20;
+spawn(p.facing>0?p.x+PW:p.x, p.y+PH/2, ‘#c0e4ff’, 5, 3.5);
+
+```
+// Orb activation
+const abox={ x:p.facing>0?p.x+PW:p.x-70, y:p.y-4, w:70, h:PH+8 };
+ORBS.forEach((o,i)=>{
+  if(!orbAct[i]&&overlaps(abox,{x:o.col*TILE,y:o.row*TILE,w:TILE,h:TILE})){
+    orbAct[i]=true;
+    spawn(o.col*TILE+TILE/2,o.row*TILE+TILE/2,'#ffd050',14,4.5);
+    if(orbAct.every(Boolean)) gateOpen=true;
+  }
+});
+
+// Hit enemies
+const ab2={ x:p.facing>0?p.x+PW-4:p.x-72, y:p.y-2, w:74, h:PH+4 };
+enemies.forEach(e=>{
+  if(e.hp<=0) return;
+  if(overlaps(ab2,e)){ e.hp--; e.hitTimer=15; e.vx+=(e.x>p.x?4:-4); spawn(e.x+e.w/2,e.y+e.h/2,'#70c030',5,3); }
+});
+
+// Hit boss
+if(b.active&&b.hp>0&&overlaps(ab2,b)){
+  b.hp--; b.hitTimer=12; shakeT=6;
+  spawn(b.x+b.w/2,b.y+b.h*.4,'#ff4040',7,4);
+  if(b.hp<=0){ spawn(b.x+b.w/2,b.y+b.h*.5,'#ff8040',24,6); gs='win'; }
+}
+jp.atk=false;
+```
+
+}
+if(p.atkTimer>0) p.atkTimer–;
+if(p.hitTimer>0) p.hitTimer–;
+
+// ── Enemies ──
+enemies.forEach(e=>{
+if(e.hp<=0) return;
+e.vy=Math.min(e.vy+GRAV,MAX_VY);
+moveEnt(e,gateOpen);
+if(e.onGround){
+const nc=Math.floor(e.x/TILE)+Math.sign(e.vx);
+if(!isSolid(nc,Math.floor((e.y+e.h+2)/TILE),gateOpen)||
+isSolid(nc,Math.floor((e.y+e.h/2)/TILE),gateOpen)) e.vx*=-1;
+}
+if(e.hitTimer>0) e.hitTimer–;
+if(p.hitTimer<=0&&overlaps(p,e)){ p.hp–; p.hitTimer=60; p.vx=(e.x>p.x?-5:5); p.vy=-6; if(p.hp<=0) gs=‘dead’; }
+});
+
+// ── Boss ──
+if(!b.active&&p.x>43*TILE&&gateOpen) b.active=true;
+
+if(b.active&&b.hp>0){
+b.phase = b.hp<b.maxHp/2?2:1;
+b.vy=Math.min(b.vy+GRAV,MAX_VY);
+moveEnt(b,gateOpen);
+if(b.hitTimer>0) b.hitTimer–;
+if(b.atkCool>0) b.atkCool–;
+if(b.timer>0){ b.timer–; }
+else {
+const dx=p.x-(b.x+b.w/2);
+const spd=b.phase===2?1.9:1.4;
+const rng=Math.random();
+if(b.state===‘idle’){
+if(Math.abs(dx)>160){ b.state=‘walk’; b.vx=Math.sign(dx)*spd; b.timer=55; }
+else if(rng<0.38){ b.state=‘slam’; b.vy=-12; b.timer=80; }
+else { b.state=‘vine’;
+const ang=Math.atan2(p.y+PH/2-(b.y+b.h*.3), p.x+PW/2-(b.x+b.w/2));
+const ps=3.8+(b.phase===2?2:0);
+for(let k=0;k<(b.phase===2?2:1);k++){
+const da=(k-.5)*.3;
+projs.push({x:b.x+b.w/2,y:b.y+b.h*.3,vx:Math.cos(ang+da)*ps,vy:Math.sin(ang+da)*ps,w:11,h:11,life:90});
+}
+b.timer=45-(b.phase===2?10:0);
+}
+} else if(b.state===‘walk’){
+b.vx*=0.88; if(Math.abs(b.vx)<0.2){ b.vx=0; b.state=‘idle’; b.timer=25; }
+} else if(b.state===‘slam’){
+b.vx=0;
+if(b.onGround&&b.vy===0&&b.timer<75){
+shakeT=10;
+spawn(b.x+b.w/2,b.y+b.h,’#3d7028’,12,5);
+spawn(b.x+b.w/2,b.y+b.h,’#2d5020’,8,3);
+if(Math.abs(p.x-b.x)<130&&p.onGround&&p.hitTimer<=0){ p.hp–; p.hitTimer=60; p.vy=-8; if(p.hp<=0) gs=‘dead’; }
+b.state=‘idle’; b.timer=45;
+}
+} else if(b.state===‘vine’){
+b.state=‘idle’; b.timer=20;
+}
+}
+// Clamp boss in arena
+b.x=Math.max(42*TILE,Math.min(54*TILE-b.w,b.x));
+
+```
+// Boss vine hits player
+projs.forEach(pr=>{
+  if(p.hitTimer<=0&&overlaps(p,{x:pr.x,y:pr.y,w:pr.w,h:pr.h})){
+    p.hp--; p.hitTimer=60; p.vx=(p.x>b.x?4:-4); p.vy=-5; pr.life=0;
+    if(p.hp<=0) gs='dead';
+  }
+});
+```
+
+}
+
+// Projectiles
+for(let i=projs.length-1;i>=0;i–){
+const pr=projs[i]; pr.x+=pr.vx; pr.y+=pr.vy; pr.vy+=0.18; pr.life–;
+if(pr.life<=0||isSolid(Math.floor(pr.x/TILE),Math.floor(pr.y/TILE),gateOpen)){
+spawn(pr.x,pr.y,’#5a9020’,4,2.5); projs.splice(i,1);
+}
+}
+
+// Particles
+for(let i=parts.length-1;i>=0;i–){
+const p=parts[i]; p.x+=p.vx; p.y+=p.vy;
+p.vx*=0.93; p.vy+=p.type===‘wisp’?-0.04:0.08; p.life–;
+if(p.life<=0) parts.splice(i,1);
+}
+
+// Camera
+const tx=p.x-GW/2+PW/2, ty=Math.max(0,Math.min(MR*TILE-GH,p.y-GH*0.55));
+cam.x+=(Math.max(0,Math.min(MC*TILE-GW,tx))-cam.x)*0.1;
+cam.y+=(ty-cam.y)*0.1;
+}
+
+// ─── DRAW ───────────────────────────────────────────────────────
+
+// Procedural bg trees (seeded)
+const BG=[];
+const rng=(s)=>{ let x=s; return ()=>{ x=Math.sin(x)*43758.5453123; return x-Math.floor(x); }; };
+for(let i=0;i<50;i++){
+const r=rng(i*31+7);
+BG.push({x:r()*MC*TILE,h:60+r()*140,w:8+r()*20,lyr:Math.floor(r()*3)});
+}
+
+function drawBG(){
+const g=ctx.createLinearGradient(0,0,0,GH);
+g.addColorStop(0,’#020805’); g.addColorStop(0.6,’#040d07’); g.addColorStop(1,’#0a1a0c’);
+ctx.fillStyle=g; ctx.fillRect(0,0,GW,GH);
+
+// Stars
+for(let i=0;i<55;i++){
+const sx=((i*137+51)*1.7%GW+((GW-(cam.x)*0.04))%GW+GW*2)%GW;
+const sy=(i*97+23)%170;
+const br=0.2+Math.sin(Date.now()/900+i)*0.15;
+ctx.fillStyle=`rgba(180,230,180,${br})`; ctx.beginPath();
+ctx.arc(sx,sy,0.7,0,Math.PI*2); ctx.fill();
+}
+
+// Parallax forest layers
+const pars=[0.25,0.5,0.75];
+const cols=[‘rgba(8,18,6,0.75)’,‘rgba(5,13,4,0.85)’,‘rgba(3,9,2,0.95)’];
+for(let lyr=0;lyr<3;lyr++){
+ctx.save(); ctx.translate(-cam.x*pars[lyr],0); ctx.fillStyle=cols[lyr];
+BG.filter(t=>t.lyr===lyr).forEach(t=>{
+ctx.beginPath();
+ctx.moveTo(t.x,GH); ctx.lineTo(t.x-t.w*0.4,GH-t.h*0.3);
+ctx.quadraticCurveTo(t.x-t.w*0.45,GH-t.h*0.72,t.x-t.w*0.12,GH-t.h);
+ctx.quadraticCurveTo(t.x,GH-t.h*1.05,t.x+t.w*0.12,GH-t.h);
+ctx.quadraticCurveTo(t.x+t.w*0.45,GH-t.h*0.72,t.x+t.w*0.4,GH-t.h*0.3);
+ctx.lineTo(t.x,GH); ctx.fill();
+});
+ctx.restore();
+}
+}
+
+function drawTiles(){
+const c0=Math.max(0,Math.floor(cam.x/TILE)-1), c1=Math.min(MC,Math.ceil((cam.x+GW)/TILE)+2);
+const r0=Math.max(0,Math.floor(cam.y/TILE)-1), r1=Math.min(MR,Math.ceil((cam.y+GH)/TILE)+2);
+for(let r=r0;r<r1;r++) for(let c=c0;c<c1;c++){
+const t=T[r][c]; if(!t) continue;
+const tx=c*TILE-cam.x, ty=r*TILE-cam.y;
+if(t===1){
+ctx.fillStyle=’#0c190a’; ctx.fillRect(tx,ty,TILE,TILE);
+// Top grass edge
+if(r===0||!T[r-1][c]){
+ctx.fillStyle=’#284818’; ctx.fillRect(tx,ty,TILE,5);
+ctx.fillStyle=’#3a6424’; ctx.fillRect(tx+1,ty,TILE-2,2);
+// Moss bumps
+ctx.fillStyle=’#1d3814’;
+for(let i=0;i<3;i++){ ctx.beginPath(); ctx.ellipse(tx+4+i*10,ty+1,2+Math.sin(c+i)*.8,2.5,0,0,Math.PI*2); ctx.fill(); }
+}
+ctx.fillStyle=‘rgba(0,0,0,0.25)’; ctx.fillRect(tx,ty,2,TILE);
+ctx.fillRect(tx,ty,TILE,1);
+} else if(t===2){
+const oi=ORBS.findIndex(o=>o.col===c&&o.row===r);
+const act=orbAct[oi]||false;
+const cx2=tx+TILE/2, cy2=ty+TILE/2;
+const pulse=Math.sin(Date.now()/380+c)*.15;
+if(act){
+const grd=ctx.createRadialGradient(cx2,cy2,2,cx2,cy2,TILE);
+grd.addColorStop(0,‘rgba(255,210,70,0.6)’); grd.addColorStop(1,‘rgba(255,160,20,0)’);
+ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(cx2,cy2,TILE,0,Math.PI*2); ctx.fill();
+}
+ctx.shadowBlur=act?18:8; ctx.shadowColor=act?’#ffa020’:’#ffe070’;
+ctx.fillStyle=act?’#ffd030’:’#ffec98’;
+ctx.beginPath(); ctx.arc(cx2,cy2,7+pulse*3*(act?1.5:1),0,Math.PI*2); ctx.fill();
+if(!act){
+ctx.strokeStyle=‘rgba(255,200,80,0.5)’; ctx.lineWidth=1;
+for(let i=0;i<6;i++){
+const a=i*Math.PI/3; ctx.beginPath();
+ctx.moveTo(cx2+Math.cos(a)*5,cy2+Math.sin(a)*5);
+ctx.lineTo(cx2+Math.cos(a)*9.5,cy2+Math.sin(a)*9.5); ctx.stroke();
+} ctx.lineWidth=1;
+}
+ctx.shadowBlur=0;
+} else if(t===3){
+// Boss gate — root wall
+ctx.fillStyle=’#142010’; ctx.fillRect(tx,ty,TILE,TILE);
+ctx.strokeStyle=’#254a18’; ctx.lineWidth=2.5;
+for(let i=0;i<3;i++){
+const bx=tx+4+i*9;
+ctx.beginPath(); ctx.moveTo(bx,ty);
+ctx.bezierCurveTo(bx-4,ty+TILE*.33,bx+4,ty+TILE*.66,bx,ty+TILE); ctx.stroke();
+}
+ctx.lineWidth=1;
+ctx.fillStyle=‘rgba(30,70,10,0.4)’; ctx.fillRect(tx+TILE-3,ty,3,TILE);
+}
+}
+}
+
+function drawPlayer(){
+const p=player;
+const px=p.x-cam.x+Math.sin(shakeT*2.8)*(shakeT*.5);
+const py=p.y-cam.y;
+const alpha=p.hitTimer>0?(Math.floor(p.hitTimer/5)%2===0?.35:1):1;
+ctx.globalAlpha=alpha;
+
+// Soul aura
+const ga=ctx.createRadialGradient(px+PW/2,py+PH/2,1,px+PW/2,py+PH/2,22);
+ga.addColorStop(0,‘rgba(120,190,255,0.22)’); ga.addColorStop(1,‘rgba(100,170,255,0)’);
+ctx.fillStyle=ga; ctx.beginPath(); ctx.arc(px+PW/2,py+PH/2,22,0,Math.PI*2); ctx.fill();
+
+// Body
+ctx.fillStyle=’#1a2830’;
+ctx.beginPath(); ctx.ellipse(px+PW/2,py+PH*.58,PW/2+1,PH*.48,0,0,Math.PI*2); ctx.fill();
+ctx.beginPath(); ctx.ellipse(px+PW/2,py+PH*.27,PW/2-.5,PH*.28,0,0,Math.PI*2); ctx.fill();
+// Horn
+ctx.beginPath(); ctx.moveTo(px+PW/2-2.5,py+PH*.06);
+ctx.lineTo(px+PW/2,py-9); ctx.lineTo(px+PW/2+2.5,py+PH*.06); ctx.fill();
+
+// Eye
+const ex=px+PW/2+p.facing*4;
+ctx.shadowBlur=7; ctx.shadowColor=’#88c4ff’;
+ctx.fillStyle=’#88c4ff’; ctx.beginPath(); ctx.arc(ex,py+PH*.25,2.5,0,Math.PI*2); ctx.fill();
+ctx.shadowBlur=0;
+
+// Attack arc
+if(p.atkTimer>0){
+const t=p.atkTimer/14;
+ctx.save(); ctx.translate(px+PW/2,py+PH*.45);
+ctx.strokeStyle=`rgba(180,225,255,${t*.8})`; ctx.lineWidth=2;
+ctx.shadowBlur=10; ctx.shadowColor=’#b0d8ff’;
+ctx.beginPath();
+ctx.arc(0,0,52,p.facing>0?-Math.PI*.4:-Math.PI*.6,p.facing>0?Math.PI*.4:Math.PI*.6);
+ctx.stroke(); ctx.shadowBlur=0; ctx.restore();
+}
+ctx.globalAlpha=1;
+}
+
+function drawEnemies(){
+enemies.forEach(e=>{
+if(e.hp<=0) return;
+const ex=e.x-cam.x, ey=e.y-cam.y;
+ctx.globalAlpha=e.hitTimer>0?.45:1;
+ctx.fillStyle=’#1a2d12’;
+ctx.shadowBlur=4; ctx.shadowColor=‘rgba(40,100,20,0.5)’;
+// Body segments
+for(let i=0;i<3;i++){
+ctx.beginPath(); ctx.ellipse(ex+3+i*6,ey+e.h*.6,6.5-i*.5,5.5,0,0,Math.PI*2); ctx.fill();
+}
+ctx.beginPath(); ctx.ellipse(ex+e.w*.72,ey+e.h*.38,6.5,8,0.15,0,Math.PI*2); ctx.fill();
+ctx.fillStyle=’#ff2828’; ctx.shadowColor=’#ff2020’; ctx.shadowBlur=5;
+ctx.beginPath(); ctx.arc(ex+e.w*.84,ey+e.h*.32,2.2,0,Math.PI*2); ctx.fill();
+ctx.shadowBlur=0; ctx.globalAlpha=1;
+});
+}
+
+function drawBoss(){
+const b=boss;
+if(!b.active||b.hp<=0) return;
+const bx=b.x-cam.x, by=b.y-cam.y;
+const ph2=b.phase===2;
+ctx.globalAlpha=b.hitTimer>0?.45:1;
+
+// Phase 2 corruption glow
+if(ph2){
+const cg=ctx.createRadialGradient(bx+b.w/2,by+b.h/2,4,bx+b.w/2,by+b.h/2,b.w*.9);
+cg.addColorStop(0,‘rgba(180,20,10,0.22)’); cg.addColorStop(1,‘rgba(180,20,10,0)’);
+ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(bx+b.w/2,by+b.h/2,b.w*.9,0,Math.PI*2); ctx.fill();
+}
+
+// Root tendrils
+ctx.strokeStyle=ph2?’#4a0e0e’:’#1c3612’; ctx.lineWidth=3;
+ctx.shadowBlur=ph2?8:0; ctx.shadowColor=’#cc1010’;
+for(let i=0;i<6;i++){
+const a=-Math.PI*.85+i*Math.PI*.34;
+ctx.beginPath();
+ctx.moveTo(bx+b.w/2,by+b.h*.78);
+ctx.quadraticCurveTo(bx+b.w/2+Math.cos(a)*22,by+b.h*.9+Math.sin(a)*12,
+bx+b.w/2+Math.cos(a)*44,by+b.h+Math.abs(Math.sin(a))*14);
+ctx.stroke();
+}
+ctx.lineWidth=1; ctx.shadowBlur=0;
+
+// Body mass
+ctx.fillStyle=ph2?’#2c0e0e’:’#182d0e’;
+ctx.beginPath(); ctx.ellipse(bx+b.w/2,by+b.h*.6,b.w/2,b.h*.45,0,0,Math.PI*2); ctx.fill();
+ctx.beginPath(); ctx.ellipse(bx+b.w*.24,by+b.h*.5,b.w*.22,b.h*.3,-.3,0,Math.PI*2); ctx.fill();
+ctx.beginPath(); ctx.ellipse(bx+b.w*.76,by+b.h*.5,b.w*.22,b.h*.3,.3,0,Math.PI*2); ctx.fill();
+ctx.beginPath(); ctx.ellipse(bx+b.w/2,by+b.h*.22,b.w*.3,b.h*.24,0,0,Math.PI*2); ctx.fill();
+
+// Crown thorns
+ctx.strokeStyle=ph2?’#5a1010’:’#2d4a18’; ctx.lineWidth=2;
+for(let i=0;i<7;i++){
+const a=-Math.PI+i*(Math.PI/6.5);
+const rx=Math.cos(a)*b.w*.29, ry=Math.sin(a)*b.h*.23;
+ctx.beginPath();
+ctx.moveTo(bx+b.w/2+rx,by+b.h*.22+ry);
+ctx.lineTo(bx+b.w/2+rx+Math.cos(a)*17,by+b.h*.22+ry+Math.sin(a)*17);
+ctx.stroke();
+}
+ctx.lineWidth=1;
+
+// Eyes
+const ec=ph2?’#ff2828’:’#44d028’;
+ctx.fillStyle=ec; ctx.shadowBlur=12; ctx.shadowColor=ec;
+ctx.beginPath(); ctx.arc(bx+b.w*.36,by+b.h*.19,5,0,Math.PI*2); ctx.fill();
+ctx.beginPath(); ctx.arc(bx+b.w*.64,by+b.h*.19,5,0,Math.PI*2); ctx.fill();
+ctx.shadowBlur=0; ctx.globalAlpha=1;
+}
+
+function drawProjs(){
+projs.forEach(pr=>{
+const px=pr.x-cam.x, py=pr.y-cam.y;
+ctx.shadowBlur=8; ctx.shadowColor=’#60a020’;
+ctx.fillStyle=’#4d8818’; ctx.beginPath(); ctx.arc(px,py,5.5,0,Math.PI*2); ctx.fill();
+ctx.shadowBlur=0;
+});
+}
+
+function drawParts(){
+parts.forEach(p=>{
+ctx.globalAlpha=(p.life/p.ml)*0.9;
+ctx.fillStyle=p.col;
+if(p.type===‘wisp’){ ctx.shadowBlur=8; ctx.shadowColor=p.col; }
+ctx.beginPath(); ctx.arc(p.x-cam.x,p.y-cam.y,p.r*(p.life/p.ml),0,Math.PI*2); ctx.fill();
+ctx.shadowBlur=0;
+});
+ctx.globalAlpha=1;
+}
+
+function drawLightMask(){
+const ds=17*TILE-cam.x, de=41*TILE-cam.x;
+if(ds>=GW||de<=0) return;
+lctx.clearRect(0,0,GW,GH);
+lctx.fillStyle=‘rgba(1,4,2,0.83)’;
+lctx.fillRect(Math.max(0,ds),0,Math.min(GW,de)-Math.max(0,ds),GH);
+lctx.globalCompositeOperation=‘destination-out’;
+
+// Player light
+const plx=player.x+PW/2-cam.x, ply=player.y+PH/2-cam.y;
+const pg=lctx.createRadialGradient(plx,ply,0,plx,ply,55);
+pg.addColorStop(0,‘rgba(0,0,0,0.9)’); pg.addColorStop(1,‘rgba(0,0,0,0)’);
+lctx.fillStyle=pg; lctx.beginPath(); lctx.arc(plx,ply,55,0,Math.PI*2); lctx.fill();
+
+// Activated orb lights
+ORBS.forEach((o,i)=>{
+if(!orbAct[i]) return;
+const ox=o.col*TILE+TILE/2-cam.x, oy=o.row*TILE+TILE/2-cam.y;
+const og=lctx.createRadialGradient(ox,oy,0,ox,oy,145);
+og.addColorStop(0,‘rgba(0,0,0,1)’); og.addColorStop(.55,‘rgba(0,0,0,.7)’); og.addColorStop(1,‘rgba(0,0,0,0)’);
+lctx.fillStyle=og; lctx.beginPath(); lctx.arc(ox,oy,145,0,Math.PI*2); lctx.fill();
+});
+
+lctx.globalCompositeOperation=‘source-over’;
+ctx.drawImage(LC,0,0);
+}
+
+function drawHUD(){
+// Shake offset
+const sx=Math.sin(shakeT*2.8)*(shakeT*.6), sy=Math.cos(shakeT*3.1)*(shakeT*.4);
+
+// Health vessels (HK style)
+for(let i=0;i<player.maxHp;i++){
+ctx.fillStyle=i<player.hp?‘rgba(80,200,60,0.85)’:‘rgba(30,50,20,0.5)’;
+ctx.strokeStyle=i<player.hp?‘rgba(100,220,80,0.6)’:‘rgba(40,70,30,0.4)’;
+ctx.lineWidth=1;
+ctx.beginPath(); ctx.arc(18+i*22,18,7,0,Math.PI*2);
+if(i<player.hp){ ctx.shadowBlur=6; ctx.shadowColor=’#50c040’; }
+ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+}
+
+// Orb/seal counter
+const litOrbs=orbAct.filter(Boolean).length;
+ctx.font=‘10px Georgia’; ctx.fillStyle=‘rgba(255,205,70,0.75)’;
+ctx.fillText(`✦ SEALS ${litOrbs}/2`, 16,42);
+if(gateOpen){ ctx.fillStyle=‘rgba(120,210,80,0.75)’; ctx.fillText(‘PATH UNSEALED’, 16,56); }
+
+// Boss HP bar
+if(boss.active&&boss.hp>0){
+const bw=280, bh=8, bx=(GW-bw)/2, by=GH-26;
+ctx.fillStyle=‘rgba(0,0,0,0.55)’; ctx.fillRect(bx-4,by-16,bw+8,bh+22);
+ctx.fillStyle=boss.phase===2?‘rgba(180,30,20,0.9)’:‘rgba(140,25,20,0.8)’;
+ctx.fillRect(bx,by,bw*boss.hp/boss.maxHp,bh);
+ctx.strokeStyle=‘rgba(180,60,50,0.5)’; ctx.lineWidth=1; ctx.strokeRect(bx,by,bw,bh);
+ctx.fillStyle=‘rgba(210,175,155,0.75)’; ctx.font=‘9px Georgia’; ctx.textAlign=‘center’;
+ctx.fillText(‘MOSSWHYR  —  THE HOLLOW WARDEN’, GW/2, by-4);
+ctx.textAlign=‘left’;
+}
+
+// Controls hint (fades after play starts)
+ctx.fillStyle=‘rgba(140,180,130,0.3)’; ctx.font=‘9px Georgia’;
+ctx.textAlign=‘right’;
+ctx.fillText(‘WASD/Arrows: Move   Z/Space: Jump   X: Light Pulse’, GW-12, GH-10);
+ctx.textAlign=‘left’;
+}
+
+function drawTitle(){
+ctx.fillStyle=’#010704’; ctx.fillRect(0,0,GW,GH);
+// Atmospheric fog strips
+for(let i=0;i<5;i++){
+const y=GH*.2+i*GH*.14, opa=0.05+i*.02;
+ctx.fillStyle=`rgba(20,60,15,${opa})`;
+ctx.fillRect(0,y-12,GW,24);
+}
+// Distant canopy silhouette
+ctx.fillStyle=‘rgba(5,14,4,0.9)’;
+for(let i=0;i<18;i++){
+const x=i*(GW/18)+20, h=60+Math.sin(i*1.7)*35, w=16+Math.sin(i*.9)*10;
+ctx.beginPath(); ctx.ellipse(x,GH*.55,w,h*.8,0,0,Math.PI*2); ctx.fill();
+}
+// Title
+ctx.shadowBlur=30; ctx.shadowColor=‘rgba(80,200,80,0.3)’;
+ctx.fillStyle=’#d0e8c0’; ctx.font=‘bold 56px Georgia’; ctx.textAlign=‘center’;
+ctx.fillText(‘ASHVEIL’, GW/2, GH*.36); ctx.shadowBlur=0;
+ctx.fillStyle=‘rgba(130,185,120,0.75)’; ctx.font=‘13px Georgia’;
+ctx.fillText(‘T H E   U N D E R S T O R Y’, GW/2, GH*.47);
+ctx.fillStyle=‘rgba(100,155,95,0.6)’; ctx.font=‘10px Georgia’;
+ctx.fillText(‘Find the two Seals of Light to break the Warden's gate.’, GW/2, GH*.63);
+ctx.fillText(‘WASD / Arrows — Move & Jump        X / Shift — Light Pulse’, GW/2, GH*.71);
+const blink=.55+Math.sin(Date.now()/520)*.35;
+ctx.globalAlpha=blink; ctx.fillStyle=‘rgba(165,215,140,0.9)’; ctx.font=‘11px Georgia’;
+ctx.fillText(’— Press Any Key or Tap to Descend —’, GW/2, GH*.84);
+ctx.globalAlpha=1; ctx.textAlign=‘left’;
+}
+
+function drawDead(){
+ctx.fillStyle=‘rgba(0,0,0,0.62)’; ctx.fillRect(0,0,GW,GH);
+ctx.fillStyle=‘rgba(170,50,40,0.92)’; ctx.font=‘bold 34px Georgia’; ctx.textAlign=‘center’;
+ctx.fillText(‘THE FOREST RECLAIMS YOU’, GW/2, GH*.46);
+ctx.fillStyle=‘rgba(195,155,145,0.7)’; ctx.font=‘11px Georgia’;
+ctx.fillText(‘Press any key or tap to try again’, GW/2, GH*.58);
+ctx.textAlign=‘left’;
+}
+
+function drawWin(){
+ctx.fillStyle=‘rgba(0,4,1,0.72)’; ctx.fillRect(0,0,GW,GH);
+const wg=ctx.createLinearGradient(0,GH*.3,0,GH*.75);
+wg.addColorStop(0,‘rgba(50,180,70,0)’); wg.addColorStop(.5,‘rgba(50,180,70,0.1)’); wg.addColorStop(1,‘rgba(50,180,70,0)’);
+ctx.fillStyle=wg; ctx.fillRect(0,0,GW,GH);
+ctx.shadowBlur=22; ctx.shadowColor=‘rgba(70,210,80,0.45)’;
+ctx.fillStyle=‘rgba(155,225,130,0.96)’; ctx.font=‘bold 30px Georgia’; ctx.textAlign=‘center’;
+ctx.fillText(‘THE UNDERSTORY FALLS SILENT’, GW/2, GH*.38); ctx.shadowBlur=0;
+ctx.fillStyle=‘rgba(130,200,110,0.7)’; ctx.font=‘12px Georgia’;
+ctx.fillText(‘Mosswhyr has returned to the root.’, GW/2, GH*.52);
+ctx.fillText(‘One seal of light — restored.’, GW/2, GH*.60);
+ctx.fillText(‘The sky still waits above.’, GW/2, GH*.67);
+ctx.fillStyle=‘rgba(100,160,90,0.5)’; ctx.font=‘10px Georgia’;
+ctx.fillText(’— tap or press any key to play again —’, GW/2, GH*.80);
+ctx.textAlign=‘left’;
+}
+
+// ─── MAIN LOOP ──────────────────────────────────────────────────
+let gs=‘title’;
+
+function frame(){
+update();
+ctx.clearRect(0,0,GW,GH);
+
+if(gs===‘title’){ drawTitle(); requestAnimationFrame(frame); return; }
+if(gs===‘dead’){  drawBG(); drawDead(); requestAnimationFrame(frame); return; }
+if(gs===‘win’){   drawWin(); requestAnimationFrame(frame); return; }
+
+drawBG();
+drawTiles();
+drawParts();
+drawEnemies();
+drawBoss();
+drawProjs();
+drawPlayer();
+if(!gateOpen) drawLightMask();
+drawHUD();
+
+requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>
