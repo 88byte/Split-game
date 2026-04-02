@@ -2,6 +2,10 @@
   "rewrites": [
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/admin/(.*)", "destination": "/admin/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/splitorigin", "destination": "/splitorigin/index.html" },
+    { "source": "/splitorigin/(.*)", "destination": "/splitorigin/index.html" },
+    { "source": "/ether", "destination": "/ether/index.html" },
+    { "source": "/ether/(.*)", "destination": "/ether/index.html" },
+    { "source": "/", "destination": "/index.html" }
   ]
 }
