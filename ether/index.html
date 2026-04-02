@@ -718,14 +718,14 @@ function hudAct5(){
   ctx.save();ctx.font=`400 9px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.25)';ctx.textAlign='right';ctx.fillText(`score ${gs.totalScore.toLocaleString()}`,C.width-22,C.height-18);ctx.textAlign='left';ctx.restore();
   for(let li=0;li<gs.lives;li++){ctx.save();ctx.fillStyle=c;ctx.shadowBlur=5;ctx.shadowColor=c;ctx.beginPath();ctx.arc(22+li*14,C.height-22,5,0,tau);ctx.fill();ctx.restore();}
 }
-// ── ACT 2 LOGIC — WRAITHS ─────────────────────────────────────────────────────
+// ── ACT 2 LOGIC — WRAITH FIELD ───────────────────────────────────────────────
 function hudAct2(){
   const rem=Math.max(0,90-Math.floor(gs.act2Timer/60));
-  ctx.save();ctx.font=`700 22px 'Share Tech Mono'`;ctx.fillStyle='rgba(160,140,220,.7)';ctx.shadowBlur=12;ctx.shadowColor='#8866ff';
+  ctx.save();ctx.font=`700 22px 'Share Tech Mono'`;ctx.fillStyle='rgba(180,160,255,.7)';ctx.shadowBlur=12;ctx.shadowColor='#9966ff';
   ctx.textAlign='right';ctx.fillText(`${rem}s`,C.width-22,46);ctx.textAlign='left';ctx.restore();
-  ctx.save();ctx.font=`400 9px 'Share Tech Mono'`;ctx.fillStyle='rgba(160,140,220,.3)';ctx.fillText('SURVIVE',22,46);ctx.restore();
-  ctx.save();ctx.font=`400 9px 'Share Tech Mono'`;ctx.fillStyle='rgba(160,140,220,.35)';ctx.textAlign='right';
-  ctx.fillText(`${gs.act2Memories||0} memories`,C.width-22,C.height-18);ctx.textAlign='left';ctx.restore();
+  ctx.save();ctx.font=`400 9px 'Share Tech Mono'`;ctx.fillStyle='rgba(180,160,255,.35)';ctx.fillText('SURVIVE',22,46);ctx.restore();
+  ctx.save();ctx.font=`400 9px 'Share Tech Mono'`;ctx.fillStyle='rgba(180,160,255,.38)';ctx.textAlign='right';
+  ctx.fillText(`${gs.act2Orbs||0} orbs`,C.width-22,C.height-18);ctx.textAlign='left';ctx.restore();
   for(let li=0;li<gs.lives;li++){ctx.save();ctx.fillStyle='#9966ff';ctx.shadowBlur=6;ctx.shadowColor='#9966ff';ctx.beginPath();ctx.arc(22+li*14,C.height-22,5,0,tau);ctx.fill();ctx.restore();}
 }
 function updateAct2(){
@@ -734,40 +734,45 @@ function updateAct2(){
   if(P.inv){P.invTime--;if(P.invTime<=0)P.inv=false;}
   gs.act2Timer++;
   if(gs.act2Timer>=5400){
-    gs.actLog.push({act:2,frames:gs.act2Timer,score:0,label:`${fmtTime(gs.act2Timer)} survived`});
-    gs.totalScore+=Math.floor(gs.act2Timer/8)+(gs.act2Memories||0)*20;showActCinematic(2,3);return;
+    gs.actLog.push({act:2,frames:gs.act2Timer,score:0,label:`${gs.act2Orbs||0} orbs collected`});
+    gs.totalScore+=(gs.act2Orbs||0)*40+Math.floor(gs.act2Timer/8);showActCinematic(2,3);return;
   }
-  const intensity=gs.act2Timer/5400;
-  // Spawn wraiths — start sparse, get dense
-  const spawnInt=Math.max(120,lerp(380,120,intensity))|0;
-  const maxWraiths=Math.floor(lerp(1,6,intensity));
-  if(gs.frame%spawnInt===0&&lightPools.filter(w=>w.alive).length<maxWraiths)lightPools.push(new Wraith(intensity));
-  // Spawn memory fragments
-  if(gs.frame%90===0&&Math.random()<.5+intensity*.4)lightPools.push(new MemoryFragment());
-  lightPools.forEach(w=>w.update&&w.update());
-  lightPools=lightPools.filter(w=>w.alive===undefined?!w.dead:w.alive);
+  const intensity=Math.min(gs.act2Timer/5400,1);
+  // Spawn wraiths — ramp from 2 to 10, each seeking the player
+  const maxW=Math.floor(lerp(2,10,intensity));
+  const spawnInt=Math.max(80,lerp(280,80,intensity))|0;
+  const wraiths=lightPools.filter(w=>w instanceof Wraith&&w.alive);
+  if(gs.frame%spawnInt===0&&wraiths.length<maxW) lightPools.push(new Wraith(intensity));
+  // Maintain ~12 void orbs on screen
+  const orbs=lightPools.filter(w=>w instanceof VoidOrb&&!w.dead);
+  if(gs.frame%90===0&&orbs.length<12) lightPools.push(new VoidOrb());
+  lightPools.forEach(e=>{if(e.update)e.update();});
+  lightPools=lightPools.filter(e=>e instanceof Wraith?e.alive:!e.dead);
   particles.forEach(p=>p.update());particles=particles.filter(p=>p.life>0);
   floatTexts.forEach(t=>t.update());floatTexts=floatTexts.filter(t=>t.life>0);
-  // Collect memory fragments
-  lightPools.filter(w=>w instanceof MemoryFragment&&!w.dead).forEach(m=>{
-    if(dist(P,m)<P.r+m.r+8){m.dead=true;gs.act2Memories=(gs.act2Memories||0)+1;gs.totalScore+=20;burst(m.x,m.y,'#aaaaff',8,1,3,1.5,3,12,25);sfx.collect(1);}
+  // Wraiths illuminate void orbs their trail passes near
+  lightPools.filter(w=>w instanceof Wraith).forEach(wr=>{
+    lightPools.filter(w=>w instanceof VoidOrb&&!w.dead).forEach(orb=>{ if(wr.trailNear(orb.x,orb.y,60))orb.illuminate(); });
   });
-  // Wraith collision
+  // Player collects illuminated orbs
+  lightPools.filter(w=>w instanceof VoidOrb&&!w.dead&&w.lit).forEach(orb=>{
+    if(dist(P,orb)<P.r+orb.r+10){orb.dead=true;gs.act2Orbs=(gs.act2Orbs||0)+1;gs.totalScore+=40;
+      burst(orb.x,orb.y,'#aaaaff',10,1,3.5,1.5,3,12,28);sfx.collect(gs.act2Orbs);
+      if(navigator.vibrate)navigator.vibrate(18);floatTexts.push(new FloatText(orb.x,orb.y-24,'+40','#aaaaff',16));}
+  });
+  // Wraith collision with player
   if(!P.inv){
-    for(const w of lightPools.filter(x=>x instanceof Wraith)){
-      if(w.alive&&dist(P,w)<P.r+w.hitR){
-        gs.lives--;sfx.hit();if(navigator.vibrate)navigator.vibrate([80,20,40]);
+    for(const w of lightPools.filter(x=>x instanceof Wraith&&x.alive)){
+      if(dist(P,w)<P.r+w.hitR){gs.lives--;sfx.hit();if(navigator.vibrate)navigator.vibrate([80,20,40]);
         P.inv=true;P.invTime=140;gs.shake={x:rnd(-10,10),y:rnd(-10,10)};
-        burst(P.x,P.y,'#9966ff',14,2,6,2,4);
-        floatTexts.push(new FloatText(P.x,P.y-28,'TOUCHED','#cc99ff',16));
-        if(gs.lives<=0)killPlayer(2);break;
-      }
+        burst(P.x,P.y,'#9966ff',14,2,6,2,4);floatTexts.push(new FloatText(P.x,P.y-28,'TOUCHED','#cc99ff',16));
+        if(gs.lives<=0)killPlayer(2);break;}
     }
   }
   gs.shake.x*=.78;gs.shake.y*=.78;
   if(gs.frame%3===0&&gs.runRecording.length<8000)gs.runRecording.push({x:Math.round(P.x),y:Math.round(P.y),sw:C.width,sh:C.height});
-  if(gs.frame%420===0){
-    const msgs=['they do not see you','move between them','do not touch the light','memories fade quickly','you are still here'];
+  if(gs.frame%480===0){
+    const msgs=['they see your light','keep moving','do not stop','the orbs are waiting','they are drawn to you'];
     floatTexts.push(new FloatText(C.width/2,C.height*.82,msgs[Math.floor(Math.random()*msgs.length)],'rgba(150,120,220,.38)',11));
   }
 }
@@ -775,22 +780,22 @@ function drawAct2(){
   drawBG();drawStars(true);
   const sx=gs.shake.x*(Math.random()-.5)*2,sy=gs.shake.y*(Math.random()-.5)*2;
   ctx.save();ctx.translate(sx,sy);
-  lightPools.filter(w=>w instanceof MemoryFragment).forEach(m=>m.draw());
+  lightPools.filter(w=>w instanceof VoidOrb).forEach(o=>o.draw());
   lightPools.filter(w=>w instanceof Wraith).forEach(w=>w.draw());
   particles.forEach(p=>p.draw());drawPlayer();ctx.restore();
   floatTexts.forEach(t=>t.draw());
   if(gs.act2Timer<200){
     const a=Math.min(gs.act2Timer/30,1)*(gs.act2Timer<140?1:Math.max(0,(200-gs.act2Timer)/60));
     ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';
-    ctx.font=`700 ${Math.min(C.width*.07,28)}px 'Orbitron'`;ctx.fillStyle='#cc99ff';ctx.shadowBlur=22;ctx.shadowColor='#8866ff';
-    ctx.fillText('DO NOT BE TOUCHED',C.width/2,C.height/2-14);
-    ctx.font=`400 12px 'Share Tech Mono'`;ctx.fillStyle='rgba(200,180,255,.6)';ctx.shadowBlur=0;
-    ctx.fillText('collect the memories  ·  avoid the wraiths',C.width/2,C.height/2+16);
+    ctx.font=`700 ${Math.min(C.width*.068,28)}px 'Orbitron'`;ctx.fillStyle='#cc99ff';ctx.shadowBlur=22;ctx.shadowColor='#8866ff';
+    ctx.fillText('THE OTHER SIDE',C.width/2,C.height/2-20);
+    ctx.font=`400 11px 'Share Tech Mono'`;ctx.fillStyle='rgba(200,180,255,.65)';ctx.shadowBlur=0;
+    ctx.fillText("use them · don't let them use you",C.width/2,C.height/2+10);
+    ctx.font=`400 10px 'Share Tech Mono'`;ctx.fillStyle='rgba(180,160,255,.45)';
+    ctx.fillText('wraith trails reveal the orbs · collect the light',C.width/2,C.height/2+28);
     ctx.restore();
   }
 }
-
-// ── ACT 3 LOGIC — WAVE SHOOTER ───────────────────────────────────────────────
 function hudAct3(){
   const waveLabel=gs.waveNum===8?'BOSS WAVE':'WAVE '+gs.waveNum+'/8';
   ctx.save();ctx.font=`700 18px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.85)';ctx.shadowBlur=8;ctx.shadowColor='#44aaff';
@@ -1860,9 +1865,12 @@ function drawDissolution(){
     const sp=Math.min((gs.dissProgress-.7)/.18,1);ctx.save();ctx.globalAlpha=sp*.28;
     for(let y=0;y<C.height;y+=3){ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(0,y,C.width,1);}ctx.restore();
   }
-  if(gs.dissProgress>.88){
-    const fp=Math.min((gs.dissProgress-.88)/.12,1);ctx.save();ctx.fillStyle=`rgba(0,0,0,${fp})`;ctx.fillRect(0,0,C.width,C.height);ctx.restore();
-    if(gs.dissProgress>.94){ctx.save();ctx.globalAlpha=Math.min((gs.dissProgress-.94)/.06,1);ctx.textAlign='center';ctx.font=`400 ${Math.min(C.width*.03,13)}px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.65)';ctx.fillText('the light remembers everything',C.width/2,C.height/2);ctx.restore();}
+  if(gs.dissProgress>.78){
+    const fp=Math.min((gs.dissProgress-.78)/.12,1);ctx.save();ctx.fillStyle=`rgba(0,0,0,${fp})`;ctx.fillRect(0,0,C.width,C.height);ctx.restore();
+    if(gs.dissProgress>.84){
+      const ta=Math.min((gs.dissProgress-.84)/.08,1); // fades in earlier, holds through to end
+      ctx.save();ctx.globalAlpha=ta;ctx.textAlign='center';ctx.font=`400 ${Math.min(C.width*.03,13)}px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.72)';ctx.shadowBlur=12;ctx.shadowColor='rgba(255,255,255,.4)';ctx.fillText('the light remembers everything',C.width/2,C.height/2);ctx.restore();
+    }
   }
 }
 // ── ACT 1 LOGIC ───────────────────────────────────────────────────────────────
