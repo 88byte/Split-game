@@ -44,7 +44,7 @@ const EPOCHS=[
   {name:'SOLAR WIND', sub:'hold your shape',            threshold:2000, bgRGB:[18,7,0],   player:'#ff9900',obstacle:'#cc0044',shard:'#ffff44',speed:1.28,spawnRate:64},
   {name:'STORM',      sub:'they are watching now',      threshold:3500, bgRGB:[0,6,18],   player:'#3399ff',obstacle:'#ff00bb',shard:'#00ffff',speed:1.55,spawnRate:52},
   {name:'PRISM',      sub:'everything fractures',       threshold:5500, bgRGB:[8,4,12],   player:'#ff77ff',obstacle:'#ff4400',shard:'#88ffaa',speed:1.82,spawnRate:42},
-  {name:'OMEGA',      sub:"sixty seconds. that's all.", threshold:8000, bgRGB:[5,5,5],    player:'#ffffff',obstacle:'#ff0000',shard:'#ffff00',speed:2.2, spawnRate:30},
+  {name:'OMEGA',      sub:"sixty seconds. that's all.", threshold:8000, bgRGB:[5,5,5],    player:'#ffffff',obstacle:'#ff0000',shard:'#ffff00',speed:1.95,spawnRate:34},
 ];
 const ACTS=[null,
   {name:'ETHER',          color:'#00d4ff',num:'ACT I'},
@@ -56,6 +56,9 @@ const ACTS=[null,
 
 let AC=null,droneNode=null;
 function initAudio(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}
+// Resume audio on any interaction (mobile browsers suspend AudioContext)
+document.addEventListener('touchstart',()=>{if(AC&&AC.state==='suspended')AC.resume();},{passive:true});
+document.addEventListener('click',()=>{if(AC&&AC.state==='suspended')AC.resume();});
 function tone(freq,endFreq,type,vol,dur,delay=0){
   if(!AC)return;try{
     const o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter();
@@ -71,7 +74,7 @@ function startDrone(freq=55){
   const o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter();
   f.type='lowpass';f.frequency.value=280;o.connect(f);f.connect(g);g.connect(AC.destination);
   o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0.001,AC.currentTime);
-  g.gain.linearRampToValueAtTime(0.03,AC.currentTime+1.8);o.start();droneNode={o,g};
+  g.gain.linearRampToValueAtTime(0.08,AC.currentTime+1.8);o.start();droneNode={o,g};
 }
 function stopDrone(){
   if(!droneNode)return;
@@ -697,8 +700,11 @@ function spawnAct1(){
   if(gs.frame%sr===0)obstacles.push(new Obstacle());
   if(gs.epoch>=3&&gs.frame%(e.spawnRate*3)===0&&on<MAX_OBS-2)obstacles.push(new Obstacle());
   if(gs.epoch>=5&&gs.frame%(e.spawnRate*4)===0&&on<MAX_OBS-4)obstacles.push(new Obstacle());
-  const mxS=5+gs.epoch*2;if(gs.frame%55===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS)shards.push(new Shard());
-  if(gs.frame%1800===900){for(let i=0;i<9;i++)shards.push(new Shard());sfx.surge();gs.gridPulse=.8;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SURGE!',E().shard,32));}
+  const mxS=8+gs.epoch*2;
+  if(gs.frame%28===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS)shards.push(new Shard());
+  // Double-spawn if running low
+  if(gs.frame%60===0&&shards.filter(s=>!s.collected&&!s.dead).length<3){shards.push(new Shard());shards.push(new Shard());}
+  if(gs.frame%1200===600){for(let i=0;i<12;i++)shards.push(new Shard());sfx.surge();gs.gridPulse=.8;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SURGE!',E().shard,32));}
   if(gs.frame%1500===750&&Math.random()<.6)powerups.push(new PowerUp());
   if(gs.epoch>=3&&gs.frame%1200===600&&Math.random()<.4){const pu=new PowerUp();pu.type='life';pu.color=PU_CFG.life.color;pu.label=PU_CFG.life.label;powerups.push(pu);} // bonus life in hard epochs
   if(!gs.bossWave&&!gs.bossCalm&&gs.score>=gs.nextBossAt&&gs.score>0){
@@ -899,7 +905,8 @@ function updateAct5(){
   // Spawn extra wandering ghost periodically
   if(gs.act5Timer%1800===900){ghostEchoes.push(new GhostEcho(genWander(),0));}
   const e5=E();if(gs.frame%e5.spawnRate===0)obstacles.push(new Obstacle());
-  const mxS=5+gs.epoch*2;if(gs.frame%55===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS)shards.push(new Shard());
+  const mxS5=8+gs.epoch*2;if(gs.frame%28===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS5)shards.push(new Shard());
+  if(gs.frame%60===0&&shards.filter(s=>!s.collected&&!s.dead).length<3){shards.push(new Shard());shards.push(new Shard());}
   obstacles.forEach(o=>o.update());obstacles=obstacles.filter(o=>o.alive);
   shards.forEach(s=>s.update());shards=shards.filter(s=>!s.dead);
   particles.forEach(p=>p.update());particles=particles.filter(p=>p.life>0);
@@ -951,6 +958,7 @@ const DSCREENS={
 };
 function killPlayer(fromAct){
   gs.epochReached=gs.epoch;gs.playFrames=gs.frame;
+  gs.bossWave=false;gs.bossCalm=0; // stop red flash on death screen
   if(fromAct===5&&gs.act5Recording.length>20)saveGhostRun();
   if(fromAct===1)gs.totalScore+=gs.score; // act 1 score only reaches totalScore on dissolution normally, add it here on death
   const total=gs.totalScore;
@@ -977,12 +985,12 @@ function drawDeath(){
       const a2=fade*Math.min((since-55-i*6)/22,1);ctx.save();ctx.globalAlpha=Math.max(0,a2)*al;ctx.textAlign='center';ctx.font=`400 ${13-i}px 'Share Tech Mono'`;ctx.fillStyle=ds.color;ctx.fillText(ds.quote,cx,cy+36+i*18);ctx.restore();
     });
   }else{
-    const qa=fade*Math.min((since-55)/22,1);ctx.save();ctx.globalAlpha=Math.max(0,qa)*.62;ctx.textAlign='center';ctx.font=`400 12px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.52)';ctx.fillText(ds.quote,cx,cy+38);ctx.restore();
+    const qa=fade*Math.min((since-55)/18,1);ctx.save();ctx.globalAlpha=Math.max(0,qa)*.85;ctx.textAlign='center';ctx.font=`400 12px 'Share Tech Mono'`;ctx.fillStyle='#fff';ctx.fillText(ds.quote,cx,cy+38);ctx.restore();
   }
   // Stats
   const rows=buildStats();
   rows.forEach(([k,v],i)=>{
-    const a2=fade*Math.min((since-55-i*4)/24,1);ctx.save();ctx.globalAlpha=Math.max(0,a2)*.62;ctx.textAlign='center';ctx.font=`400 11px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.48)';ctx.fillText(`${k}   ${v}`,cx,cy+(gs.act===5?98:60)+i*20);ctx.restore();
+    const a2=fade*Math.min((since-58-i*3)/18,1);ctx.save();ctx.globalAlpha=Math.max(0,a2)*.88;ctx.textAlign='center';ctx.font=`400 12px 'Share Tech Mono'`;ctx.fillStyle='#fff';ctx.fillText(`${k}   ${v}`,cx,cy+(gs.act===5?98:60)+i*20);ctx.restore();
   });
   // Run timeline
   const tlY=cy+(gs.act===5?98:60)+rows.length*20+16;
