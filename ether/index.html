@@ -1153,26 +1153,25 @@ function drawCinematic(){
 }
 
 // ── ADMIN SKIP — triple-tap top-right corner (remove before release) ──────────
-// REMOVE: delete the 12 lines below before shipping
+// REMOVE: delete the 10 lines below before shipping
 let _adminTaps=[],_adminSkipEnabled=true;
 function _adminCheckTap(ex,ey){
   if(!_adminSkipEnabled)return;
-  if(ex>C.width*.75&&ey<C.height*.15){
+  // Only active during gameplay — never on title/death/skins screens
+  if(gs.state!=='playing'&&gs.state!=='dissolution')return;
+  if(ex>innerWidth*.75&&ey<innerHeight*.15){
     _adminTaps.push(Date.now());
-    _adminTaps=_adminTaps.filter(t=>Date.now()-t<1200); // 1.2s window
+    _adminTaps=_adminTaps.filter(t=>Date.now()-t<1200);
     if(_adminTaps.length>=3){
       _adminTaps=[];
       const curAct=gs.act||1;
       const nextAct=Math.min(5,curAct+1);
-      if(gs.state==='playing'||gs.state==='dissolution'||gs.state==='cinematic'){
-        gs.cinematicDone=false;
-        fadeOutMusic(800);setTimeout(()=>showActCinematic(curAct,nextAct),200);
-      }
+      gs.cinematicDone=false;
+      fadeOutMusic(800);setTimeout(()=>showActCinematic(curAct,nextAct),200);
     }
   }
 }
 C.addEventListener('click',e=>_adminCheckTap(e.clientX,e.clientY));
-C.addEventListener('touchend',e=>{if(e.changedTouches[0])_adminCheckTap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);});
 // END REMOVE
 const DSCREENS={
   1:{word:'DISSOLVED',    quote:'you burned bright',                color:'#ff2255'},
