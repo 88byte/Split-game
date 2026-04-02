@@ -120,30 +120,28 @@ header{
   overflow:hidden;
 }
 
-/* Logo image — fills most of card */
+/* Full bleed image — movie poster style */
 .card-img{
   position:absolute;inset:0;
-  display:flex;align-items:flex-start;justify-content:center;
-  padding-top:0;
 }
 .card-img img{
-  width:100%;height:72%;
-  object-fit:contain;
-  object-position:center top;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center 15%;
   transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .4s;
-  opacity:.95;
+  opacity:.9;
 }
-.game-card:hover .card-img img{transform:scale(1.04);opacity:1;}
+.game-card:hover .card-img img{transform:scale(1.03);opacity:1;}
 
-/* Fade from image to dark at bottom */
+/* Strong gradient — clears image text, dark zone at bottom for content */
 .card-fade{
   position:absolute;
   bottom:0;left:0;right:0;
-  height:48%;
+  height:38%;
   background:linear-gradient(to top,
     var(--card-bg,rgba(12,6,22,1)) 0%,
-    var(--card-bg,rgba(12,6,22,.98)) 30%,
-    var(--card-bg,rgba(12,6,22,.6)) 65%,
+    var(--card-bg,rgba(12,6,22,.99)) 40%,
+    var(--card-bg,rgba(12,6,22,.7)) 70%,
     transparent 100%
   );
   pointer-events:none;
@@ -293,7 +291,7 @@ footer{
 @media(max-width:580px){
   .games{grid-template-columns:1fr;max-width:320px;gap:18px;}
   .game-card{aspect-ratio:3/4;}
-  .card-img img{height:70%;object-fit:contain;}
+  .card-img img{height:100%;object-fit:cover;}
   header{padding:36px 0 16px;}
 }
 </style>
@@ -326,7 +324,7 @@ footer{
     <a class="game-card card-split" href="/splitorigin">
       <div class="card-inner">
         <div class="card-img">
-          <img src="/splitorigin.PNG" alt="Split Origin">
+          <img src="/splitorigin.png" alt="Split Origin">
         </div>
         <div class="card-fade"></div>
         <div class="card-content">
@@ -343,7 +341,7 @@ footer{
     <a class="game-card card-ether" href="#" onclick="return false;" style="cursor:default;">
       <div class="card-inner">
         <div class="card-img">
-          <img src="/EtherLogo.png" alt="Ether" style="object-position:center center;">
+          <img src="/EtherLogo.png" alt="Ether" style="object-position:center 20%;">
         </div>
         <div class="card-fade" style="--card-bg:#030c10;"></div>
         <div class="card-content">
