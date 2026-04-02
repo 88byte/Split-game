@@ -566,7 +566,7 @@ let gs={
   breathScale:1.0,constellations:0,act4Win:false,act4WinTimer:0,act4Perfect:0,act4Missed:0,
   act5Timer:0,act5Recording:[],act5Score:0,act5MaxCombo:0,
   runRecording:[],
-  cinematicFrame:0,cinematicTo:0,cinematicFrom:0,cinematicOrbX:0,cinematicOrbY:0,cinematicParticles:[],
+  cinematicFrame:0,cinematicTo:0,cinematicFrom:0,cinematicOrbX:0,cinematicOrbY:0,cinematicDone:false,cinematicParticles:[],
   shake:{x:0,y:0},flash:0,transAlpha:0,actLog:[],totalScore:0,
   act2Exposure:0,
 };
@@ -995,15 +995,16 @@ function showActCinematic(fromAct,toAct){
   // Seed orb position for cinematic
   gs.cinematicOrbX=C.width/2;gs.cinematicOrbY=C.height/2;
 }
-// Also wire showActCard to go through cinematic
-const _origShowActCard=showActCard;
-
 function drawCinematic(){
   const f=gs.cinematicFrame,from=gs.cinematicFrom,to=gs.cinematicTo;
-  const cx=C.width/2,cy=C.height/2,dur=380; // ~6.3s at 60fps
+  const cx=C.width/2,cy=C.height/2,dur=380;
   gs.cinematicFrame++;
-
-  // Shared: update orb lerp toward center
+  // Safety: if from/to pair unrecognised, don't sit on black — jump to act
+  const validPairs=[[1,2],[2,3],[3,4],[4,5]];
+  if(!validPairs.some(([a,b])=>a===from&&b===to)){
+    if(!gs.cinematicDone){gs.cinematicDone=true;setTimeout(()=>{gs.cinematicDone=false;playMusic(to||2);initAct(to||2);},100);}
+    drawBG();return;
+  }
   gs.cinematicOrbX=lerp(gs.cinematicOrbX,cx,.04);
   gs.cinematicOrbY=lerp(gs.cinematicOrbY,cy,.04);
 
@@ -1145,8 +1146,9 @@ function drawCinematic(){
 
   // 2→3 cinematic: hold 90 extra frames at end so the amber light lingers
   const holdExtra=(from===2&&to===3)?90:0;
-  if(f>=dur+holdExtra){
-    setTimeout(()=>{ playMusic(gs.cinematicTo); initAct(gs.cinematicTo); },100);
+  if(f>=dur+holdExtra&&!gs.cinematicDone){
+    gs.cinematicDone=true;
+    setTimeout(()=>{ gs.cinematicDone=false; playMusic(gs.cinematicTo); initAct(gs.cinematicTo); },100);
   }
 }
 
@@ -1160,9 +1162,11 @@ function _adminCheckTap(ex,ey){
     _adminTaps=_adminTaps.filter(t=>Date.now()-t<1200); // 1.2s window
     if(_adminTaps.length>=3){
       _adminTaps=[];
-      const nextAct=Math.min(5,(gs.act||1)+1);
+      const curAct=gs.act||1;
+      const nextAct=Math.min(5,curAct+1);
       if(gs.state==='playing'||gs.state==='dissolution'||gs.state==='cinematic'){
-        fadeOutMusic(800);setTimeout(()=>showActCinematic(gs.act||1,nextAct),200);
+        gs.cinematicDone=false;
+        fadeOutMusic(800);setTimeout(()=>showActCinematic(curAct,nextAct),200);
       }
     }
   }
@@ -1358,7 +1362,7 @@ function startGame(){
     mazeSpeed:1.5,mazeScrolled:0,mazeLives:3,mazeWallTouches:0,
     breathScale:1.0,constellations:0,act4Win:false,act4WinTimer:0,act4Perfect:0,act4Missed:0,
     act5Timer:0,act5Recording:[],act5Score:0,act5MaxCombo:0,
-    runRecording:[],cinematicFrame:0,cinematicParticles:[],cinematicFrom:0,cinematicTo:0,cinematicOrbX:0,cinematicOrbY:0,
+    runRecording:[],cinematicFrame:0,cinematicParticles:[],cinematicFrom:0,cinematicTo:0,cinematicOrbX:0,cinematicOrbY:0,cinematicDone:false,
     shake:{x:0,y:0},flash:0,transAlpha:0,actLog:[],totalScore:0,
   });
   camZoom=1.0;bgC={r:2,g:4,b:10};
