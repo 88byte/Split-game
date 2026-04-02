@@ -98,7 +98,7 @@ function playMusic(actNum){
   if(musicFadeTimer)clearInterval(musicFadeTimer);
   musicFadeTimer=setInterval(()=>{
     const t=Math.min((Date.now()-start)/dur,1);
-    newAudio.volume=t*0.75;
+    newAudio.volume=t*0.45;
     if(oldAudio)oldAudio.volume=fromVol*(1-t);
     if(t>=1){
       clearInterval(musicFadeTimer);musicFadeTimer=null;
@@ -591,10 +591,10 @@ function hudAct1(){
     ctx.beginPath();ctx.arc(28+i*13,83,on?4:3,0,tau);ctx.fill();ctx.restore();
   }
   if(gs.epoch===5){
-    const rem=Math.max(0,1800-gs.omegaTimer),urgent=rem<360;
+    const rem=Math.max(0,1200-gs.omegaTimer),urgent=rem<360;
     ctx.save();ctx.font=`700 13px 'Share Tech Mono'`;ctx.fillStyle=urgent?'#ff4444':'rgba(255,255,255,.45)';if(urgent){ctx.shadowBlur=10;ctx.shadowColor='#ff2200';}
     ctx.fillText(`${Math.ceil(rem/60)}s`,28,102);ctx.restore();
-    ctx.save();ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(28,107,80,3);ctx.fillStyle=urgent?'#ff4444':EPOCHS[5].player;ctx.fillRect(28,107,80*(1800-rem)/1800,3);ctx.restore();
+    ctx.save();ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(28,107,80,3);ctx.fillStyle=urgent?'#ff4444':EPOCHS[5].player;ctx.fillRect(28,107,80*(1200-rem)/1200,3);ctx.restore();
   }
   if(gs.combo>=3){const cs=1+Math.min(gs.combo/30,.55);ctx.save();ctx.font=`700 ${Math.floor(18*cs)}px 'Orbitron'`;ctx.fillStyle=c;ctx.shadowBlur=14;ctx.shadowColor=c;ctx.textAlign='right';ctx.fillText(`×${gs.combo}`,C.width-28,52);ctx.textAlign='left';ctx.restore();}
   if(gs.score<gs.highScore){ctx.save();ctx.font=`400 10px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.18)';ctx.textAlign='right';ctx.fillText(`BEST ${String(gs.highScore).padStart(7,'0')}`,C.width-28,70);ctx.textAlign='left';ctx.restore();}
@@ -731,7 +731,7 @@ function updateAct1(){
   gs.shake.x*=.77;gs.shake.y*=.77;
   if(gs.shield){gs.shieldTime--;if(gs.shieldTime<=0){gs.shield=false;P.inv=false;}}
   if(gs.magnet){gs.magnetTime--;if(gs.magnetTime<=0)gs.magnet=false;}
-  if(gs.epoch===5){gs.omegaTimer++;if(gs.omegaTimer>=1800)initDissolution();}
+  if(gs.epoch===5){gs.omegaTimer++;if(gs.omegaTimer>=1200)initDissolution();}
   spawnAct1();
   obstacles.forEach(o=>o.update());obstacles=obstacles.filter(o=>o.alive);
   shards.forEach(s=>s.update());shards=shards.filter(s=>!s.dead);
