@@ -39,12 +39,12 @@ let selTrail=localStorage.getItem('ether_trail')||'classic';
 let selOrb=localStorage.getItem('ether_orb')||'epoch';
 
 const EPOCHS=[
-  {name:'THE VOID',   sub:'learn to breathe',          threshold:0,    bgRGB:[2,4,10],   player:'#00d4ff',obstacle:'#ff2255',shard:'#00ffcc',speed:1.0, spawnRate:80},
-  {name:'NEBULA',     sub:'the colors remember you',    threshold:500,  bgRGB:[10,2,18],  player:'#cc44ff',obstacle:'#ff1133',shard:'#ffdd00',speed:1.2, spawnRate:68},
-  {name:'SOLAR WIND', sub:'hold your shape',            threshold:1200, bgRGB:[18,7,0],   player:'#ff9900',obstacle:'#cc0044',shard:'#ffff44',speed:1.45,spawnRate:56},
-  {name:'STORM',      sub:'they are watching now',      threshold:2200, bgRGB:[0,6,18],   player:'#3399ff',obstacle:'#ff00bb',shard:'#00ffff',speed:1.75,spawnRate:44},
-  {name:'PRISM',      sub:'everything fractures',       threshold:3500, bgRGB:[8,4,12],   player:'#ff77ff',obstacle:'#ff4400',shard:'#88ffaa',speed:2.2, spawnRate:32},
-  {name:'OMEGA',      sub:"sixty seconds. that's all.", threshold:5500, bgRGB:[5,5,5],    player:'#ffffff',obstacle:'#ff0000',shard:'#ffff00',speed:2.8, spawnRate:22},
+  {name:'THE VOID',   sub:'learn to breathe',          threshold:0,    bgRGB:[2,4,10],   player:'#00d4ff',obstacle:'#ff2255',shard:'#00ffcc',speed:1.0, spawnRate:85},
+  {name:'NEBULA',     sub:'the colors remember you',    threshold:900,  bgRGB:[10,2,18],  player:'#cc44ff',obstacle:'#ff1133',shard:'#ffdd00',speed:1.12,spawnRate:75},
+  {name:'SOLAR WIND', sub:'hold your shape',            threshold:2000, bgRGB:[18,7,0],   player:'#ff9900',obstacle:'#cc0044',shard:'#ffff44',speed:1.28,spawnRate:64},
+  {name:'STORM',      sub:'they are watching now',      threshold:3500, bgRGB:[0,6,18],   player:'#3399ff',obstacle:'#ff00bb',shard:'#00ffff',speed:1.55,spawnRate:52},
+  {name:'PRISM',      sub:'everything fractures',       threshold:5500, bgRGB:[8,4,12],   player:'#ff77ff',obstacle:'#ff4400',shard:'#88ffaa',speed:1.82,spawnRate:42},
+  {name:'OMEGA',      sub:"sixty seconds. that's all.", threshold:8000, bgRGB:[5,5,5],    player:'#ffffff',obstacle:'#ff0000',shard:'#ffff00',speed:2.2, spawnRate:30},
 ];
 const ACTS=[null,
   {name:'ETHER',          color:'#00d4ff',num:'ACT I'},
@@ -245,10 +245,10 @@ class Obstacle{
   }
   get hitR(){return this.r*.72;}
 }
-const PU_CFG={nova:{color:'#ff6600',label:'NOVA'},shield:{color:'#00ffff',label:'SHIELD'},magnet:{color:'#ffaa00',label:'MAGNET'}};
+const PU_CFG={nova:{color:'#ff6600',label:'NOVA'},shield:{color:'#00ffff',label:'SHIELD'},magnet:{color:'#ffaa00',label:'MAGNET'},life:{color:'#ff88ff',label:'+LIFE'}};
 class PowerUp{
   constructor(){
-    this.type=['nova','shield','magnet'][Math.floor(Math.random()*3)];
+    this.type=['nova','shield','magnet','magnet','magnet','life'][Math.floor(Math.random()*6)];
     const a=rnd(0,tau),d=rnd(80,Math.min(C.width,C.height)*.38);
     this.x=C.width/2+Math.cos(a)*d;this.y=C.height/2+Math.sin(a)*d;
     this.angle=a;this.dist=d;this.r=11;this.pulse=rnd(0,tau);this.dead=false;this.life=700;
@@ -263,6 +263,7 @@ class PowerUp{
     ctx.save();ctx.globalAlpha=al;ctx.strokeStyle=this.color;ctx.lineWidth=2.2;ctx.shadowBlur=28;ctx.shadowColor=this.color;
     if(this.type==='nova'){ctx.beginPath();for(let i=0;i<8;i++){const a2=tau/8*i-tau/16,r2=i%2===0?pr*1.6:pr*.6;ctx.lineTo(Math.cos(a2)*r2+this.x,Math.sin(a2)*r2+this.y);}ctx.closePath();ctx.stroke();}
     else if(this.type==='shield'){poly(6,pr,this.x,this.y,this.pulse*.18);}
+    else if(this.type==='life'){ctx.beginPath();ctx.arc(this.x,this.y,pr,0,tau);ctx.stroke();ctx.beginPath();ctx.arc(this.x,this.y,pr*.5,0,tau);ctx.stroke();}
     else{ctx.beginPath();ctx.moveTo(this.x,this.y-pr*1.5);ctx.lineTo(this.x+pr,this.y);ctx.lineTo(this.x,this.y+pr*1.5);ctx.lineTo(this.x-pr,this.y);ctx.closePath();ctx.stroke();}
     ctx.font=`700 9px 'Share Tech Mono'`;ctx.fillStyle=this.color;ctx.textAlign='center';ctx.shadowBlur=6;ctx.fillText(this.label,this.x,this.y+pr+17);ctx.restore();
   }
@@ -454,7 +455,7 @@ function onTap(){
   initAudio();
   if(gs.state==='title'){if(!hitTest(titleHits))startGame();}
   else if(gs.state==='skins'){hitTest(skinsHits);}
-  else if(gs.state==='epochCard'&&gs.cardTimer<120){gs.cardTimer=1;}
+  else if(gs.state==='epochCard'&&gs.cardTimer<180){gs.cardTimer=1;}
   else if(gs.state==='actCard'&&gs.cardTimer<160){gs.cardTimer=1;}
   else if(gs.state==='dead'&&gs.frame-deathFrame>80){if(!hitTest(deathHits))gs.state='title';}
 }
@@ -587,7 +588,7 @@ function puBar(x,y,w,h,color,label,pct){
 
 // ── EPOCH CARD ────────────────────────────────────────────────────────────────
 function showEpochCard(idx){
-  const e=EPOCHS[idx];gs.state='epochCard';gs.cardTimer=165;
+  const e=EPOCHS[idx];gs.state='epochCard';gs.cardTimer=280;
   gs.cardData={name:e.name,sub:e.sub,color:e.player,pip:idx};
   P.inv=true;P.invTime=9999;
 }
@@ -699,6 +700,7 @@ function spawnAct1(){
   const mxS=5+gs.epoch*2;if(gs.frame%55===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS)shards.push(new Shard());
   if(gs.frame%1800===900){for(let i=0;i<9;i++)shards.push(new Shard());sfx.surge();gs.gridPulse=.8;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SURGE!',E().shard,32));}
   if(gs.frame%1500===750&&Math.random()<.6)powerups.push(new PowerUp());
+  if(gs.epoch>=3&&gs.frame%1200===600&&Math.random()<.4){const pu=new PowerUp();pu.type='life';pu.color=PU_CFG.life.color;pu.label=PU_CFG.life.label;powerups.push(pu);} // bonus life in hard epochs
   if(!gs.bossWave&&!gs.bossCalm&&gs.score>=gs.nextBossAt&&gs.score>0){
     gs.bossWave=true;gs.bossTime=480;gs.nextBossAt+=1200;
     floatTexts.push(new FloatText(C.width/2,C.height*.32,'WAVE PROTOCOL',E().obstacle,26));sfx.boss();gs.gridPulse=1.0;
@@ -707,18 +709,22 @@ function spawnAct1(){
   if(gs.bossCalm>0)gs.bossCalm--;
 }
 function collideAct1(){
-  if(P.inv)return;if(gs.nearCooldown>0)gs.nearCooldown--;
-  for(const o of obstacles){
-    if(!o.alive)continue;const d=dist(P,o)-o.hitR;
-    if(d<gs.closestCall)gs.closestCall=d;
-    if(d<14&&d>0&&gs.nearCooldown===0){gs.nearMisses++;gs.nearCooldown=30;gs.gridPulse=Math.max(gs.gridPulse,.65);}
-    if(d<=0){
-      gs.lives--;gs.combo=0;const ddx=P.x-o.x,ddy=P.y-o.y,dl=Math.hypot(ddx,ddy)||1;
-      gs.shake={x:ddx/dl*12,y:ddy/dl*12};gs.hitStop=3;P.inv=true;P.invTime=115;
-      burst(P.x,P.y,'#ff2255',22,2,7,2,5);sfx.hit();if(navigator.vibrate)navigator.vibrate([80,20,40]);
-      if(gs.lives<=0)killPlayer(1);break;
+  // Obstacle collision only when not invincible
+  if(!P.inv){
+    if(gs.nearCooldown>0)gs.nearCooldown--;
+    for(const o of obstacles){
+      if(!o.alive)continue;const d=dist(P,o)-o.hitR;
+      if(d<gs.closestCall)gs.closestCall=d;
+      if(d<14&&d>0&&gs.nearCooldown===0){gs.nearMisses++;gs.nearCooldown=30;gs.gridPulse=Math.max(gs.gridPulse,.65);}
+      if(d<=0){
+        gs.lives--;gs.combo=0;const ddx=P.x-o.x,ddy=P.y-o.y,dl=Math.hypot(ddx,ddy)||1;
+        gs.shake={x:ddx/dl*12,y:ddy/dl*12};gs.hitStop=3;P.inv=true;P.invTime=115;
+        burst(P.x,P.y,'#ff2255',22,2,7,2,5);sfx.hit();if(navigator.vibrate)navigator.vibrate([80,20,40]);
+        if(gs.lives<=0)killPlayer(1);break;
+      }
     }
   }
+  // Shards + powerups always collectable (shield doesn't block these)
   for(const s of shards){
     if(s.collected||s.dead)continue;
     if(dist(P,s)<(gs.magnet?P.r+s.r+90:P.r+s.r+18)){
@@ -739,7 +745,8 @@ function activatePU(type){
     gs.novaRing={r:0,x:P.x,y:P.y,maxR:Math.max(C.width,C.height)*1.3};sfx.nova();
     obstacles.forEach(o=>{burst(Math.max(0,Math.min(C.width,o.x)),Math.max(0,Math.min(C.height,o.y)),E().obstacle,12,2,6,1.5,4,22,50);o.alive=false;});
     gs.score+=50;gs.flash=.4;gs.gridPulse=1.0;camZoom=.88;floatTexts.push(new FloatText(C.width/2,C.height*.38,'NOVA!','#ff6600',30));
-  }else if(type==='shield'){gs.shield=true;gs.shieldTime=300;P.inv=true;P.invTime=9999;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SHIELD!','#00ffff',28));}
+  }else if(type==='shield'){gs.shield=true;gs.shieldTime=480;P.inv=true;P.invTime=480;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SHIELD!','#00ffff',28));}
+  else if(type==='life'){gs.lives=Math.min(5,gs.lives+1);sfx.milestone();gs.flash=.3;floatTexts.push(new FloatText(C.width/2,C.height*.38,`+1 LIFE  (${gs.lives})✦`,'#ff88ff',26));}
   else{gs.magnet=true;gs.magnetTime=380;floatTexts.push(new FloatText(C.width/2,C.height*.38,'MAGNET!','#ffaa00',28));}
 }
 function drawEdgeIndicators(){
@@ -945,7 +952,8 @@ const DSCREENS={
 function killPlayer(fromAct){
   gs.epochReached=gs.epoch;gs.playFrames=gs.frame;
   if(fromAct===5&&gs.act5Recording.length>20)saveGhostRun();
-  const total=gs.totalScore+(gs.act===5?gs.act5Score:0);
+  if(fromAct===1)gs.totalScore+=gs.score; // act 1 score only reaches totalScore on dissolution normally, add it here on death
+  const total=gs.totalScore;
   if(total>gs.highScore){gs.highScore=total;localStorage.setItem('ether_hs',gs.highScore);}
   gs.state='dead';deathFrame=gs.frame;sfx.death();stopDrone();document.body.style.cursor='default';
   burst(P.x,P.y,pColor(),90,1,9.5,2,9,40,115);deathParts=[...particles];particles=[];
@@ -995,10 +1003,13 @@ function drawDeath(){
 }
 function buildStats(){
   const rows=[];
-  rows.push(['TOTAL SCORE',gs.highScore.toLocaleString()]);
-  if(gs.act===1){rows.push(['EPOCH',EPOCHS[gs.epochReached].name]);rows.push(['MAX COMBO',`${gs.maxCombo}×`]);rows.push(['SHARDS',String(gs.shardsCollected)]);}
+  const runScore=gs.act===1?gs.score:gs.act===5?gs.act5Score:0;
+  rows.push(['SCORE',runScore.toLocaleString()]);
+  if(gs.totalScore>runScore)rows.push(['TOTAL RUN',gs.totalScore.toLocaleString()]);
+  if(gs.act===1){rows.push(['EPOCH REACHED',EPOCHS[gs.epochReached].name]);rows.push(['MAX COMBO',`${gs.maxCombo}×`]);rows.push(['SHARDS',String(gs.shardsCollected)]);}
   if(gs.act>=2)rows.push(['ACTS COMPLETED',String(gs.actLog.length)]);
-  rows.push(['TIME',fmtTime(gs.frame)]);
+  rows.push(['TIME ALIVE',fmtTime(gs.frame)]);
+  if(gs.highScore>0)rows.push(['BEST RUN',gs.highScore.toLocaleString()]);
   return rows;
 }
 function drawTimeline(cx,y,fade,since){
