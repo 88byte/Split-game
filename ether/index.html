@@ -354,12 +354,12 @@ let gs={
   bullets:[],enemies:[],lastShot:0,fractureBoss:null,voidFakeKill:false,voidFakeKillTimer:0,voidShots:[],
   cracksSealed:0,cracksBreached:0,act4Cracks:[],act4Enemies:[],
   act4Sealing:false,act4NearCrack:false,act4SealBtn:null,
-  beatCount:0,beatPerfect:0,beatPulseRing:null,act4Shards:[],act4Obstacles:[],
+  beatCount:0,beatPerfect:0,beatPulseRing:null,act4Shards:[],act4Obstacles:[],act4SecretSpawned:false,
   act5Timer:0,act5Recording:[],act5Score:0,act5MaxCombo:0,act5Phase:'waves',
-  act5Wave:0,act5WaveKills:0,act5WaveActive:false,act5WaveSides:[],act5WaveEnemyCount:0,
+  act5Wave:0,act5WaveKills:0,act5WaveActive:false,act5WaveSides:[],act5WaveEnemyCount:0,act5PulseCharge:0,act5PulseRing:null,act5SecretSpawned:false,
   act5Projectiles:[],act5Bullets:[],act5BossDeadTimer:0,originBoss:null,
   runRecording:[],
-  cinematicFrame:0,cinematicTo:0,cinematicFrom:0,cinematicOrbX:0,cinematicOrbY:0,cinematicDone:false,cinematicParticles:[],
+  cinematicFrame:0,cinematicTo:0,cinematicFrom:0,cinematicOrbX:0,cinematicOrbY:0,cinematicDone:false,cinematicParticles:[],cinematicStartTime:0,
   victoryFrame:0,
   shake:{x:0,y:0},flash:0,transAlpha:0,actLog:[],totalScore:0,
 };
@@ -393,7 +393,16 @@ let mx=0,my=0,titleHits=[],skinsHits=[],deathHits=[];
 C.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
 C.addEventListener('touchmove',e=>{e.preventDefault();mx=e.touches[0].clientX;my=e.touches[0].clientY;},{passive:false});
 C.addEventListener('click',onTap);
-C.addEventListener('touchstart',e=>{e.preventDefault();mx=e.touches[0].clientX;my=e.touches[0].clientY;onTap();},{passive:false});
+C.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  // In Act 3/5 right-half touch = pulse release, don't move character there
+  if((gs.act===3||gs.act===5)&&gs.state==='playing'&&t.clientX>C.width*.5){
+    if(gs.act===3)releasePulse();else releaseAct5Pulse();
+    return; // don't update mx/my or call onTap
+  }
+  mx=t.clientX;my=t.clientY;onTap();
+},{passive:false});
 window.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Enter')onTap();});
 function hitTest(hits){for(const h of hits){if(mx>=h.x&&mx<=h.x+h.w&&my>=h.y&&my<=h.y+h.h){h.fn();return true;}}return false;}
 function onTap(){
@@ -403,7 +412,7 @@ function onTap(){
   else if(gs.state==='victory'){gs.state='title';}
   else if(gs.state==='epochCard'&&gs.cardTimer<240){gs.cardTimer=1;}
   else if(gs.state==='actCard'&&gs.cardTimer<240){gs.cardTimer=1;}
-  else if(gs.state==='cinematic'&&gs.cinematicFrame>420){gs.cinematicFrame=9999;}
+  else if(gs.state==='cinematic'&&gs.cinematicStartTime&&(Date.now()-gs.cinematicStartTime)>7000){gs.cinematicStartTime=0;gs.cinematicDone=false;playMusic(gs.cinematicTo);initAct(gs.cinematicTo);}
   else if(gs.state==='dead'&&gs.frame-deathFrame>80){if(!hitTest(deathHits))gs.state='title';}
 }
 
@@ -629,7 +638,11 @@ class FractureEnemy{
     const sp=lerp(1.0,3.8,Math.min((wave-1)/7,1));
     const baseAngle=Math.atan2(P.y-this.y,P.x-this.x);
     // Unique offset so enemies form a ring not a stack
-    const spread=100+gs.waveNum*18;const oa=rnd(0,tau);this.targetOffset={x:Math.cos(oa)*spread,y:Math.sin(oa)*spread};
+    // Assign enemies a slot on a ring around player — no clustering
+    const ringIdx=Math.floor(Math.random()*12);
+    const ringAngle=tau/12*ringIdx+rnd(-.2,.2);
+    const ringDist=lerp(80,200,Math.min(gs.waveNum/8,1))+rnd(-20,20);
+    this.targetOffset={x:Math.cos(ringAngle)*ringDist,y:Math.sin(ringAngle)*ringDist};
     this.vx=Math.cos(baseAngle+rnd(-.2,.2))*sp;this.vy=Math.sin(baseAngle+rnd(-.2,.2))*sp;this.baseSpd=sp;
     const roll=Math.random();
     if(wave>=8&&roll<.25){this.type='heavy';this.hp=6;this.r=22;this.rotSpd=.02;this.pulseHits=3;}
@@ -652,7 +665,7 @@ class FractureEnemy{
       if(spd>this.baseSpd*1.5){this.vx=this.vx/spd*this.baseSpd*1.5;this.vy=this.vy/spd*this.baseSpd*1.5;}
     }
     this.x+=this.vx;this.y+=this.vy;
-    if(this.x<-120||this.x>C.width+120||this.y<-120||this.y>C.height+120)this.alive=false;
+    if(this.x<-120||this.x>C.width+120||this.y<-120||this.y>C.height+120){this.alive=false;if(gs.act===3&&gs.waveActive)gs.waveKills++;if(gs.act===5&&gs.act5WaveActive)gs.act5WaveKills++;}
   }
   draw(){
     const fi=Math.min(this.age/20,1);ctx.save();ctx.globalAlpha=fi;ctx.translate(this.x,this.y);ctx.rotate(this.rot);
@@ -737,6 +750,11 @@ function hudAct5(){
     const waveLabel=gs.act5Wave===0?'GET READY':`WAVE ${gs.act5Wave} / 8`;
     ctx.save();ctx.font=`700 18px 'Share Tech Mono'`;ctx.fillStyle='rgba(200,150,255,.85)';ctx.shadowBlur=8;ctx.shadowColor='#cc88ff';
     ctx.fillText(waveLabel,28,48);ctx.restore();
+    // Pulse charge bar
+    const pct5=gs.act5PulseCharge||0;const bw5=Math.min(C.width*.55,260),bh5=8,bx5=C.width/2-bw5/2,by5=C.height-28;
+    const pc5c=pct5>.8?'#ffffff':pct5>.4?'#cc88ff':'#8844ff';
+    ctx.save();ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(bx5,by5,bw5,bh5);ctx.fillStyle=pc5c;ctx.shadowBlur=pct5>.5?14:4;ctx.shadowColor=pc5c;ctx.fillRect(bx5,by5,bw5*pct5,bh5);
+    ctx.font=`400 8px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.3)';ctx.textAlign='center';ctx.fillText(pct5>=.8?'RELEASE PULSE — SPACE / TAP':'PULSE CHARGING',C.width/2,by5-5);ctx.textAlign='left';ctx.restore();
     if(gs.act5WaveActive&&gs.enemies&&gs.enemies.length>0){
       ctx.save();ctx.font=`400 9px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillText(`${gs.enemies.filter(e=>e.alive).length} remaining`,28,64);ctx.restore();
     }
@@ -800,6 +818,16 @@ function updateAct2(){
       if(gs.act2Orbs===5)floatTexts.push(new FloatText(C.width/2,C.height*.4,'THEY SENSE YOU','#bb44ff',18));
       if(gs.act2Orbs===10)floatTexts.push(new FloatText(C.width/2,C.height*.4,'CLOSING IN','#ff44aa',20));
       if(gs.act2Orbs===15)floatTexts.push(new FloatText(C.width/2,C.height*.4,'NO HIDING NOW','#ff0066',22));
+      // Secret life at fragment 10 — hidden in dark corner
+      if(gs.act2Orbs===10&&!gs.act2SecretSpawned){
+        gs.act2SecretSpawned=true;
+        const corner=Math.floor(Math.random()*4);
+        const lx=[30,C.width-30,C.width-30,30][corner],ly=[30,30,C.height-30,C.height-30][corner];
+        const sl={x:lx,y:ly,r:10,dead:false};
+        sl.update=function(){};
+        sl.draw=function(lX,lY,lR){const d=Math.hypot(this.x-lX,this.y-lY);if(d>lR+this.r)return;const vis=Math.max(0,1-(d-lR*.4)/(lR*.8));ctx.save();ctx.globalAlpha=vis*.8;ctx.shadowBlur=20;ctx.shadowColor='#ffdd00';ctx.fillStyle='#ffdd00';ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,tau);ctx.fill();ctx.restore();};
+        if(!gs.act2SecretLife)gs.act2SecretLife=sl;
+      }
       // Win condition
       if(gs.act2Orbs>=20){
         gs.actLog.push({act:2,frames:gs.act2Timer,score:gs.totalScore,label:'20 fragments recovered'});
@@ -807,6 +835,15 @@ function updateAct2(){
       }
     }
   });
+  // Secret life collection
+  if(gs.act2SecretLife&&!gs.act2SecretLife.dead){
+    const lightR2=gs.act2LightR||100;
+    if(Math.hypot(P.x-gs.act2SecretLife.x,P.y-gs.act2SecretLife.y)<lightR2&&dist(P,gs.act2SecretLife)<P.r+gs.act2SecretLife.r){
+      gs.act2SecretLife.dead=true;gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();
+      floatTexts.push(new FloatText(gs.act2SecretLife.x,gs.act2SecretLife.y-24,'+1 LIFE','#ffdd00',20));
+      burst(gs.act2SecretLife.x,gs.act2SecretLife.y,'#ffdd00',14,2,5,2,4,15,35);
+    }
+  }
   // Wraith collision
   if(!P.inv){
     for(const w of lightPools.filter(x=>x instanceof Wraith&&x.alive)){
@@ -831,22 +868,30 @@ function drawAct2(){
   lightPools.filter(w=>w instanceof Wraith).forEach(w=>w.draw(P.x,P.y,lightR));
   lightPools.filter(w=>w instanceof MemFrag).forEach(f=>f.draw(P.x,P.y,lightR));
   particles.forEach(p=>p.draw());
-  // Player light — radial gradient
-  const g=ctx.createRadialGradient(P.x,P.y,0,P.x,P.y,lightR);
-  g.addColorStop(0,'rgba(180,160,255,.08)');g.addColorStop(.6,'rgba(140,100,220,.04)');g.addColorStop(1,'transparent');
+  // Player light — visible radial glow so the radius is readable
+  const g=ctx.createRadialGradient(P.x,P.y,P.r,P.x,P.y,lightR);
+  g.addColorStop(0,'rgba(180,160,255,.18)');
+  g.addColorStop(.5,'rgba(140,100,220,.08)');
+  g.addColorStop(.85,'rgba(100,60,180,.03)');
+  g.addColorStop(1,'transparent');
   ctx.fillStyle=g;ctx.beginPath();ctx.arc(P.x,P.y,lightR,0,tau);ctx.fill();
+  // Soft edge ring — shows exactly where visibility ends
+  ctx.save();
+  ctx.strokeStyle=`rgba(160,120,255,${.12+Math.sin(gs.frame*.04)*.04})`;
+  ctx.lineWidth=1.5;ctx.shadowBlur=8;ctx.shadowColor='rgba(160,120,255,.3)';
+  ctx.setLineDash([4,8]);ctx.lineDashOffset=-(gs.frame*.3);
+  ctx.beginPath();ctx.arc(P.x,P.y,lightR,0,tau);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
   drawPlayer();ctx.restore();
   floatTexts.forEach(t=>t.draw());
-  // Intro card
-  if(gs.act2Timer<200){
-    const a=Math.min(gs.act2Timer/30,1)*(gs.act2Timer<150?1:Math.max(0,(200-gs.act2Timer)/50));
+  // Instructions only — title was shown in the cinematic
+  if(gs.act2Timer>60&&gs.act2Timer<300){
+    const a=Math.min((gs.act2Timer-60)/40,1)*(gs.act2Timer<230?1:Math.max(0,(300-gs.act2Timer)/70));
     ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';
-    ctx.font=`700 ${Math.min(C.width*.07,28)}px 'Orbitron'`;ctx.fillStyle='#cc99ff';ctx.shadowBlur=22;ctx.shadowColor='#8866ff';
-    ctx.fillText('THE OTHER SIDE',C.width/2,C.height*.4);
     ctx.font=`400 12px 'Share Tech Mono'`;ctx.fillStyle='rgba(200,180,255,.7)';ctx.shadowBlur=0;
-    ctx.fillText('Do not show fear in darkness.',C.width/2,C.height*.4+32);
+    ctx.fillText('Do not show fear in darkness.',C.width/2,C.height*.5);
     ctx.font=`400 10px 'Share Tech Mono'`;ctx.fillStyle='rgba(180,160,255,.5)';
-    ctx.fillText('move your light · find 20 fragments · stay alive',C.width/2,C.height*.4+54);
+    ctx.fillText('move your light · find 20 fragments · stay alive',C.width/2,C.height*.5+22);
     ctx.restore();
   }
 }
@@ -880,7 +925,7 @@ function startWave(){
   if(gs.waveActive)return;
   gs.waveNum++;gs.waveKills=0;gs.waveActive=true;
   const isBoss=gs.waveNum===8;
-  const count=isBoss?0:4+gs.waveNum*3;
+  const count=isBoss?0:8+gs.waveNum*4;
   gs.waveEnemiesThisWave=count;gs.waveTimer=0;
   const label=isBoss?'THE VOID AWAKENS':'WAVE '+gs.waveNum;
   floatTexts.push(new FloatText(C.width/2,C.height*.36,label,'#44aaff',24));sfx.boss();
@@ -892,7 +937,7 @@ function startWave(){
 }
 function releasePulse(){
   const charge=gs.act3PulseCharge||0;if(charge<.12)return;
-  const radius=lerp(C.width*.25,C.width*.75,charge);const dmg=Math.ceil(charge*4);
+  const radius=lerp(P.r*4,Math.min(C.width,C.height)*.28,charge);const dmg=Math.ceil(charge*4);
   // Visual ring
   gs.act3PulseRing={r:0,maxR:radius,born:gs.frame,charge};sfx.boss();
   // Damage enemies
@@ -946,6 +991,7 @@ function updateAct3(){
   }
   gs.shake.x*=.8;gs.shake.y*=.8;
   // Wave complete
+  // OOB kills counted in FractureEnemy.update() directly
   if(gs.waveActive&&gs.waveNum<8&&gs.waveKills>=gs.waveEnemiesThisWave&&gs.enemies.length===0){
     gs.waveActive=false;floatTexts.push(new FloatText(C.width/2,C.height*.38,'WAVE CLEAR','#44aaff',22));
     if(gs.lives<5&&Math.random()<.38){gs.lives++;sfx.milestone();floatTexts.push(new FloatText(C.width/2,C.height*.47,'+1 LIFE','#ff88ff',18));}
@@ -1062,31 +1108,70 @@ function updateAct4(){
   particles.forEach(p=>p.update());particles=particles.filter(p=>p.life>0);
   floatTexts.forEach(t=>t.update());floatTexts=floatTexts.filter(t=>t.life>0);
   // Win: reach the top
+  // Hidden life — a golden glowing chunk appears at mid-climb
+  if(gs.act4Dist>=gs.act4MaxDist*.45&&gs.act4Dist<gs.act4MaxDist*.5&&!gs.act4SecretSpawned){
+    gs.act4SecretSpawned=true;
+    const ld={x:rnd(C.width*.2,C.width*.8),y:-30,vy:(gs.act4Speed||2)*0.7,vx:rnd(-0.5,0.5),w:22,h:22,rot:0,rotS:.03,alive:true,glow:true,isLife:true,color:'#ffdd00',hitsPlayer:()=>false};
+    ld.update=function(){this.y+=this.vy;this.x+=this.vx;this.rot+=this.rotS;if(this.y>C.height+30)this.alive=false;};
+    ld.draw=function(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.rot);ctx.shadowBlur=30;ctx.shadowColor='#ffdd00';ctx.fillStyle='#ffdd00';ctx.fillRect(-11,-11,22,22);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.strokeRect(-11,-11,22,22);ctx.restore();};
+    ld.hitsPlayer=function(){return Math.hypot(P.x-this.x,P.y-this.y)<P.r+14;};
+    gs.act4Debris.push(ld);
+  }
+  // Collect the golden life fragment
+  if(gs.act4Debris){gs.act4Debris.filter(d=>d.isLife&&d.alive).forEach(d=>{if(Math.hypot(P.x-d.x,P.y-d.y)<P.r+16){d.alive=false;gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();floatTexts.push(new FloatText(d.x,d.y-24,'+1 LIFE','#ffdd00',20));burst(d.x,d.y,'#ffdd00',16,2,6,2,5,18,45);}});}
   if(gs.act4Dist>=gs.act4MaxDist){
     gs.actLog.push({act:4,frames:gs.frame,score:gs.totalScore,label:'the rise complete'});
     showActCinematic(4,5);
   }
 }
 function drawAct4(){
-  // Background: ember-warm at start, deepening violet as you ascend
   const prog=Math.min((gs.act4Dist||0)/(gs.act4MaxDist||8000),1);
-  const r=Math.floor(lerp(18,6,prog)),g=Math.floor(lerp(6,2,prog)),b=Math.floor(lerp(2,14,prog));
+  const r=Math.floor(lerp(18,4,prog)),g=Math.floor(lerp(6,2,prog)),b=Math.floor(lerp(2,18,prog));
   ctx.fillStyle=`rgb(${r},${g},${b})`;ctx.fillRect(0,0,C.width,C.height);
-  // Speed lines — vertical streaks showing ascent
-  if(gs.act4Speed>2.5){const sl=Math.min((gs.act4Speed-2.5)/3,.8);ctx.save();ctx.globalAlpha=sl*.15;ctx.strokeStyle='rgba(255,120,40,.6)';ctx.lineWidth=1;for(let i=0;i<8;i++){const lx=rnd(0,C.width);ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,rnd(20,80));ctx.stroke();}ctx.restore();}
+  // Scrolling grid — strong upward motion illusion
+  const scrollY=(gs.act4Dist||0)*0.8;
+  const gc=lerp(.18,.06,prog);
+  ctx.save();ctx.strokeStyle=`rgba(255,${Math.floor(lerp(120,60,prog))},40,${gc})`;ctx.lineWidth=1;
+  // Vertical lines — tighter near edges (forced perspective feel)
+  const cols=8;
+  for(let i=0;i<=cols;i++){const gx=C.width/cols*i;ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,C.height);ctx.stroke();}
+  // Horizontal lines scrolling upward
+  const gridH=60;
+  for(let gy=(scrollY%gridH);gy<C.height+gridH;gy+=gridH){
+    const yp=1-gy/C.height;ctx.globalAlpha=gc*(0.4+yp*.6);
+    ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(C.width,gy);ctx.stroke();
+  }
+  ctx.restore();
+  // Speed streaks at bottom — blur of upward travel
+  ctx.save();const streakA=Math.min((gs.act4Speed-1.5)/4,.5);
+  if(streakA>0){ctx.strokeStyle=`rgba(255,140,60,${streakA*.4})`;ctx.lineWidth=1;
+    for(let i=0;i<10;i++){const lx=rnd(0,C.width),len=gs.act4Speed*14+rnd(0,30);
+      ctx.beginPath();ctx.moveTo(lx,C.height);ctx.lineTo(lx,C.height-len);ctx.stroke();}
+  }ctx.restore();
   drawStars();
   const sx=gs.shake.x*(Math.random()-.5)*2,sy=gs.shake.y*(Math.random()-.5)*2;
   ctx.save();ctx.translate(sx,sy);
   gs.act4Debris&&gs.act4Debris.forEach(d=>d.draw());
-  particles.forEach(p=>p.draw());drawPlayer();ctx.restore();
+  particles.forEach(p=>p.draw());
+  if(gs.act2SecretLife&&!gs.act2SecretLife.dead)gs.act2SecretLife.draw(P.x,P.y,gs.act2LightR||100);
+  drawPlayer();ctx.restore();
   floatTexts.forEach(t=>t.draw());
-  if(!gs.act4Dist||gs.act4Dist<120){ctx.save();ctx.globalAlpha=.85;ctx.textAlign='center';ctx.font=`700 ${Math.min(C.width*.07,28)}px 'Orbitron'`;ctx.fillStyle='#ff6600';ctx.shadowBlur=20;ctx.shadowColor='#ff6600';ctx.fillText('THE RISE',C.width/2,C.height/2-16);ctx.font=`400 11px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,200,150,.55)';ctx.shadowBlur=0;ctx.fillText('navigate the debris · ascend',C.width/2,C.height/2+8);ctx.fillText('two lives · no stopping',C.width/2,C.height/2+24);ctx.restore();}
+  if(!gs.act4Dist||gs.act4Dist<300){ctx.save();ctx.globalAlpha=.85;ctx.textAlign='center';ctx.font=`700 ${Math.min(C.width*.07,28)}px 'Orbitron'`;ctx.fillStyle='#ff6600';ctx.shadowBlur=20;ctx.shadowColor='#ff6600';ctx.fillText('THE RISE',C.width/2,C.height/2-16);ctx.font=`400 11px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,200,150,.55)';ctx.shadowBlur=0;ctx.fillText('navigate the debris · ascend',C.width/2,C.height/2+8);ctx.fillText('two lives · no stopping',C.width/2,C.height/2+24);ctx.restore();}
 }
 
+function releaseAct5Pulse(){
+  const charge=gs.act5PulseCharge||0;if(charge<.12)return;
+  const radius=lerp(P.r*4,Math.min(C.width,C.height)*.28,charge);
+  gs.act5PulseRing={r:0,maxR:radius,born:gs.frame,charge};sfx.boss();
+  gs.enemies.forEach(e=>{if(!e.alive)return;if(dist(P,e)<radius+e.r){const killed=e.hitByPulse(charge);burst(e.x,e.y,e.color,8,1,4,1.5,3.5,14,32);if(killed){gs.act5WaveKills++;gs.totalScore+=30*gs.act5Wave;}}});
+  gs.enemies=gs.enemies.filter(e=>e.alive);
+  gs.act5PulseCharge=0;
+}
 function initAct5(){
   gs.act=5;gs.state='playing';gs.epoch=0;gs.combo=0;gs.act5Score=0;gs.act5Timer=0;gs.act5MaxCombo=0;
   gs.act5Recording=[];gs.lives=3;gs.act5Phase='waves';gs.act5Projectiles=[];gs.originBoss=null;
   gs.act5Wave=0;gs.act5WaveKills=0;gs.act5WaveActive=false;gs.act5WaveSides=[];gs.act5WaveEnemyCount=0;
+  gs.act5PulseCharge=0;gs.act5PulseRing=null;gs.act5SecretSpawned=false;gs.act5SecretLife=null;
   bgC={r:2,g:4,b:10};obstacles=[];shards=[];particles=[];floatTexts=[];ghostEchoes=[];
   gs.enemies=[];gs.bullets=[];gs.lastShot=0;
   playMusic(5);document.body.style.cursor='none';
@@ -1099,7 +1184,7 @@ function startAct5Wave(){
   const sides=isFinal?[0,1,2,3]: // all 4 sides on wave 8
     [Math.floor(Math.random()*4)]; // random single side for waves 1-7, no repeat
   gs.act5WaveSides=sides;
-  const perSide=isFinal?8:5+gs.act5Wave*2;
+  const perSide=isFinal?12:8+gs.act5Wave*3;
   gs.act5WaveEnemyCount=perSide*sides.length;
   floatTexts.push(new FloatText(C.width/2,C.height*.38,isFinal?'ALL SIDES — FINAL WAVE':`WAVE ${gs.act5Wave} / 8`,'#cc88ff',24));
   sfx.boss();
@@ -1145,10 +1230,31 @@ function updateAct5(){
     for(const b of gs.bullets){
       for(const e of gs.enemies){if(!e.alive||!b.alive)continue;if(dist(b,e)<b.r+e.hitR){b.alive=false;const killed=e.hit();if(killed){gs.act5WaveKills++;gs.totalScore+=20*gs.act5Wave;burst(e.x,e.y,e.color,10,1,5,1.5,3.5,16,36);}}}
     }
+    // Count enemies that left the map as kills so wave can complete
+    gs.enemies.forEach(e=>{if(!e.alive&&!e.counted){e.counted=true;gs.act5WaveKills++;}});
     gs.enemies=gs.enemies.filter(e=>e.alive);
     // Player-enemy collision
-    if(!P.inv){for(const e of gs.enemies){if(!e.alive)continue;if(dist(P,e)<P.r+e.hitR){gs.lives--;sfx.hit();P.inv=true;P.invTime=120;burst(P.x,P.y,'#ff2255',14,2,6,2,4);gs.shake={x:rnd(-8,8),y:rnd(-8,8)};if(gs.lives<=0)killPlayer(5);break;}}}
+    if(!P.inv){for(const e of gs.enemies){if(!e.alive)continue;if(dist(P,e)<P.r+e.hitR){gs.lives--;sfx.hit();P.inv=true;P.invTime=120;burst(P.x,P.y,'#ff2255',14,2,6,2,4);gs.shake={x:rnd(-8,8),y:rnd(-8,8)};if(navigator.vibrate)navigator.vibrate([80,20,40]);if(gs.lives<=0)killPlayer(5);break;}}}
+    // Powerups in Act 5 like Act 1
+    if(gs.frame%1200===300&&Math.random()<.6)powerups.push(new PowerUp());
+    powerups.forEach(p=>p.update());powerups=powerups.filter(p=>!p.dead);
+    for(const pu of powerups){if(!pu.dead&&dist(P,pu)<P.r+pu.r+16){pu.dead=true;activatePU(pu.type);}}
     // Wave complete
+    // Secret life hidden in corner during wave 6
+    if(gs.act5Wave===6&&!gs.act5SecretSpawned&&gs.act5WaveActive){
+      gs.act5SecretSpawned=true;
+      const corner=Math.floor(Math.random()*4);
+      const lx=[30,C.width-30,C.width-30,30][corner],ly=[30,30,C.height-30,C.height-30][corner];
+      floatTexts.push(new FloatText(lx,ly,'✦','#ffdd00',22));
+      // Create a collectible life
+      if(!gs.act5SecretLife){gs.act5SecretLife={x:lx,y:ly,r:12,collected:false};
+        setTimeout(()=>{if(gs.act5SecretLife)gs.act5SecretLife=null;},8000);}
+    }
+    if(gs.act5SecretLife&&!gs.act5SecretLife.collected&&dist(P,gs.act5SecretLife)<P.r+gs.act5SecretLife.r){
+      gs.act5SecretLife.collected=true;gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();
+      floatTexts.push(new FloatText(gs.act5SecretLife.x,gs.act5SecretLife.y-24,'+1 LIFE','#ffdd00',20));
+      burst(gs.act5SecretLife.x,gs.act5SecretLife.y,'#ffdd00',16,2,6,2,5,18,45);
+    }
     if(gs.act5WaveActive&&gs.act5WaveKills>=gs.act5WaveEnemyCount&&gs.enemies.length===0){
       gs.act5WaveActive=false;
       if(gs.act5Wave>=8){
@@ -1156,7 +1262,13 @@ function updateAct5(){
         gs.act5Phase='boss';gs.originBoss=new TheVoid(true);gs.bullets=[];
         sfx.boss();floatTexts.push(new FloatText(C.width/2,C.height*.3,'THE VOID RETURNS','#ff0044',28));
       }else{
-        if(gs.lives<5&&Math.random()<.4){gs.lives++;sfx.milestone();floatTexts.push(new FloatText(C.width/2,C.height*.45,'+1 LIFE','#ff88ff',18));}
+        // Hidden life near wave 7
+        if(gs.act5Wave===7&&!gs.act5SecretSpawned){
+          gs.act5SecretSpawned=true;
+          // Spawn a glowing life shard among the enemies' debris
+          const ls=new Shard();ls.x=rnd(C.width*.1,C.width*.9);ls.y=rnd(C.height*.1,C.height*.9);ls.isLife=true;shards.push(ls);
+          floatTexts.push(new FloatText(C.width/2,C.height*.32,'AN ENERGY REMAINS...','rgba(255,136,255,.6)',16));
+        }
         setTimeout(startAct5Wave,2200);
       }
     }
@@ -1189,9 +1301,18 @@ function updateAct5(){
     if(!P.inv&&boss.alive&&dist(P,boss)<P.r+boss.r*.4){gs.lives--;sfx.hit();P.inv=true;P.invTime=130;burst(P.x,P.y,'#ff0044',14,2,6,2,4);if(gs.lives<=0)killPlayer(5);}
   }
   // Shards in act5 for scoring
+  // Shards charge the pulse in act5
   const mxS5=6;if(gs.frame%25===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS5)shards.push(new Shard());
+  // Act 1 obstacles appear in act5 for nostalgia and challenge
+  if(gs.act5Phase==='waves'&&gs.frame%120===0&&obstacles.length<4)obstacles.push(new Obstacle());
+  obstacles.forEach(o=>o.update());obstacles=obstacles.filter(o=>o.alive);
+  if(!P.inv){for(const o of obstacles){if(!o.alive)continue;const d=dist(P,o)-o.hitR;if(d<=0){gs.lives--;gs.combo=0;P.inv=true;P.invTime=100;burst(P.x,P.y,'#ff2255',14,2,6,2,5);sfx.hit();if(gs.lives<=0)killPlayer(5);break;}}}
+  // Occasional powerups
+  if(gs.act5Phase==='waves'&&gs.frame%1400===700&&Math.random()<.5)powerups.push(new PowerUp());
+  powerups.forEach(pu=>pu.update());powerups=powerups.filter(p=>!p.dead);
+  for(const pu of powerups){if(!pu.dead&&dist(P,pu)<P.r+pu.r+16){pu.dead=true;activatePU(pu.type);}}
   shards.forEach(s=>s.update());shards=shards.filter(s=>!s.dead);
-  for(const s of shards){if(s.collected||s.dead)continue;if(dist(P,s)<P.r+s.r+18){s.collected=true;gs.combo++;const mult=Math.min(COMBO_CAP,Math.floor(gs.combo/5)+1),pts=10*mult;gs.act5Score+=pts;gs.totalScore+=pts;burst(s.x,s.y,E().shard,7,1,3,1.5,3,12,25);sfx.collect(gs.combo);}}
+  for(const s of shards){if(s.collected||s.dead)continue;if(dist(P,s)<P.r+s.r+18){s.collected=true;if(s.isLife){gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();floatTexts.push(new FloatText(s.x,s.y-24,'+1 LIFE','#ff88ff',20));burst(s.x,s.y,'#ff88ff',16,2,6,2,5,18,45);}else{gs.combo++;const mult=Math.min(COMBO_CAP,Math.floor(gs.combo/5)+1),pts=10*mult;gs.act5Score+=pts;gs.totalScore+=pts;burst(s.x,s.y,E().shard,7,1,3,1.5,3,12,25);sfx.collect(gs.combo);}}}
   particles.forEach(p=>p.update());particles=particles.filter(p=>p.life>0);
   floatTexts.forEach(t=>t.update());floatTexts=floatTexts.filter(t=>t.life>0);
 }
@@ -1201,11 +1322,18 @@ function drawAct5(){
   ctx.save();ctx.translate(C.width/2+sx,C.height/2+sy);ctx.scale(camZoom,camZoom);ctx.translate(-C.width/2,-C.height/2);
   drawBG();drawStars();
   if(gs.act5Phase==='waves'){
-    shards.forEach(s=>s.draw());
-    gs.bullets&&gs.bullets.forEach(b=>{ctx.save();ctx.fillStyle=b.color||pColor();ctx.shadowBlur=12;ctx.shadowColor=b.color||pColor();ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,tau);ctx.fill();ctx.restore();});
+    // Pulse charge ring growing on player
+    const pct5=gs.act5PulseCharge||0;
+    if(pct5>0.05){const pc5=pct5>.8?'#ffffff':pct5>.4?'#cc88ff':'#8844ff';const ringR=P.r+8+pct5*28;ctx.save();ctx.strokeStyle=pc5;ctx.lineWidth=2+pct5*3;ctx.shadowBlur=12+pct5*22;ctx.shadowColor=pc5;ctx.globalAlpha=.5+pct5*.5;ctx.beginPath();ctx.arc(P.x,P.y,ringR,0,tau);ctx.stroke();ctx.restore();}
+    // Expanding pulse ring
+    if(gs.act5PulseRing){const pr5=gs.act5PulseRing,age5=gs.frame-pr5.born,prog5=Math.min(age5/20,1);ctx.save();ctx.strokeStyle=`rgba(200,150,255,${(1-prog5)*.7})`;ctx.lineWidth=4*(1-prog5)+2;ctx.shadowBlur=22;ctx.shadowColor='#cc88ff';ctx.beginPath();ctx.arc(P.x,P.y,pr5.maxR*prog5,0,tau);ctx.stroke();ctx.restore();}
+    shards.forEach(sv=>sv.draw());
+    obstacles.forEach(o=>o.draw());
+    powerups.forEach(p=>p.draw());
     gs.enemies&&gs.enemies.forEach(e=>e.draw());
     particles.forEach(p=>p.draw());
-
+    // Secret life indicator in corner (pulses gently)
+    if(gs.act5SecretLife&&!gs.act5SecretLife.collected){const sl=gs.act5SecretLife;ctx.save();ctx.shadowBlur=20+Math.sin(gs.frame*.08)*8;ctx.shadowColor='#ffdd00';ctx.fillStyle='#ffdd00';ctx.globalAlpha=.6+Math.sin(gs.frame*.1)*.4;ctx.beginPath();ctx.arc(sl.x,sl.y,sl.r,0,tau);ctx.fill();ctx.restore();}
     drawPlayer();
     // Wave side indicators — show arrows pointing toward incoming wave
     if(gs.act5WaveActive&&gs.act5WaveSides){
@@ -1230,7 +1358,12 @@ function drawAct5(){
   ctx.restore();
   floatTexts.forEach(t=>t.draw());
   if(gs.act5Phase==='waves'&&gs.act5Wave===0){
-    ctx.save();ctx.globalAlpha=.85;ctx.textAlign='center';ctx.font=`700 ${Math.min(C.width*.07,30)}px 'Orbitron'`;ctx.fillStyle='#cc88ff';ctx.shadowBlur=20;ctx.shadowColor='#cc88ff';ctx.fillText('THE BEGINNING',C.width/2,C.height/2-16);ctx.font=`400 11px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.5)';ctx.shadowBlur=0;ctx.fillText('waves come from all sides · face them',C.width/2,C.height/2+8);ctx.fillText('← → rotate aim · auto-fires toward enemies',C.width/2,C.height/2+26);ctx.restore();
+    ctx.save();ctx.globalAlpha=.85;ctx.textAlign='center';
+    ctx.font=`700 ${Math.min(C.width*.07,30)}px 'Orbitron'`;ctx.fillStyle='#cc88ff';ctx.shadowBlur=20;ctx.shadowColor='#cc88ff';ctx.fillText('THE RECKONING',C.width/2,C.height*.38);
+    ctx.font=`400 11px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.55)';ctx.shadowBlur=0;
+    ctx.fillText('waves come from all sides',C.width/2,C.height*.38+28);
+    ctx.fillText('collect fragments · charge the pulse · SPACE/tap to release',C.width/2,C.height*.38+46);
+    ctx.restore();
   }
 }
 
@@ -1339,6 +1472,11 @@ function drawHUD(){
     ctx.beginPath();ctx.moveTo(mx-8,my);ctx.lineTo(mx+8,my);ctx.stroke();ctx.beginPath();ctx.moveTo(mx,my-8);ctx.lineTo(mx,my+8);ctx.stroke();ctx.beginPath();ctx.arc(mx,my,3,0,tau);ctx.stroke();ctx.restore();
   }
 }
+function puBar(x,y,w,col,lbl,pct){
+  ctx.save();ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(x,y,w,8);
+  ctx.fillStyle=col;ctx.shadowBlur=8;ctx.shadowColor=col;ctx.fillRect(x,y,w*Math.max(0,Math.min(1,pct)),8);
+  ctx.font=`400 8px 'Share Tech Mono'`;ctx.fillStyle=col;ctx.shadowBlur=0;ctx.fillText(lbl,x+w+6,y+7);ctx.restore();
+}
 function hudAct1(){
   const c=pColor();
   ctx.save();ctx.font=`700 ${Math.min(C.width*.062,33)}px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.92)';ctx.shadowBlur=12;ctx.shadowColor=c;
@@ -1359,23 +1497,31 @@ function hudAct1(){
   if(gs.score<gs.highScore){ctx.save();ctx.font=`400 10px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.18)';ctx.textAlign='right';ctx.fillText(`BEST ${String(gs.highScore).padStart(7,'0')}`,C.width-28,70);ctx.textAlign='left';ctx.restore();}
   let ty=C.height-30;
   if(gs.shield){puBar(20,ty,100,'#00ffff','SHIELD',gs.shieldTime/300);ty-=22;}
-  if(gs.magnet){puBar(20,ty,100,'#ffaa00','MAGNET',gs.magnetTime/380);}
+  if(gs.magnet){puBar(20,ty,100,'#ffaa00','MAGNET',gs.magnetTime/380);ty-=22;}
+  // Life dots — explicit and readable
+  for(let li=0;li<gs.lives;li++){ctx.save();ctx.fillStyle=c;ctx.shadowBlur=6;ctx.shadowColor=c;ctx.beginPath();ctx.arc(22+li*14,ty,5,0,tau);ctx.fill();ctx.restore();}
 }
 
 function showActCinematic(fromAct,toAct){
   gs.state='cinematic';gs.cinematicFrom=fromAct;gs.cinematicTo=toAct;gs.cinematicFrame=0;
+  gs.cinematicStartTime=Date.now();
   gs.cinematicParticles=[];fadeOutMusic(1200);
   // Seed orb position for cinematic
   gs.cinematicOrbX=C.width/2;gs.cinematicOrbY=C.height/2;
 }
 function drawCinematic(){
-  const f=gs.cinematicFrame,from=gs.cinematicFrom,to=gs.cinematicTo;
-  const cx=C.width/2,cy=C.height/2,dur=600; // 10s at 60fps
+  const from=gs.cinematicFrom,to=gs.cinematicTo;
+  const cx=C.width/2,cy=C.height/2;
+  // Use real time so high-refresh displays don't rush cinematics
+  if(!gs.cinematicStartTime)gs.cinematicStartTime=Date.now();
+  const elapsed=Date.now()-gs.cinematicStartTime;
+  const dur=14000; // 14 real seconds per cinematic
+  const f=gs.cinematicFrame; // frame count for particle/animation loops
   gs.cinematicFrame++;
   // Safety: if from/to pair unrecognised, don't sit on black — jump to act
   const validPairs=[[1,2],[2,3],[3,4],[4,5]];
   if(!validPairs.some(([a,b])=>a===from&&b===to)){
-    if(!gs.cinematicDone){gs.cinematicDone=true;setTimeout(()=>{gs.cinematicDone=false;playMusic(to||2);initAct(to||2);},100);}
+    if(!gs.cinematicDone){gs.cinematicDone=true;setTimeout(()=>{gs.cinematicDone=false;gs.cinematicStartTime=0;playMusic(to||2);initAct(to||2);},100);}
     drawBG();return;
   }
   gs.cinematicOrbX=lerp(gs.cinematicOrbX,cx,.04);
@@ -1384,7 +1530,7 @@ function drawCinematic(){
   if(from===1&&to===2){
     // ── 1→2: Orb shatters, darkness floods in, dark orb breathes ────────────
     ctx.fillStyle='#000';ctx.fillRect(0,0,C.width,C.height);
-    const phase=f/dur;
+    const phase=Math.min(elapsed/dur,1);
     if(phase<.25){
       // Orb glowing bright then shatters
       const intense=phase/.25;
@@ -1405,11 +1551,24 @@ function drawCinematic(){
       ctx.globalAlpha=bp;ctx.beginPath();ctx.arc(cx,cy,P.r+breathe,0,tau);ctx.fill();
       ctx.strokeStyle='rgba(50,50,80,.4)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,P.r*2+breathe*2,0,tau);ctx.stroke();
       ctx.restore();
+    }else if(phase<.72){
+      // Dark orb continues breathing — longer middle section
+      const bp2=(phase-.55)/.17,breathe2=Math.sin(f*.08)*4;
+      ctx.save();ctx.shadowBlur=30+breathe2*3;ctx.shadowColor='#223';ctx.fillStyle='#111130';
+      ctx.globalAlpha=Math.min(bp2,1);ctx.beginPath();ctx.arc(cx,cy,P.r+breathe2,0,tau);ctx.fill();ctx.restore();
     }else{
-      // White void bleeds in from edges, title fades
-      const wp=(phase-.85)/.15;
-      ctx.save();ctx.fillStyle=`rgba(238,238,255,${wp*.85})`;ctx.fillRect(0,0,C.width,C.height);
-      const ta=Math.max(0,wp-.5)/.5;ctx.globalAlpha=ta;ctx.textAlign='center';ctx.font=`900 ${Math.min(C.width*.1,48)}px 'Orbitron'`;ctx.fillStyle='rgba(0,0,40,.7)';ctx.shadowBlur=0;ctx.fillText('THE OTHER SIDE',cx,cy+8);ctx.font=`400 11px 'Share Tech Mono'`;ctx.fillStyle='rgba(0,0,40,.45)';ctx.fillText('you are the dark now',cx,cy+32);ctx.restore();
+      // White void bleeds in — title holds for a full 4 seconds
+      const wp=Math.min((phase-.72)/.28,1);
+      ctx.save();ctx.fillStyle=`rgba(238,238,255,${wp*.88})`;ctx.fillRect(0,0,C.width,C.height);
+      // Title fades in at wp>.2 and holds fully until end
+      const ta=Math.min((wp-.2)/.25,1);
+      if(ta>0){ctx.globalAlpha=ta;ctx.textAlign='center';
+        ctx.font=`900 ${Math.min(C.width*.1,48)}px 'Orbitron'`;ctx.fillStyle='rgba(0,0,40,.75)';ctx.shadowBlur=0;
+        ctx.fillText('THE OTHER SIDE',cx,cy+8);
+        ctx.font=`400 12px 'Share Tech Mono'`;ctx.fillStyle='rgba(0,0,40,.5)';
+        ctx.fillText('you are the dark now',cx,cy+36);
+      }
+      ctx.restore();
     }
     // Particle system
     gs.cinematicParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96;p.life--;const a=p.life/p.maxLife;ctx.save();ctx.globalAlpha=a*.8;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.1,p.size*a),0,tau);ctx.fill();ctx.restore();});
@@ -1418,7 +1577,7 @@ function drawCinematic(){
   }else if(from===2&&to===3){
     // ── 2→3: Your orb gains weapon, debris rains from sky ────────────────────
     ctx.fillStyle='rgb(2,4,14)';ctx.fillRect(0,0,C.width,C.height);drawStars();
-    const phase=f/dur;
+    const phase=Math.min(elapsed/dur,1);
     // Spawn falling debris particles throughout
     if(gs.frame%4===0){
       const col=['#ff4400','#ff8800','#ffaa44','#44aaff'][Math.floor(Math.random()*4)];
@@ -1466,7 +1625,7 @@ function drawCinematic(){
   }else if(from===3&&to===4){
     // ── 3→4: Hero down. Star descends. Resurrection. ─────────────────────────
     ctx.fillStyle='rgb(0,0,0)';ctx.fillRect(0,0,C.width,C.height);
-    const phase=f/dur; // 0→1 over 10s
+    const phase=Math.min(elapsed/dur,1);
     // Rain debris throughout entire cinematic
     if(gs.frame%5===0){
       const col=['#1a0a00','#2a1200','#3a1800','#ff6600'][Math.random()<.08?3:Math.floor(Math.random()*3)];
@@ -1524,7 +1683,7 @@ function drawCinematic(){
   }else if(from===4&&to===5){
     // ── 4→5: THE VOID speaks. Then THE RECKONING begins. ─────────────────────
     ctx.fillStyle='rgb(0,0,0)';ctx.fillRect(0,0,C.width,C.height);
-    const phase=f/dur;
+    const phase=Math.min(elapsed/dur,1);
     // THE VOID appears — massive, filling upper screen
     const voidAlpha=Math.min(phase/.18,.7);
     ctx.save();ctx.globalAlpha=voidAlpha;ctx.translate(cx,C.height*.2);ctx.rotate(gs.frame*.004);
@@ -1572,10 +1731,10 @@ function drawCinematic(){
   if(f>420&&f%60<30){ctx.save();ctx.globalAlpha=.18;ctx.textAlign='center';ctx.font=`400 9px 'Share Tech Mono'`;ctx.fillStyle='#fff';ctx.fillText('tap to skip',cx,C.height-22);ctx.restore();}
 
   // 2→3 cinematic: hold 180 extra frames at end so the amber light lingers
-  const holdExtra=(from===2&&to===3)?180:0;
-  if(f>=dur+holdExtra&&!gs.cinematicDone){
+  const holdExtraMs=(from===2&&to===3)?3000:(from===1&&to===2)?2000:0;
+  if(elapsed>=dur+holdExtraMs&&!gs.cinematicDone){
     gs.cinematicDone=true;
-    setTimeout(()=>{ gs.cinematicDone=false; playMusic(gs.cinematicTo); initAct(gs.cinematicTo); },100);
+    setTimeout(()=>{ gs.cinematicDone=false;gs.cinematicStartTime=0; playMusic(gs.cinematicTo); initAct(gs.cinematicTo); },100);
   }
 }
 
@@ -1784,14 +1943,16 @@ function initAct(n){
 // ── KEYBOARD + TOUCH WIRING ────────────────────────────────────────────────────
 // Act 3 aim rotation
 window.addEventListener('keydown',e=>{
-  if(gs.act===3){
+  if(gs.act===3||gs.act===5){
     if(e.code==='ArrowLeft'||e.code==='KeyA')act3KeysHeld.left=true;
     if(e.code==='ArrowRight'||e.code==='KeyD')act3KeysHeld.right=true;
-    if(e.code==='Space'){e.preventDefault();releasePulse();}
+    if(e.code==='Space'){e.preventDefault();if(gs.act===3)releasePulse();else releaseAct5Pulse();}
   }
-  if(gs.act===5){
-    if(e.code==='ArrowLeft'||e.code==='KeyA')act3KeysHeld.left=true;
-    if(e.code==='ArrowRight'||e.code==='KeyD')act3KeysHeld.right=true;
+  if(gs.act===5&&gs.act5Phase==='waves'){
+    if(e.code==='Space'){e.preventDefault();releaseAct5Pulse();}
+  }
+  if(gs.act===5&&gs.act5Phase==='boss'){
+    if(e.code==='Space'){e.preventDefault();releaseAct5Pulse();}
   }
 });
 window.addEventListener('keyup',e=>{
@@ -1801,7 +1962,8 @@ window.addEventListener('keyup',e=>{
 // Mobile: tap right half to release pulse in Act 3
 C.addEventListener('touchstart',e=>{
   if(!e.touches[0])return;
-  if(gs.act===3&&e.touches[0].clientX>C.width*.5)releasePulse();
+  if((gs.act===3||gs.act===5)&&e.touches[0].clientX>C.width*.5){if(gs.act===3)releasePulse();else releaseAct5Pulse();}
+  if(gs.act===5&&(gs.act5Phase==='waves'||gs.act5Phase==='boss'))releaseAct5Pulse();
   // Mobile dial for aim
   if(gs.act===3||gs.act===5){
     const t=[...e.touches].find(t=>t.clientX>C.width*.5);
@@ -1825,17 +1987,17 @@ function startGame(){
     shardsCollected:0,closestCall:999,powerupsUsed:0,nearMisses:0,nearCooldown:0,
     hitStop:0,gridPulse:0,bossWave:false,bossTime:0,bossCalm:0,nextBossAt:1500,omegaTimer:0,playFrames:0,
     dissolveActive:false,dissProgress:0,tearPoints:[],dissFlash:0,
-    act2Timer:0,act2Depth:0,act2Exposure:0,act2Memories:0,act2Orbs:0,
+    act2Timer:0,act2Depth:0,act2Exposure:0,act2Memories:0,act2Orbs:0,act2SecretSpawned:false,act2SecretLife:null,
     waveNum:0,waveKills:0,waveTotalKills:0,waveEnemiesThisWave:0,waveActive:false,waveTimer:0,
     bullets:[],enemies:[],lastShot:0,fractureBoss:null,voidFakeKill:false,voidFakeKillTimer:0,voidShots:[],
     cracksSealed:0,cracksBreached:0,act4Cracks:[],act4Enemies:[],
     act4Sealing:false,act4NearCrack:false,act4SealBtn:null,
-    beatCount:0,beatPerfect:0,beatPulseRing:null,act4Shards:[],act4Obstacles:[],
+    beatCount:0,beatPerfect:0,beatPulseRing:null,act4Shards:[],act4Obstacles:[],act4SecretSpawned:false,
     act5Timer:0,act5Recording:[],act5Score:0,act5MaxCombo:0,act5Phase:'waves',
-  act5Wave:0,act5WaveKills:0,act5WaveActive:false,act5WaveSides:[],act5WaveEnemyCount:0,
+  act5Wave:0,act5WaveKills:0,act5WaveActive:false,act5WaveSides:[],act5WaveEnemyCount:0,act5PulseCharge:0,act5PulseRing:null,act5SecretSpawned:false,
     act5Projectiles:[],act5Bullets:[],act5BossDeadTimer:0,originBoss:null,
     runRecording:[],cinematicFrame:0,cinematicParticles:[],cinematicFrom:0,cinematicTo:0,
-    cinematicOrbX:0,cinematicOrbY:0,cinematicDone:false,victoryFrame:0,
+    cinematicOrbX:0,cinematicOrbY:0,cinematicDone:false,cinematicStartTime:0,victoryFrame:0,
     shake:{x:0,y:0},flash:0,transAlpha:0,actLog:[],totalScore:0,
   });
   camZoom=1.0;bgC={r:2,g:4,b:10};
