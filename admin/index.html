@@ -270,13 +270,26 @@ tr:hover td{background:rgba(255,255,255,.015);}
   /* Page title */
   .pg-title{font-size:8px;}
 }
+/* ── GAME TABS ───────────────────────────────────────── */
+.game-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}
+.game-badge.split{background:rgba(180,80,255,.14);color:rgba(180,80,255,1);border:1px solid rgba(180,80,255,.3);}
+.game-badge.ether{background:rgba(0,200,255,.12);color:rgba(0,220,255,.9);border:1px solid rgba(0,200,255,.3);}
+.game-badge.studio{background:rgba(200,168,80,.12);color:var(--gold);border:1px solid rgba(200,168,80,.3);}
+.two-stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.mini-stat{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;}
+.mini-val{font-size:20px;font-weight:900;letter-spacing:-0.5px;}
+.mini-lbl{font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:3px;}
+.donation-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.donation-row:last-child{border-bottom:none;}
+.health-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:11px;}
+@media(max-width:700px){.two-stat{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
 <body>
 
 <div id="loginScreen">
   <div class="lbox">
-    <div class="lbox-logo">SPLIT</div>
+    <div class="lbox-logo" style="font-size:17px;">SPLIT GAMES</div>
     <div class="lbox-sub">Mission Control</div>
     <input type="password" id="keyInput" placeholder="Admin key" autocomplete="current-password">
     <label class="lbox-rem"><input type="checkbox" id="rememberKey" checked> Remember on this device</label>
@@ -289,19 +302,18 @@ tr:hover td{background:rgba(255,255,255,.015);}
 <div class="layout">
 
   <header class="topbar">
-    <div class="tb-logo">SPL<span>I</span>T</div>
+    <div class="tb-logo" style="font-size:12px;letter-spacing:4px;">SPLIT<span style="opacity:.35;margin-left:4px;font-size:9px;letter-spacing:3px;">GAMES</span></div>
     <div class="tb-today">
-      <div class="tb-stat"><div class="tb-val gold" id="tbRev">—</div><div class="tb-lbl">Today</div></div>
       <div class="tb-stat">
         <div style="display:flex;align-items:baseline;gap:5px;">
           <div class="tb-val" id="tbGames">—</div>
           <div style="font-size:9px;color:var(--dim2);" id="tbGamesDetail"></div>
         </div>
-        <div class="tb-lbl">Games today</div>
+        <div class="tb-lbl">Split sessions</div>
       </div>
       <div class="tb-stat"><div class="tb-val purple" id="tbPlayers">—</div><div class="tb-lbl">New players</div></div>
-      <div class="tb-stat"><div class="tb-val" id="tbLastPurch">—</div><div class="tb-lbl">Last purchase</div></div>
-      <div class="tb-stat"><div class="tb-val green" id="tbConv">—</div><div class="tb-lbl">Conversion</div></div>
+      <div class="tb-stat"><div class="tb-val" style="color:rgba(0,220,255,.9);" id="tbEtherPlays">—</div><div class="tb-lbl">Ether plays</div></div>
+      <div class="tb-stat"><div class="tb-val gold" id="tbDonations">—</div><div class="tb-lbl">Donations</div></div>
     </div>
     <div class="tb-right">
       <div class="health"><div class="hdot ok" id="hdot"></div><span id="hLabel">Healthy</span></div>
@@ -320,13 +332,19 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="5.5" height="5.5" rx="1.2"/><rect x="8.5" y="0" width="5.5" height="5.5" rx="1.2"/><rect x="0" y="8.5" width="5.5" height="5.5" rx="1.2"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.2"/></svg>
       Pulse
     </div>
-    <div class="nav-item" onclick="nav('funnel',this)">
-      <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><path d="M1 2h12l-4 5v5l-4-2V7z"/></svg>
-      Funnel
-    </div>
     <div class="nav-item" onclick="nav('activity',this)">
       <svg class="ni" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="1,10 3,6 5,8 7,4 9,7 11,5 13,3"/></svg>
       Activity
+    </div>
+
+    <div class="nav-sec">Games</div>
+    <div class="nav-item" onclick="nav('split',this)">
+      <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><circle cx="7" cy="7" r="6"/><path d="M4 7h6" stroke="var(--bg)" stroke-width="1.5"/></svg>
+      Split Origin
+    </div>
+    <div class="nav-item" onclick="nav('ether',this)">
+      <svg class="ni" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><polygon points="7,1 13,5 13,9 7,13 1,9 1,5"/><circle cx="7" cy="7" r="2"/></svg>
+      Ether
     </div>
 
     <div class="nav-sec">Players</div>
@@ -345,17 +363,23 @@ tr:hover td{background:rgba(255,255,255,.015);}
     </div>
     <div class="nav-item" onclick="nav('leaderboard',this)">
       <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1l1.6 4h4.4l-3.6 2.6 1.4 4.4L7 9.4l-3.8 2.6 1.4-4.4L1 5h4.4z"/></svg>
-      Leaderboard
+      Split LB
     </div>
 
-    <div class="nav-sec">Revenue</div>
-    <div class="nav-item" onclick="nav('revenue',this)">
-      <svg class="ni" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7" cy="7" r="5.5"/><path d="M7 3v8M4.5 5.5h4a1.5 1.5 0 010 3h-4"/></svg>
-      Revenue
+    <div class="nav-sec">Analytics</div>
+    <div class="nav-item" onclick="nav('funnel',this)">
+      <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><path d="M1 2h12l-4 5v5l-4-2V7z"/></svg>
+      Funnel
     </div>
     <div class="nav-item" onclick="nav('sessions',this)">
       <svg class="ni" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7" cy="7" r="5.5"/><path d="M7 4v3l2 2"/></svg>
       Sessions
+    </div>
+
+    <div class="nav-sec">Revenue</div>
+    <div class="nav-item" onclick="nav('donations',this)">
+      <svg class="ni" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M7 2c-2.2 0-4 1.6-4 3.6 0 2.8 4 6.4 4 6.4s4-3.6 4-6.4C11 3.6 9.2 2 7 2z"/></svg>
+      Donations
     </div>
   </aside>
 
@@ -413,10 +437,10 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="page" id="page-funnel">
       <div class="pg-title">Conversion Funnel</div>
       <div class="funnel" id="funnelRow">
-        <div class="fn-step"><div class="fn-val" id="fv1">—</div><div class="fn-lbl">Total Visits</div><div class="fn-conv" id="fc1"></div><div class="fn-arrow">→</div></div>
-        <div class="fn-step"><div class="fn-val" id="fv2">—</div><div class="fn-lbl">Hit Paywall</div><div class="fn-conv" id="fc2"></div><div class="fn-arrow">→</div></div>
-        <div class="fn-step"><div class="fn-val" id="fv3">—</div><div class="fn-lbl">Paid</div><div class="fn-conv" id="fc3"></div><div class="fn-arrow">→</div></div>
-        <div class="fn-step"><div class="fn-val" id="fv4">—</div><div class="fn-lbl">At Risk (5+ games, free)</div><div class="fn-conv" id="fc4"></div></div>
+        <div class="fn-step"><div class="fn-val" id="fv1">—</div><div class="fn-lbl">Landing Visits</div><div class="fn-conv" id="fc1"></div><div class="fn-arrow">→</div></div>
+        <div class="fn-step"><div class="fn-val" id="fv2">—</div><div class="fn-lbl">Started Playing</div><div class="fn-conv" id="fc2"></div><div class="fn-arrow">→</div></div>
+        <div class="fn-step"><div class="fn-val" id="fv3">—</div><div class="fn-lbl">Split Players</div><div class="fn-conv" id="fc3"></div><div class="fn-arrow">→</div></div>
+        <div class="fn-step"><div class="fn-val" id="fv4">—</div><div class="fn-lbl">Highly Engaged (5+ games)</div><div class="fn-conv" id="fc4"></div></div>
       </div>
       <div class="card" style="margin-top:4px;">
         <div class="card-title">What this means</div>
@@ -493,7 +517,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <div class="pg-title">At-Risk Players — 5+ Games, No Purchase</div>
       <div class="card" style="background:var(--orangeD);border-color:rgba(255,160,60,.25);margin-bottom:16px;">
         <div style="font-size:12px;color:rgba(255,160,60,.9);line-height:1.9;">
-          These players are engaged enough to hit the paywall. They haven't converted yet. Grant them a pass to turn them into Founders.
+          These players are highly engaged but haven't donated yet. They're your best candidates for a personal outreach or a BMAC nudge. Granting a pass costs nothing and builds loyalty.
         </div>
       </div>
       <div class="card">
@@ -538,8 +562,86 @@ tr:hover td{background:rgba(255,255,255,.015);}
           <div class="card-action" onclick="loadSessions()">Refresh</div>
         </div>
         <div id="sessHeader"></div>
-        <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>Score</th><th>When</th></tr></thead>
+        <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>Obstacles</th><th>When</th></tr></thead>
         <tbody id="sessBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- SPLIT ORIGIN -->
+    <div class="page" id="page-split">
+      <div class="pg-title">Split Origin — Game Stats</div>
+      <div class="stats-row" id="splitStatsGrid"><div class="spinner"></div></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Revenue — Last 14 Days</div>
+          <div class="sparkline" id="splitChart"></div>
+          <div class="spark-labels" id="splitChartLabels"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">Recent Purchases</div>
+          </div>
+          <table><thead><tr><th>User</th><th>Tier</th><th>Amount</th><th>When</th></tr></thead>
+          <tbody id="splitRecentBody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ETHER -->
+    <div class="page" id="page-ether">
+      <div class="pg-title">Ether — Five Acts</div>
+      <div class="stats-row" id="etherStatsGrid"><div class="spinner"></div></div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Ether Leaderboard</div>
+          <div class="card-action" onclick="loadEtherData()">Refresh</div>
+        </div>
+        <div id="etherStatus" style="font-size:11px;color:var(--dim);margin-bottom:10px;display:none;"></div>
+        <table><thead><tr><th>#</th><th>Player</th><th>Score</th><th>When</th></tr></thead>
+        <tbody id="etherLbBody"><tr><td colspan="4"><div class="spinner"></div></td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- DONATIONS -->
+    <div class="page" id="page-donations">
+      <div class="pg-title">Donations — Buy Me a Coffee</div>
+      <div class="card" style="background:rgba(200,168,80,.06);border-color:rgba(200,168,80,.22);margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px;">☕ buymeacoffee.com/splitgames</div>
+            <div style="font-size:11px;color:var(--dim);line-height:1.8;">Donations live on BMAC. Log them here manually to track momentum over time.</div>
+          </div>
+          <a href="https://www.buymeacoffee.com/splitgames" target="_blank" style="padding:8px 18px;border-radius:8px;background:rgba(200,168,80,.18);border:1px solid rgba(200,168,80,.4);color:var(--gold);font-size:10px;letter-spacing:2px;text-decoration:none;text-transform:uppercase;white-space:nowrap;">Open Dashboard →</a>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">Log a Donation</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <label style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:5px;">Amount ($)</label>
+              <input type="number" id="donAmt" placeholder="5.00" step="0.01" min="0" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:#fff;padding:8px 11px;font-size:13px;font-family:Georgia,serif;outline:none;width:130px;">
+            </div>
+            <div>
+              <label style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:5px;">Note (optional)</label>
+              <input type="text" id="donNote" placeholder="e.g. Twitter mention" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:#fff;padding:8px 11px;font-size:12px;font-family:Georgia,serif;outline:none;width:100%;">
+            </div>
+            <button onclick="logDonation()" style="background:rgba(200,168,80,.18);border:1px solid rgba(200,168,80,.4);border-radius:7px;color:var(--gold);padding:8px 18px;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:Georgia,serif;align-self:flex-start;">Log Donation</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">Donation Log</div>
+            <div class="card-action" onclick="clearDonations()">Clear all</div>
+          </div>
+          <div id="donationLog"><div class="empty">No donations logged yet</div></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:baseline;gap:8px;">
+            <span style="font-size:22px;font-weight:900;color:var(--gold);" id="donTotal">$0.00</span>
+            <span style="font-size:11px;color:var(--dim);">total logged</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -602,6 +704,9 @@ tr:hover td{background:rgba(255,255,255,.015);}
 
 <script>
 var B='https://split-backend-production-18a8.up.railway.app';
+// ── ETHER — paste SB_URL and SB_KEY from your ether/index.html ──
+var ETHER_SB_URL='https://jehqwbhscngmdpialexg.supabase.co';  // e.g. 'https://xxxx.supabase.co'
+var ETHER_SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplaHF3YmhzY25nbWRwaWFsZXhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3NjIwNDYsImV4cCI6MjA5MDMzODA0Nn0.2AuEnGg4O7xBXgD1CltTO1ASgFt9EwA-MNsh5MoX__c';  // your Supabase anon or service_role key
 var KEY='';
 var D={};               // data cache
 var ALL_PLAYERS=[];
@@ -657,6 +762,9 @@ function nav(id,el){
   }
   // Sessions tab — always reload fresh when navigating to it
   if(id==='sessions')loadSessions();
+  if(id==='ether')loadEtherData();
+  if(id==='split')renderSplitPage(D.stats,D.revenue_by_day,D.recent_purchases);
+  if(id==='donations'){renderDonationLog();}
 }
 function mobNav(el){
   document.querySelectorAll('.mob-nav-item').forEach(function(n){n.classList.remove('active');});
@@ -690,20 +798,28 @@ function renderAll(d){
   if(d.players&&d.players.length)renderPlayers(d.players);
   renderSessions(d.recent_sessions||[]);
   renderRevStats(d.stats,d.all_purchases||d.recent_purchases);
+  renderSplitPage(d.stats,d.revenue_by_day,d.recent_purchases);
+  loadEtherData();
+  renderDonationLog();
 }
 
 // ── TOPBAR ────────────────────────────────────────────────
 function renderTopbar(today,purchases,stats){
   if(today){
-    set('tbRev','$'+((today.revenue_cents||0)/100).toFixed(2));
     set('tbGames',today.games||0);
     set('tbPlayers',today.new_players||0);
   }
+  // Ether plays from localStorage cache (updated by loadEtherData)
+  var ep=parseInt(localStorage.getItem('etherPlaysCount')||'0');
+  set('tbEtherPlays',ep>0?ep:'—');
+  // Donation total from local log
+  var donLog=getDonations();
+  var donTotal=donLog.reduce(function(s,d){return s+(d.amount||0);},0);
+  set('tbDonations',donTotal>0?'$'+donTotal.toFixed(2):'—');
   // Guest vs named split from recent sessions
   if(ALL_SESSIONS&&ALL_SESSIONS.length){
-    var todaySessions=ALL_SESSIONS.filter(function(s){var d=new Date(s.created_at);var n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();});
-    var gCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
-    var nCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
+    var gCount=ALL_SESSIONS.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
+    var nCount=ALL_SESSIONS.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
     var dtl=document.getElementById('tbGamesDetail');
     if(dtl)dtl.textContent=nCount+' reg · '+gCount+' guest';
   }
@@ -806,27 +922,24 @@ function renderRecent(rows){
 // ── FUNNEL ────────────────────────────────────────────────
 function renderFunnel(f,s){
   if(!f||!s)return;
-  var visits=f.visits||s.total_page_views||0;
-  var paywall=f.paywall_hits||0;
-  var paid=f.paid||s.total_purchases||0;
-  var atRisk=f.at_risk||0;
-  set('fv1',num(visits));set('fv2',num(paywall));set('fv3',num(paid));set('fv4',num(atRisk));
-  // Conversion rates
-  var c1=visits>0?Math.round(paywall/visits*100):0;
-  var c2=paywall>0?Math.round(paid/paywall*100):0;
-  var c3=paid>0?Math.round(atRisk/(paid+atRisk)*100):0;
-  set('fc1',c1+'% hit paywall');
-  var c2el=document.getElementById('fc2');if(c2el){c2el.textContent=c2+'% converted';c2el.className='fn-conv '+(c2>=20?'good':c2>=8?'warn':'bad');}
-  var c3el=document.getElementById('fc3');if(c3el){c3el.textContent=paid+' total paid';c3el.className='fn-conv good';}
-  set('fc4','engaged but unpaid');
-  // Insight
+  var visits=f?f.visits||s.total_page_views||0:s?s.total_page_views||0:0;
+  var sessions=s?s.total_games_played||0:0;
+  var players=s?s.total_users||0:0;
+  var atRisk=f?f.at_risk||0:0;
+  set('fv1',num(visits));set('fv2',num(sessions));set('fv3',num(players));set('fv4',num(atRisk));
+  var r1=visits>0?Math.round(sessions/visits*100):0;
+  var r2=sessions>0?Math.round(players/sessions*100):0;
+  set('fc1',visits>0?r1+'% played':'—');
+  var c2el=document.getElementById('fc2');if(c2el){c2el.textContent=sessions>0?r2+'% registered':'—';c2el.className='fn-conv '+(r2>=20?'good':r2>=8?'warn':'bad');}
+  var c3el=document.getElementById('fc3');if(c3el){c3el.textContent=players+' registered';c3el.className='fn-conv good';}
+  set('fc4',atRisk+' high-engagement');
   var insight='';
-  if(visits===0)insight='No visit data yet.';
-  else if(paywall===0)insight='No players have reached the paywall yet. Either traffic is very new or game session tracking needs checking.';
+  if(visits===0)insight='No visit data yet. Make sure your landing page is sending tracking events.';
+  else if(sessions===0)insight='Visits are tracked but no sessions yet. Check that the game session endpoint is firing correctly.';
   else{
-    if(c2<5)insight='Paywall conversion is low ('+c2+'%). Consider lowering the price, offering a trial, or reaching out to at-risk players directly.';
-    else if(c2<15)insight='Conversion is building ('+c2+'%). '+atRisk+' engaged free players are your next best opportunity — consider a targeted offer.';
-    else insight='Strong conversion at '+c2+'%. The funnel is healthy. Focus on driving more traffic to the top.';
+    if(r2<10)insight='Most players are not registering ('+r2+'%). Consider making sign-in feel more rewarding — leaderboard placement, personal stats.';
+    else if(r2<30)insight='Registration is growing ('+r2+'%). '+atRisk+' high-engagement players are prime candidates for a personal BMAC nudge.';
+    else insight='Solid engagement at '+r2+'% registration. Focus on bringing new players to the top of the funnel.';
   }
   document.getElementById('funnelInsight').textContent=insight;
 }
@@ -1029,9 +1142,8 @@ function loadSessions(){
 function renderSessions(rows){
   if(rows&&rows.length){
     ALL_SESSIONS=rows;
-    var todaySessions=rows.filter(function(s){var d=new Date(s.created_at);var n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();});
-    var gCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
-    var nCount=todaySessions.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
+    var gCount=rows.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
+    var nCount=rows.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
     var dtl=document.getElementById('tbGamesDetail');
     if(dtl)dtl.textContent=nCount+' reg · '+gCount+' guest';
     renderSessionsFiltered();
@@ -1084,7 +1196,7 @@ function renderSessionsFiltered(){
     var nameCell=isGuest
       ?'<td style="color:var(--dim2)">Guest</td>'
       :'<td style="cursor:pointer;color:var(--purple);" onclick="goLookup(\''+esc(s.username||'')+'\')">'+ esc(s.username||'—')+'</td>';
-    return '<tr>'+nameCell+'<td style="font-weight:900">'+num(s.score)+'</td><td style="color:var(--dim)">'+esc(s.level||'—')+'</td><td>'+(num(s.score))+'</td><td style="color:var(--dim)">'+ago(s.created_at||s.played_at)+'</td></tr>';
+    return '<tr>'+nameCell+'<td style="font-weight:900">'+num(s.score)+'</td><td style="color:var(--dim)">'+esc(s.level||'—')+'</td><td>'+(s.obstacles_cleared||'—')+'</td><td style="color:var(--dim)">'+ago(s.created_at||s.played_at)+'</td></tr>';
   }).join('');
 }
 function setSessFilter(f){SESSION_FILTER=f;renderSessionsFiltered();}
@@ -1174,6 +1286,112 @@ function setHealth(ok){
   var d=document.getElementById('hdot');
   d.className='hdot '+(ok?'ok':'err');
   set('hLabel',ok?'Healthy':'Unreachable');
+}
+
+// ── ETHER DATA ────────────────────────────────────────────
+function etherFetch(path,cb){
+  if(!ETHER_SB_URL||!ETHER_SB_KEY){
+    document.getElementById('etherStatus').style.display='block';
+    document.getElementById('etherStatus').textContent='Fill in ETHER_SB_URL and ETHER_SB_KEY at the top of this file to see Ether data.';
+    document.getElementById('etherLbBody').innerHTML='<tr><td colspan="4" class="empty">Supabase credentials not configured</td></tr>';
+    return;
+  }
+  fetch(ETHER_SB_URL+path,{headers:{'apikey':ETHER_SB_KEY,'Authorization':'Bearer '+ETHER_SB_KEY}})
+  .then(function(r){return r.ok?r.json().then(function(d){cb(true,d);}):cb(false,null);})
+  .catch(function(){cb(false,null);});
+}
+function loadEtherData(){
+  etherFetch('/rest/v1/ether_leaderboard?select=*&order=score.desc&limit=50',function(ok,data){
+    if(!ok||!data){
+      document.getElementById('etherLbBody').innerHTML='<tr><td colspan="4" class="empty">Could not load — check credentials or create the ether_leaderboard table</td></tr>';
+      return;
+    }
+    // Cache total play count for topbar
+    localStorage.setItem('etherPlaysCount',data.length);
+    set('tbEtherPlays',data.length>0?data.length:'—');
+    // Stats
+    var topScore=data.length?data[0].score:0;
+    var avg=data.length?Math.round(data.reduce(function(s,r){return s+r.score;},0)/data.length):0;
+    var last7=new Date(Date.now()-7*24*60*60*1000);
+    var recent=data.filter(function(r){return new Date(r.created_at)>last7;}).length;
+    document.getElementById('etherStatsGrid').innerHTML=[
+      {v:data.length,l:'Total Plays',c:''},
+      {v:num(topScore),l:'Top Score',c:'gold'},
+      {v:num(avg),l:'Avg Score',c:''},
+      {v:recent,l:'Last 7 Days',c:'green'},
+    ].map(function(i){return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div></div>';}).join('');
+    // Leaderboard
+    var medals=['','🥇','🥈','🥉'];
+    document.getElementById('etherLbBody').innerHTML=data.map(function(r,i){
+      var rk=i+1;
+      return '<tr><td style="font-size:12px;min-width:24px">'+(rk<=3?medals[rk]:rk)+'</td>'
+        +'<td style="font-weight:700">'+esc(r.player_name||'—')+'</td>'
+        +'<td style="font-weight:900">'+num(r.score)+'</td>'
+        +'<td style="color:var(--dim)">'+ago(r.created_at)+'</td></tr>';
+    }).join('');
+    document.getElementById('etherStatus').style.display='none';
+  });
+}
+
+// ── SPLIT PAGE ────────────────────────────────────────────
+function renderSplitPage(s,days,purchases){
+  if(!s)return;
+  var rev=((s.total_revenue_cents||0)/100).toFixed(2);
+  var conv=s.total_page_views>0?((s.total_purchases/s.total_page_views)*100).toFixed(1)+'%':'—';
+  document.getElementById('splitStatsGrid').innerHTML=[
+    {v:'$'+rev,l:'Total Revenue',c:'gold'},
+    {v:s.total_purchases||0,l:'Total Sales',c:''},
+    {v:s.origin_pass_sales||0,l:'Origin Pass',c:'purple'},
+    {v:s.total_users||0,l:'Players',c:''},
+    {v:s.total_games_played||0,l:'Games Played',c:''},
+    {v:conv,l:'Visit→Play Rate',c:'green'},
+  ].map(function(i){return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div></div>';}).join('');
+  // Chart
+  var c=document.getElementById('splitChart'),lb=document.getElementById('splitChartLabels');
+  if(days&&days.length){
+    var mx=Math.max.apply(null,days.map(function(d){return d.amount_cents||0;}));if(!mx)mx=1;
+    c.innerHTML=days.map(function(d){var h=Math.max(2,Math.round(((d.amount_cents||0)/mx)*42));return '<div class="spark-bar" style="height:'+h+'px"></div>';}).join('');
+    lb.innerHTML='<div class="spark-labels">'+days.map(function(d){var dt=new Date(d.day);return '<div>'+(dt.getMonth()+1)+'/'+(dt.getDate())+'</div>';}).join('')+'</div>';
+  }
+  // Purchases table
+  var tb=document.getElementById('splitRecentBody');
+  if(!purchases||!purchases.length){tb.innerHTML='<tr><td colspan="4" class="empty">No purchases yet</td></tr>';return;}
+  tb.innerHTML=purchases.slice(0,10).map(function(p){
+    return '<tr><td style="font-weight:700;cursor:pointer;color:var(--purple);" onclick="goLookup(''+esc(p.username)+'')">'+esc(p.username||'—')+'</td><td>'+badge(p.tier)+'</td><td>'+(p.amount_cents?'$'+(p.amount_cents/100).toFixed(2):'—')+'</td><td style="color:var(--dim)">'+ago(p.created_at)+'</td></tr>';
+  }).join('');
+}
+
+// ── DONATIONS ─────────────────────────────────────────────
+function getDonations(){try{return JSON.parse(localStorage.getItem('splitDonations')||'[]');}catch(e){return[];}}
+function logDonation(){
+  var amt=parseFloat(document.getElementById('donAmt').value);
+  if(!amt||amt<=0){showToast('Enter a valid amount');return;}
+  var note=document.getElementById('donNote').value.trim();
+  var log=getDonations();
+  log.unshift({amount:amt,note:note,at:new Date().toISOString()});
+  localStorage.setItem('splitDonations',JSON.stringify(log));
+  document.getElementById('donAmt').value='';
+  document.getElementById('donNote').value='';
+  renderDonationLog();
+  // Update topbar
+  var total=log.reduce(function(s,d){return s+(d.amount||0);},0);
+  set('tbDonations','$'+total.toFixed(2));
+  showToast('Donation logged ✓');
+}
+function clearDonations(){
+  if(!confirm('Clear all logged donations?'))return;
+  localStorage.removeItem('splitDonations');
+  renderDonationLog();
+  set('tbDonations','—');
+}
+function renderDonationLog(){
+  var log=getDonations();
+  var total=log.reduce(function(s,d){return s+(d.amount||0);},0);
+  set('donTotal','$'+total.toFixed(2));
+  if(!log.length){document.getElementById('donationLog').innerHTML='<div class="empty">No donations logged yet</div>';return;}
+  document.getElementById('donationLog').innerHTML=log.map(function(d){
+    return '<div class="donation-row"><div><strong style="color:var(--gold)">$'+d.amount.toFixed(2)+'</strong>'+(d.note?' <span style="color:var(--dim);font-size:11px;">— '+esc(d.note)+'</span>':'')+'</div><div style="color:var(--dim2);font-size:10px;">'+ago(d.at)+'</div></div>';
+  }).join('');
 }
 
 // ── API ───────────────────────────────────────────────────
