@@ -21,12 +21,12 @@ const C=document.getElementById('c'),ctx=C.getContext('2d');
 function resize(){C.width=innerWidth;C.height=innerHeight;}
 resize();window.addEventListener('resize',()=>{resize();initStars();});
 
-const SB_URL='https://jehqwbhscngmdpialexg.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplaHF3YmhzY25nbWRwaWFsZXhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3NjIwNDYsImV4cCI6MjA5MDMzODA0Nn0.2AuEnGg4O7xBXgD1CltTO1ASgFt9EwA-MNsh5MoX__c';
+const SB_URL='https://jehqwbhscngmdpialexg.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplaHF3YmhzY25nbWRwaWFsZXhnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDc2MjA0NiwiZXhwIjoyMDkwMzM4MDQ2fQ.MEcnDZM6Qui92SSxMCd26lrXWnJO48noPuRftFhsVjA';
 const SB_ON=SB_URL!=='YOUR_SUPABASE_URL';
 const BMAC='https://buymeacoffee.com/splitgames';
 
 // ── TUNING — edit these freely ────────────────────────────────────────────────
-const SCORE_THRESHOLDS=[0,2000,4800,7000,10500,15500]; // points to enter each epoch
+const SCORE_THRESHOLDS=[0,900,2800,5000,7500,10500]; // points to enter each epoch
 const COMBO_CAP=8;     // max multiplier (combo 35+ all pay ×8, prevents runaway scoring)
 const ACT4_RESET_ON_DEATH=false; // true=restart act on death, false=keep climbing
 const OMEGA_SECONDS=30;// seconds to survive in OMEGA before dissolution triggers
@@ -1531,19 +1531,20 @@ function hudAct1(){
     const on=i<=gs.epoch;ctx.save();if(on){ctx.fillStyle=EPOCHS[i].player;ctx.shadowBlur=8;ctx.shadowColor=EPOCHS[i].player;}else{ctx.fillStyle='rgba(255,255,255,.15)';}
     ctx.beginPath();ctx.arc(28+i*13,83,on?4:3,0,tau);ctx.fill();ctx.restore();
   }
+  // Life dots — top left, under epoch pips
+  for(let li=0;li<gs.lives;li++){ctx.save();ctx.fillStyle=c;ctx.shadowBlur=5;ctx.shadowColor=c;ctx.beginPath();ctx.arc(28+li*14,100,4,0,tau);ctx.fill();ctx.restore();}
   if(gs.epoch===5){
     const rem=Math.max(0,OMEGA_SECONDS*60-gs.omegaTimer),urgent=rem<Math.min(360,OMEGA_SECONDS*20);
     ctx.save();ctx.font=`700 13px 'Share Tech Mono'`;ctx.fillStyle=urgent?'#ff4444':'rgba(255,255,255,.45)';if(urgent){ctx.shadowBlur=10;ctx.shadowColor='#ff2200';}
-    ctx.fillText(`${Math.ceil(rem/60)}s`,28,102);ctx.restore();
-    ctx.save();ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(28,107,80,3);ctx.fillStyle=urgent?'#ff4444':EPOCHS[5].player;ctx.fillRect(28,107,80*(OMEGA_SECONDS*60-rem)/(OMEGA_SECONDS*60),3);ctx.restore();
+    ctx.fillText(`${Math.ceil(rem/60)}s`,28,118);ctx.restore();
+    ctx.save();ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(28,123,80,3);ctx.fillStyle=urgent?'#ff4444':EPOCHS[5].player;ctx.fillRect(28,123,80*(OMEGA_SECONDS*60-rem)/(OMEGA_SECONDS*60),3);ctx.restore();
   }
   if(gs.combo>=3){const cs=1+Math.min(gs.combo/30,.55);ctx.save();ctx.font=`700 ${Math.floor(18*cs)}px 'Orbitron'`;ctx.fillStyle=c;ctx.shadowBlur=14;ctx.shadowColor=c;ctx.textAlign='right';ctx.fillText(`×${Math.min(COMBO_CAP,Math.floor(gs.combo/5)+1)}`,C.width-28,52);ctx.textAlign='left';ctx.restore();}
   if(gs.score<gs.highScore){ctx.save();ctx.font=`400 10px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.18)';ctx.textAlign='right';ctx.fillText(`BEST ${String(gs.highScore).padStart(7,'0')}`,C.width-28,70);ctx.textAlign='left';ctx.restore();}
+  // Power-up bars at bottom left
   let ty=C.height-30;
   if(gs.shield){puBar(20,ty,100,'#00ffff','SHIELD',gs.shieldTime/300);ty-=22;}
   if(gs.magnet){puBar(20,ty,100,'#ffaa00','MAGNET',gs.magnetTime/380);ty-=22;}
-  // Life dots — explicit and readable
-  for(let li=0;li<gs.lives;li++){ctx.save();ctx.fillStyle=c;ctx.shadowBlur=6;ctx.shadowColor=c;ctx.beginPath();ctx.arc(22+li*14,ty,5,0,tau);ctx.fill();ctx.restore();}
 }
 
 function showActCinematic(fromAct,toAct){
@@ -2247,14 +2248,18 @@ function updateAct1(){
 const MAX_OBS=20;
 function spawnAct1(){
   const e=E();let sr=e.spawnRate;if(gs.bossWave)sr=Math.ceil(sr/2);
-  const on=obstacles.filter(o=>o.alive).length;if(on>=MAX_OBS)return;
-  if(gs.frame%sr===0)obstacles.push(new Obstacle());
-  if(gs.epoch>=3&&gs.frame%(e.spawnRate*3)===0&&on<MAX_OBS-2)obstacles.push(new Obstacle());
-  if(gs.epoch>=5&&gs.frame%(e.spawnRate*4)===0&&on<MAX_OBS-4)obstacles.push(new Obstacle());
+  const on=obstacles.filter(o=>o.alive).length;
+  // Obstacle spawning only — gated by MAX_OBS, never blocks shards
+  if(on<MAX_OBS){
+    if(gs.frame%sr===0)obstacles.push(new Obstacle());
+    if(gs.epoch>=3&&gs.frame%(e.spawnRate*3)===0&&on<MAX_OBS-2)obstacles.push(new Obstacle());
+    if(gs.epoch>=5&&gs.frame%(e.spawnRate*4)===0&&on<MAX_OBS-4)obstacles.push(new Obstacle());
+  }
+  // Shard spawning — always runs regardless of obstacle count
   const mxS=10+gs.epoch*2;
   if(gs.frame%20===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS)shards.push(new Shard());
-  // Emergency spawn: never let screen drop below 4 shards
-  if(gs.frame%30===0&&shards.filter(s=>!s.collected&&!s.dead).length<4){for(let i=0;i<4;i++)shards.push(new Shard());}
+  // Emergency floor: never drop below 4 shards
+  if(gs.frame%8===0&&shards.filter(s=>!s.collected&&!s.dead).length<4){for(let i=0;i<4;i++)shards.push(new Shard());}
   if(gs.frame%1200===600){for(let i=0;i<14;i++)shards.push(new Shard());sfx.surge();gs.gridPulse=.8;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SURGE!',E().shard,32));}
   if(gs.frame%1350===675&&Math.random()<.66)powerups.push(new PowerUp());
   if(gs.epoch>=3&&gs.frame%1200===600&&Math.random()<.4){const pu=new PowerUp();pu.type='life';pu.color=PU_CFG.life.color;pu.label=PU_CFG.life.label;powerups.push(pu);} // bonus life in hard epochs
