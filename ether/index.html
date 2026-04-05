@@ -21,12 +21,12 @@ const C=document.getElementById('c'),ctx=C.getContext('2d');
 function resize(){C.width=innerWidth;C.height=innerHeight;}
 resize();window.addEventListener('resize',()=>{resize();initStars();});
 
-const SB_URL='https://jehqwbhscngmdpialexg.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplaHF3YmhzY25nbWRwaWFsZXhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3NjIwNDYsImV4cCI6MjA5MDMzODA0Nn0.2AuEnGg4O7xBXgD1CltTO1ASgFt9EwA-MNsh5MoX__c';
+const SB_URL='https://jehqwbhscngmdpialexg.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplaHF3YmhzY25nbWRwaWFsZXhnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDc2MjA0NiwiZXhwIjoyMDkwMzM4MDQ2fQ.MEcnDZM6Qui92SSxMCd26lrXWnJO48noPuRftFhsVjA';
 const SB_ON=SB_URL!=='YOUR_SUPABASE_URL';
 const BMAC='https://buymeacoffee.com/splitgames';
 
 // ── TUNING — edit these freely ────────────────────────────────────────────────
-const SCORE_THRESHOLDS=[0,3000,7000,10000,13500,18500]; // points to enter each epoch
+const SCORE_THRESHOLDS=[0,900,2800,5000,7500,10500]; // points to enter each epoch
 const COMBO_CAP=8;     // max multiplier (combo 35+ all pay ×8, prevents runaway scoring)
 const ACT4_RESET_ON_DEATH=false; // true=restart act on death, false=keep climbing
 const OMEGA_SECONDS=30;// seconds to survive in OMEGA before dissolution triggers
@@ -981,7 +981,7 @@ function updateAct3(){
   const mxS=4+gs.waveNum;
   if(gs.frame%22===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS)shards.push(new Shard());
   shards.forEach(s=>s.update());shards=shards.filter(s=>!s.dead);
-  for(const s of shards){if(s.collected||s.dead)continue;if(dist(P,s)<P.r+s.r+12){s.collected=true;gs.act3PulseCharge=Math.min(1,(gs.act3PulseCharge||0)+.12);burst(s.x,s.y,'#44aaff',5,.5,2,1,2,8,18);sfx.collect(1);}}
+  for(const s of shards){if(s.collected||s.dead)continue;if(dist(P,s)<P.r+s.r+12){s.collected=true;gs.act3PulseCharge=Math.min(1,(gs.act3PulseCharge||0)+.12);gs.totalScore+=10;burst(s.x,s.y,'#44aaff',5,.5,2,1,2,8,18);sfx.collect(1);floatTexts.push(new FloatText(s.x,s.y-16,'+10','#44aaff',11));}}
   // THE VOID bg pulse shudder
   if(gs.act3VoidShudder>0)gs.act3VoidShudder--;
   if(gs.fractureBoss&&gs.fractureBoss.alive)gs.fractureBoss.update();
@@ -1078,6 +1078,8 @@ function hudAct4(){
   const riseColor=prog>.75?'#ffffff':prog>.4?'#ffaa55':'#ff6600';
   ctx.fillStyle=riseColor;ctx.shadowBlur=8;ctx.shadowColor=riseColor;ctx.fillRect(bx,by,bw*prog,bh);
   ctx.font=`400 8px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,255,255,.3)';ctx.textAlign='center';ctx.fillText('ASCENDING',C.width/2,by+bh+10);ctx.textAlign='left';ctx.restore();
+  // Score — top right
+  ctx.save();ctx.font=`400 10px 'Share Tech Mono'`;ctx.fillStyle='rgba(255,180,80,.55)';ctx.textAlign='right';ctx.shadowBlur=0;ctx.fillText(gs.totalScore.toLocaleString(),C.width-22,36);ctx.textAlign='left';ctx.restore();
   for(let li=0;li<gs.lives;li++){ctx.save();ctx.fillStyle='#ff6600';ctx.shadowBlur=6;ctx.shadowColor='#ff6600';ctx.beginPath();ctx.arc(22+li*14,C.height-22,5,0,tau);ctx.fill();ctx.restore();}
 }
 function updateAct4(){
@@ -1112,6 +1114,25 @@ function updateAct4(){
     }
     gs.act4Debris.push(d);
   }
+  // Point orbs — fall like debris, player chooses to risk collecting them
+  if(!isBreak&&gs.frame%210===0&&Math.random()<0.72){
+    const pts=20+Math.floor(prog*35);
+    const orb={
+      x:rnd(C.width*.08,C.width*.92),y:-18,r:7,pulse:rnd(0,tau),alive:true,pts,isOrb:true,
+      vy:gs.act4Speed*rnd(0.55,0.80),vx:rnd(-0.5,0.5),
+      update:function(){this.pulse+=0.09;this.y+=this.vy;this.x+=this.vx;if(this.y>C.height+24)this.alive=false;},
+      draw:function(){
+        if(!this.alive)return;
+        const pr=this.r+Math.sin(this.pulse)*2.2;
+        ctx.save();ctx.shadowBlur=26;ctx.shadowColor='#44ffcc';ctx.fillStyle='#44ffcc';
+        ctx.beginPath();ctx.arc(this.x,this.y,pr,0,tau);ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.88)';ctx.beginPath();ctx.arc(this.x,this.y,pr*.32,0,tau);ctx.fill();
+        ctx.restore();
+      },
+      hitsPlayer:function(){return false;}
+    };
+    gs.act4Debris.push(orb);
+  }
   gs.act4Debris.forEach(d=>d.update());gs.act4Debris=gs.act4Debris.filter(d=>d.alive);
   // Collision — no invincibility frames
   if(!P.inv){
@@ -1143,6 +1164,8 @@ function updateAct4(){
   }
   // Collect the golden life fragment
   if(gs.act4Debris){gs.act4Debris.filter(d=>d.isLife&&d.alive).forEach(d=>{if(Math.hypot(P.x-d.x,P.y-d.y)<P.r+16){d.alive=false;gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();floatTexts.push(new FloatText(d.x,d.y-24,'+1 LIFE','#ffdd00',20));burst(d.x,d.y,'#ffdd00',16,2,6,2,5,18,45);}});}
+  // Collect point orbs
+  if(gs.act4Debris){gs.act4Debris.filter(d=>d.isOrb&&d.alive).forEach(d=>{if(Math.hypot(P.x-d.x,P.y-d.y)<P.r+d.r+8){d.alive=false;gs.totalScore+=d.pts;sfx.collect&&sfx.collect(1);burst(d.x,d.y,'#44ffcc',8,1,3.5,1.5,3,12,28);floatTexts.push(new FloatText(d.x,d.y-20,'+'+d.pts,'#44ffcc',15));}});}
   if(gs.act4Dist>=gs.act4MaxDist){
     gs.actLog.push({act:4,frames:gs.frame,score:gs.totalScore,label:'the rise complete'});
     showActCinematic(4,5);
@@ -1350,9 +1373,9 @@ function updateAct5(){
   for(const pu of powerups){if(!pu.dead&&dist(P,pu)<P.r+pu.r+16){pu.dead=true;activatePU(pu.type);}}
   shards.forEach(s=>s.update());shards=shards.filter(s=>!s.dead);
   for(const s of shards){if(s.collected||s.dead)continue;if(dist(P,s)<P.r+s.r+18){s.collected=true;if(s.isLife){gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();floatTexts.push(new FloatText(s.x,s.y-24,'+1 LIFE','#ff88ff',20));burst(s.x,s.y,'#ff88ff',16,2,6,2,5,18,45);}else{// Shards charge the pulse in Act 5
-      gs.act5PulseCharge=Math.min(1,(gs.act5PulseCharge||0)+.15);
+      gs.act5PulseCharge=Math.min(1,(gs.act5PulseCharge||0)+.15);gs.totalScore+=15;
       burst(s.x,s.y,'#cc88ff',5,.5,2,1,2,8,18);sfx.collect(1);
-      floatTexts.push(new FloatText(s.x,s.y-16,'+PULSE','#cc88ff',12));}}
+      floatTexts.push(new FloatText(s.x,s.y-16,'+15','#cc88ff',12));}}
   particles.forEach(p=>p.update());particles=particles.filter(p=>p.life>0);
   floatTexts.forEach(t=>t.update());floatTexts=floatTexts.filter(t=>t.life>0);
 }
