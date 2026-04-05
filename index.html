@@ -516,6 +516,8 @@ footer{
   buildStars();
   buildShooters();
   requestAnimationFrame(loop);
+  // Page view tracking — fires once on load, silently fails if endpoint unavailable
+  (function(){try{fetch('https://split-backend-production-18a8.up.railway.app/page-view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:'landing',url:location.href,referrer:document.referrer})}).catch(function(){});}catch(e){}})();
 })();
 </script>
 </body>
