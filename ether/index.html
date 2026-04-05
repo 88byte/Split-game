@@ -242,8 +242,11 @@ class Shard{
     if(!this.collected){
       if(gs.magnet){
         const dx=P.x-this.x,dy=P.y-this.y,d=Math.hypot(dx,dy)||1;
-        const spd=Math.min(6,100/d),sp=Math.max(0,(d-30)/180)*3;
-        this.x+=dx/d*spd+(-dy/d)*sp;this.y+=dy/d*spd+(dx/d)*sp;
+        const spd=Math.min(5,60/Math.max(d,20)); // slower, gentler pull
+        this.x+=dx/d*spd;this.y+=dy/d*spd;
+        // Keep orbit angle synced so shard doesn't teleport when magnet ends
+        this.angle=Math.atan2(this.y-C.height/2,this.x-C.width/2);
+        this.dist=Math.hypot(this.x-C.width/2,this.y-C.height/2);
       }else{this.angle+=this.speed;this.x=C.width/2+Math.cos(this.angle)*this.dist;this.y=C.height/2+Math.sin(this.angle)*this.dist;}
     }else{this.x=lerp(this.x,P.x,.25);this.y=lerp(this.y,P.y,.25);if(dist(this,P)<8)this.dead=true;}
   }
@@ -510,7 +513,7 @@ class TheVoid{
   constructor(scarred=false){
     this.x=C.width*.5;this.y=-120; // enters from above
     this.targetY=C.height*.32;this.r=60;this.alive=true;this.age=0;
-    this.orbitAngle=0;this.orbitR=Math.min(C.width,C.height)*.25;
+    this.orbitAngle=0;this.orbitR=Math.min(C.width,C.height)*.32;this.orbitTargetR=this.orbitR;this.zoneTimer=0;
     this.hp=200;this.maxHp=200;this.phase=0;this.flashTimer=0;this.scarred=scarred;
     this.weakAngles=[0,tau/3,tau*2/3];
     this.weakOpen=false;this.weakTimer=0;this.attackTimer=0;
@@ -525,10 +528,15 @@ class TheVoid{
       if(Math.abs(this.y-this.targetY)<3){this.entered=true;sfx.boss();burst(this.x,this.y,'#ff0044',40,3,10,3,8,40,100);}
       return;
     }
-    // Orbit
-    this.orbitAngle+=.006+this.phase*.002;
-    this.x=lerp(this.x,C.width/2+Math.cos(this.orbitAngle)*this.orbitR,.035);
-    this.y=lerp(this.y,this.targetY+Math.sin(this.orbitAngle*1.3)*40,.035);
+    // Dynamic orbit — boss shifts zones every ~4s
+    this.zoneTimer=(this.zoneTimer||0)+1;
+    if(this.zoneTimer>240){this.zoneTimer=0;
+      this.orbitTargetR=rnd(C.width*.15,Math.min(C.width,C.height)*.42);
+      this.targetY=rnd(C.height*.18,C.height*.55);}
+    this.orbitR=lerp(this.orbitR,this.orbitTargetR,.01);
+    this.orbitAngle+=.009+this.phase*.004;
+    this.x=lerp(this.x,C.width/2+Math.cos(this.orbitAngle)*this.orbitR,.04);
+    this.y=lerp(this.y,this.targetY+Math.sin(this.orbitAngle*1.8)*50,.04);
     this.weakAngles=this.weakAngles.map(a=>a+.018+this.phase*.008);
     this.attackTimer++;
     const atkInt=120-this.phase*20;
@@ -635,13 +643,14 @@ class FractureEnemy{
     else if(side===2){this.x=rnd(0,C.width);this.y=C.height+m;}
     else{this.x=-m;this.y=rnd(0,C.height);}
     this.wave=wave;this.alive=true;this.age=0;this.rot=0;this.flashTimer=0;
-    const sp=lerp(1.0,3.8,Math.min((wave-1)/7,1));
+    const sp=lerp(0.9,2.6,Math.min((wave-1)/7,1)); // capped at 2.6 — was 3.8
     const baseAngle=Math.atan2(P.y-this.y,P.x-this.x);
     // Unique offset so enemies form a ring not a stack
     // Assign enemies a slot on a ring around player — no clustering
-    const ringIdx=Math.floor(Math.random()*12);
-    const ringAngle=tau/12*ringIdx+rnd(-.2,.2);
-    const ringDist=lerp(80,200,Math.min(gs.waveNum/8,1))+rnd(-20,20);
+    // Each enemy gets a unique slot — count enemies currently alive to assign next slot
+    const slotIdx=(typeof gs._enemySlot!=="undefined"?(gs._enemySlot++):(gs._enemySlot=0,0))%16;
+    const ringAngle=tau/16*slotIdx+rnd(-.15,.15);
+    const ringDist=Math.min(C.width,C.height)*.3+rnd(-20,20);
     this.targetOffset={x:Math.cos(ringAngle)*ringDist,y:Math.sin(ringAngle)*ringDist};
     this.vx=Math.cos(baseAngle+rnd(-.2,.2))*sp;this.vy=Math.sin(baseAngle+rnd(-.2,.2))*sp;this.baseSpd=sp;
     const roll=Math.random();
@@ -654,13 +663,18 @@ class FractureEnemy{
   }
   update(){
     this.age++;this.rot+=this.rotSpd;this.flashTimer=Math.max(0,this.flashTimer-1);
-    const tx=P.x+this.targetOffset.x,ty=P.y+this.targetOffset.y;
+    // Each enemy has a unique phase offset so updates desync
+    const phaseOff=this.age*.001*this.rotSpd*10;
+    const wander={x:Math.sin(this.age*.028+phaseOff)*40,y:Math.cos(this.age*.021+phaseOff*1.3)*40};
+    const tx=P.x+this.targetOffset.x+wander.x,ty=P.y+this.targetOffset.y+wander.y;
     if(this.type==='tracker'&&this.age%55===0){
-      const a=Math.atan2(ty-this.y,tx-this.x);this.vx=Math.cos(a)*this.baseSpd;this.vy=Math.sin(a)*this.baseSpd;
+      const a=Math.atan2(ty-this.y,tx-this.x)+rnd(-.3,.3);this.vx=Math.cos(a)*this.baseSpd;this.vy=Math.sin(a)*this.baseSpd;
     }else{
       const dx=tx-this.x,dy=ty-this.y,d=Math.hypot(dx,dy)||1;
       const pull=this.type==='heavy'?.018:.032;
       this.vx+=dx/d*pull;this.vy+=dy/d*pull;
+      // Add small random drift to desync group movement
+      this.vx+=rnd(-.04,.04);this.vy+=rnd(-.04,.04);
       const spd=Math.hypot(this.vx,this.vy);
       if(spd>this.baseSpd*1.5){this.vx=this.vx/spd*this.baseSpd*1.5;this.vy=this.vy/spd*this.baseSpd*1.5;}
     }
@@ -926,7 +940,7 @@ function startWave(){
   gs.waveNum++;gs.waveKills=0;gs.waveActive=true;
   const isBoss=gs.waveNum===8;
   const count=isBoss?0:8+gs.waveNum*4;
-  gs.waveEnemiesThisWave=count;gs.waveTimer=0;
+  gs.waveEnemiesThisWave=count;gs._enemySlot=0;gs.waveTimer=0;
   const label=isBoss?'THE VOID AWAKENS':'WAVE '+gs.waveNum;
   floatTexts.push(new FloatText(C.width/2,C.height*.36,label,'#44aaff',24));sfx.boss();
   if(isBoss){
@@ -980,7 +994,7 @@ function updateAct3(){
     gs.voidFakeKillTimer--;
     if(gs.voidFakeKillTimer<=0){
       gs.actLog.push({act:3,frames:gs.waveTimer,score:gs.totalScore,label:'fell to THE VOID'});
-      gs.voidFakeKill=false;showActCinematic(3,4);
+      gs.voidFakeKill=false;gs._fakeKillSnapX=null;gs._fakeKillSnapY=null;showActCinematic(3,4);
     }
     return;
   }
@@ -1071,16 +1085,24 @@ function updateAct4(){
   P.trail.push({x:P.x,y:P.y});if(P.trail.length>14)P.trail.shift();
   if(P.inv){P.invTime--;if(P.invTime<=0)P.inv=false;}
   if(!gs.act4Dist)gs.act4Dist=0;
-  if(!gs.act4MaxDist)gs.act4MaxDist=8000;
+  if(!gs.act4MaxDist)gs.act4MaxDist=32000; // ~4x longer
   if(!gs.act4Debris)gs.act4Debris=[];
   if(!gs.act4Speed)gs.act4Speed=1.8;
-  // Speed escalates with progress
   const prog=Math.min(gs.act4Dist/gs.act4MaxDist,1);
-  gs.act4Speed=lerp(1.8,5.5,prog*prog); // ease-in — starts calm, gets intense
+  // Rhythm: CALM (0-.2) → HARD (0.2-.45) → BREAK (0.45-.55) → INTENSE (0.55-.8) → CLEAR (0.8-1.0)
+  let targetSpd;
+  if(prog<.2)targetSpd=lerp(1.8,3.2,prog/.2);         // gentle warm-up
+  else if(prog<.45)targetSpd=lerp(3.2,6.0,(prog-.2)/.25); // first hard section
+  else if(prog<.55)targetSpd=lerp(6.0,2.0,(prog-.45)/.1); // break — debris thins
+  else if(prog<.8)targetSpd=lerp(2.0,7.0,(prog-.55)/.25); // intense push
+  else targetSpd=lerp(7.0,1.0,(prog-.8)/.2);          // clear sky approach
+  gs.act4Speed=lerp(gs.act4Speed,targetSpd,.04);
   gs.act4Dist+=gs.act4Speed;
   // Spawn debris from top at rate that scales with speed
-  const spawnRate=Math.max(8,Math.floor(lerp(30,8,prog)));
-  if(gs.frame%spawnRate===0){
+  // Debris rhythm — sparse in calm/break zones, dense in hard zones
+  const isBreak=(prog>=.45&&prog<.55)||(prog>=.8);
+  const spawnRate=isBreak?9999:Math.max(6,Math.floor(lerp(35,6,prog)));
+  if(!isBreak&&gs.frame%spawnRate===0){
     const d=new RisingDebris(gs.act4Speed);
     // Denser debris clusters in middle-to-late climb
     if(prog>.4&&Math.random()<.3){// spawn a cluster
@@ -1128,25 +1150,32 @@ function drawAct4(){
   const prog=Math.min((gs.act4Dist||0)/(gs.act4MaxDist||8000),1);
   const r=Math.floor(lerp(18,4,prog)),g=Math.floor(lerp(6,2,prog)),b=Math.floor(lerp(2,18,prog));
   ctx.fillStyle=`rgb(${r},${g},${b})`;ctx.fillRect(0,0,C.width,C.height);
-  // Scrolling grid — strong upward motion illusion
-  const scrollY=(gs.act4Dist||0)*0.8;
-  const gc=lerp(.18,.06,prog);
-  ctx.save();ctx.strokeStyle=`rgba(255,${Math.floor(lerp(120,60,prog))},40,${gc})`;ctx.lineWidth=1;
-  // Vertical lines — tighter near edges (forced perspective feel)
-  const cols=8;
-  for(let i=0;i<=cols;i++){const gx=C.width/cols*i;ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,C.height);ctx.stroke();}
-  // Horizontal lines scrolling upward
-  const gridH=60;
-  for(let gy=(scrollY%gridH);gy<C.height+gridH;gy+=gridH){
-    const yp=1-gy/C.height;ctx.globalAlpha=gc*(0.4+yp*.6);
-    ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(C.width,gy);ctx.stroke();
+  // Parallax star field scrolling upward — strong sense of ascent
+  const scrollY=(gs.act4Dist||0);
+  // Far stars — slow scroll
+  ctx.save();
+  for(let i=0;i<60;i++){
+    const seed=i*137.508,sx2=(seed*73)%C.width,sy2=((seed*41+scrollY*.3)%C.height+C.height)%C.height;
+    const sz=.5+((seed*17)%1.5),bright=lerp(.18,.55,prog);
+    ctx.fillStyle=`rgba(255,255,255,${bright})`;ctx.beginPath();ctx.arc(sx2,sy2,Math.max(.3,sz),0,tau);ctx.fill();
+  }
+  // Mid stars — medium scroll
+  for(let i=0;i<30;i++){
+    const seed=i*231.7+500,sx2=(seed*53)%C.width,sy2=((seed*37+scrollY*.7)%C.height+C.height)%C.height;
+    const sz=.8+((seed*23)%2),bright=lerp(.25,.7,prog);
+    ctx.fillStyle=`rgba(255,${Math.floor(lerp(200,255,prog))},${Math.floor(lerp(150,200,prog))},${bright})`;
+    ctx.beginPath();ctx.arc(sx2,sy2,Math.max(.3,sz),0,tau);ctx.fill();
   }
   ctx.restore();
-  // Speed streaks at bottom — blur of upward travel
-  ctx.save();const streakA=Math.min((gs.act4Speed-1.5)/4,.5);
-  if(streakA>0){ctx.strokeStyle=`rgba(255,140,60,${streakA*.4})`;ctx.lineWidth=1;
-    for(let i=0;i<10;i++){const lx=rnd(0,C.width),len=gs.act4Speed*14+rnd(0,30);
-      ctx.beginPath();ctx.moveTo(lx,C.height);ctx.lineTo(lx,C.height-len);ctx.stroke();}
+  // Speed streaks — upward travel lines from bottom
+  ctx.save();const streakA=Math.min((gs.act4Speed-1.5)/4,.65);
+  if(streakA>0){
+    for(let i=0;i<12;i++){
+      const lx=rnd(0,C.width),len=gs.act4Speed*18+rnd(0,50);
+      const col=i%3===0?`rgba(255,180,80,${streakA*.5})`:`rgba(255,255,255,${streakA*.25})`;
+      ctx.strokeStyle=col;ctx.lineWidth=i%3===0?1.5:.8;
+      ctx.beginPath();ctx.moveTo(lx,C.height);ctx.lineTo(lx,C.height-len);ctx.stroke();
+    }
   }ctx.restore();
   drawStars();
   const sx=gs.shake.x*(Math.random()-.5)*2,sy=gs.shake.y*(Math.random()-.5)*2;
@@ -1214,23 +1243,9 @@ function updateAct5(){
   gs.shake.x*=.77;gs.shake.y*=.77;gs.act5Timer++;
   act3AimAngle+=act3KeysHeld.right?.05:act3KeysHeld.left?-.05:0; // aim works in act5 too
   if(gs.act5Phase==='waves'){
-    // Update enemies
+    // Update enemies — pulse is the only weapon in Act 5
     gs.enemies.forEach(e=>e.update());
-    // Bullets (same arc auto-fire as Act 3)
-    if(gs.frame-gs.lastShot>=28&&gs.enemies.length>0){
-      let nearest=null,nearDist=Infinity;
-      gs.enemies.forEach(e=>{if(!e.alive)return;const d=dist(P,e);if(d<nearDist){nearDist=d;nearest=e;}});
-      if(nearest){const a=Math.atan2(nearest.y-P.y,nearest.x-P.x);
-        gs.bullets.push({x:P.x+Math.cos(a)*P.r*1.5,y:P.y+Math.sin(a)*P.r*1.5,vx:Math.cos(a)*11,vy:Math.sin(a)*11,r:4,alive:true,color:pColor()});
-        gs.lastShot=gs.frame;}
-    }
-    gs.bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;if(b.x<-20||b.x>C.width+20||b.y<-20||b.y>C.height+20)b.alive=false;});
-    gs.bullets=gs.bullets.filter(b=>b.alive);
-    // Bullet-enemy collision
-    for(const b of gs.bullets){
-      for(const e of gs.enemies){if(!e.alive||!b.alive)continue;if(dist(b,e)<b.r+e.hitR){b.alive=false;const killed=e.hit();if(killed){gs.act5WaveKills++;gs.totalScore+=20*gs.act5Wave;burst(e.x,e.y,e.color,10,1,5,1.5,3.5,16,36);}}}
-    }
-    // Count enemies that left the map as kills so wave can complete
+    // Count OOB enemies as kills
     gs.enemies.forEach(e=>{if(!e.alive&&!e.counted){e.counted=true;gs.act5WaveKills++;}});
     gs.enemies=gs.enemies.filter(e=>e.alive);
     // Player-enemy collision
@@ -1282,7 +1297,28 @@ function updateAct5(){
       }return;
     }
     boss.update();
-    // Auto-aim fire toward boss weak points
+    // Seeds of light — spawn 3 at a time, collect all 3 to trigger light wave
+    if(!gs.act5Seeds)gs.act5Seeds=[];if(!gs.act5SeedsCollected)gs.act5SeedsCollected=0;
+    if(gs.frame%280===0&&gs.act5Seeds.filter(sd=>!sd.dead).length<3){
+      for(let i=0;i<3;i++){
+        const a=rnd(0,tau),d=rnd(C.width*.2,C.width*.42);
+        gs.act5Seeds.push({x:C.width/2+Math.cos(a)*d,y:C.height/2+Math.sin(a)*d,r:10,dead:false,pulse:rnd(0,tau)});
+      }
+    }
+    // Update and collect seeds
+    gs.act5Seeds.forEach(sd=>{sd.pulse+=.07;});
+    const nearSeed=gs.act5Seeds.find(sd=>!sd.dead&&dist(P,{x:sd.x,y:sd.y})<P.r+sd.r+10);
+    if(nearSeed){nearSeed.dead=true;gs.act5SeedsCollected++;burst(nearSeed.x,nearSeed.y,'#ffffaa',10,1,4,1.5,3,12,28);sfx.collect(1);
+      if(gs.act5SeedsCollected>=3){gs.act5SeedsCollected=0;gs.act5Seeds=[];
+        // Light wave blast — wider radius, more damage than bullets
+        const blastR=Math.min(C.width,C.height)*.5;
+        gs.act5PulseRing={r:0,maxR:blastR,born:gs.frame,charge:1};sfx.boss();
+        if(boss.weakOpen)boss.hit&&boss.hit(20);// bonus damage
+        floatTexts.push(new FloatText(C.width/2,C.height*.3,'LIGHT WAVE','#ffffaa',22));
+      }
+    }
+    gs.act5Seeds=gs.act5Seeds.filter(sd=>!sd.dead);
+    // Auto-aim bullets when weak point is open (gun mechanic)
     if(gs.frame-gs.lastShot>=28&&boss.weakOpen){
       const a=Math.atan2(boss.y-P.y,boss.x-P.x);
       gs.bullets.push({x:P.x+Math.cos(a)*P.r*1.5,y:P.y+Math.sin(a)*P.r*1.5,vx:Math.cos(a)*11,vy:Math.sin(a)*11,r:4,alive:true,color:pColor()});
@@ -1291,20 +1327,19 @@ function updateAct5(){
     gs.bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;if(b.x<-20||b.x>C.width+20||b.y<-20||b.y>C.height+20)b.alive=false;});
     gs.bullets=gs.bullets.filter(b=>b.alive);
     // Boss shots hurt player
-    if(!P.inv){if(!gs.voidShots)gs.voidShots=[];gs.voidShots.forEach(b=>{b.x+=b.vx;b.y+=b.vy;if(b.x<-30||b.x>C.width+30||b.y<-30||b.y>C.height+30)b.alive=false;});gs.voidShots=gs.voidShots.filter(b=>b.alive);for(const b of gs.voidShots){if(dist(P,b)<P.r+b.r){gs.lives--;sfx.hit();P.inv=true;P.invTime=130;burst(P.x,P.y,'#ff0044',12,2,5,2,4);b.alive=false;if(gs.lives<=0)killPlayer(5);break;}}}
+    if(!P.inv){if(!gs.voidShots)gs.voidShots=[];gs.voidShots.forEach(b=>{b.x+=b.vx;b.y+=b.vy;if(b.x<-30||b.x>C.width+30||b.y<-30||b.y>C.height+30)b.alive=false;});gs.voidShots=gs.voidShots.filter(b=>b.alive);for(const b of gs.voidShots){if(dist(P,b)<P.r+b.r){if(!absorbHit()){gs.lives--;sfx.hit();P.inv=true;P.invTime=130;burst(P.x,P.y,'#ff0044',12,2,5,2,4);}b.alive=false;if(gs.lives<=0)killPlayer(5);break;}}}
     // Player bullets vs boss weak points
     for(const b of gs.bullets){
       if(b.alive&&boss.hitWeak(b.x,b.y)){b.alive=false;const killed=boss.hit(5);burst(b.x,b.y,'#ffffff',6,1,3,1,2.5,8,18);
-        if(killed){burst(boss.x,boss.y,'#ff0044',100,3,16,3,12,60,200);burst(boss.x,boss.y,'#ffffff',60,5,14,3,10,80,200);sfx.boss();sfx.death();}}
+        if(killed){gs.flash=1.0;setTimeout(()=>{gs.flash=0;},600);burst(boss.x,boss.y,'#ff0044',100,3,16,3,12,60,200);burst(boss.x,boss.y,'#ffffff',80,5,14,3,10,80,200);sfx.boss();sfx.death();}}}
     }
     // Player proximity to boss
     if(!P.inv&&boss.alive&&dist(P,boss)<P.r+boss.r*.4){gs.lives--;sfx.hit();P.inv=true;P.invTime=130;burst(P.x,P.y,'#ff0044',14,2,6,2,4);if(gs.lives<=0)killPlayer(5);}
   }
-  // Shards in act5 for scoring
-  // Shards charge the pulse in act5
-  const mxS5=6;if(gs.frame%25===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS5)shards.push(new Shard());
+  // Shards charge pulse in all act5 phases
+  const mxS5=gs.act5Phase==='boss'?4:8;if(gs.frame%20===0&&shards.filter(s=>!s.collected&&!s.dead).length<mxS5)shards.push(new Shard());
   // Act 1 obstacles appear in act5 for nostalgia and challenge
-  if(gs.act5Phase==='waves'&&gs.frame%120===0&&obstacles.length<4)obstacles.push(new Obstacle());
+  if(gs.act5Phase==='waves'&&gs.act5Wave<8&&gs.frame%120===0&&obstacles.length<4)obstacles.push(new Obstacle());
   obstacles.forEach(o=>o.update());obstacles=obstacles.filter(o=>o.alive);
   if(!P.inv){for(const o of obstacles){if(!o.alive)continue;const d=dist(P,o)-o.hitR;if(d<=0){gs.lives--;gs.combo=0;P.inv=true;P.invTime=100;burst(P.x,P.y,'#ff2255',14,2,6,2,5);sfx.hit();if(gs.lives<=0)killPlayer(5);break;}}}
   // Occasional powerups
@@ -1312,7 +1347,10 @@ function updateAct5(){
   powerups.forEach(pu=>pu.update());powerups=powerups.filter(p=>!p.dead);
   for(const pu of powerups){if(!pu.dead&&dist(P,pu)<P.r+pu.r+16){pu.dead=true;activatePU(pu.type);}}
   shards.forEach(s=>s.update());shards=shards.filter(s=>!s.dead);
-  for(const s of shards){if(s.collected||s.dead)continue;if(dist(P,s)<P.r+s.r+18){s.collected=true;if(s.isLife){gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();floatTexts.push(new FloatText(s.x,s.y-24,'+1 LIFE','#ff88ff',20));burst(s.x,s.y,'#ff88ff',16,2,6,2,5,18,45);}else{gs.combo++;const mult=Math.min(COMBO_CAP,Math.floor(gs.combo/5)+1),pts=10*mult;gs.act5Score+=pts;gs.totalScore+=pts;burst(s.x,s.y,E().shard,7,1,3,1.5,3,12,25);sfx.collect(gs.combo);}}}
+  for(const s of shards){if(s.collected||s.dead)continue;if(dist(P,s)<P.r+s.r+18){s.collected=true;if(s.isLife){gs.lives=Math.min(5,gs.lives+1);sfx.milestone&&sfx.milestone();floatTexts.push(new FloatText(s.x,s.y-24,'+1 LIFE','#ff88ff',20));burst(s.x,s.y,'#ff88ff',16,2,6,2,5,18,45);}else{// Shards charge the pulse in Act 5
+      gs.act5PulseCharge=Math.min(1,(gs.act5PulseCharge||0)+.15);
+      burst(s.x,s.y,'#cc88ff',5,.5,2,1,2,8,18);sfx.collect(1);
+      floatTexts.push(new FloatText(s.x,s.y-16,'+PULSE','#cc88ff',12));}}
   particles.forEach(p=>p.update());particles=particles.filter(p=>p.life>0);
   floatTexts.forEach(t=>t.update());floatTexts=floatTexts.filter(t=>t.life>0);
 }
@@ -1353,6 +1391,10 @@ function drawAct5(){
     gs.voidShots&&gs.voidShots.forEach(b=>{ctx.save();ctx.fillStyle='#ff0044';ctx.shadowBlur=14;ctx.shadowColor='#ff0044';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,tau);ctx.fill();ctx.restore();});
     gs.bullets&&gs.bullets.forEach(b=>{ctx.save();ctx.fillStyle=b.color||pColor();ctx.shadowBlur=12;ctx.shadowColor=b.color||pColor();ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,tau);ctx.fill();ctx.restore();});
     if(gs.originBoss&&gs.originBoss.alive)gs.originBoss.draw();
+    // Draw seeds of light
+    if(gs.act5Seeds){gs.act5Seeds.filter(sd=>!sd.dead).forEach(sd=>{const pr=sd.r+Math.sin(sd.pulse)*3;ctx.save();ctx.shadowBlur=28;ctx.shadowColor='#ffffaa';ctx.fillStyle='#ffffaa';ctx.globalAlpha=.7+Math.sin(sd.pulse)*.3;ctx.beginPath();ctx.arc(sd.x,sd.y,Math.max(.1,pr),0,tau);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sd.x,sd.y,Math.max(.1,pr*.35),0,tau);ctx.fill();ctx.restore();});}
+    // HUD: seed collection counter
+    if(gs.act5SeedsCollected>0){ctx.save();ctx.textAlign='center';ctx.font=`400 10px 'Share Tech Mono'`;ctx.fillStyle='#ffffaa';ctx.shadowBlur=8;ctx.shadowColor='#ffffaa';ctx.fillText(`SEEDS ${gs.act5SeedsCollected}/3`,C.width/2,C.height*.12);ctx.restore();}
     drawPlayer();
   }
   ctx.restore();
@@ -1962,8 +2004,7 @@ window.addEventListener('keyup',e=>{
 // Mobile: tap right half to release pulse in Act 3
 C.addEventListener('touchstart',e=>{
   if(!e.touches[0])return;
-  if((gs.act===3||gs.act===5)&&e.touches[0].clientX>C.width*.5){if(gs.act===3)releasePulse();else releaseAct5Pulse();}
-  if(gs.act===5&&(gs.act5Phase==='waves'||gs.act5Phase==='boss'))releaseAct5Pulse();
+  if((gs.act===3||gs.act===5)&&gs.state==='playing'&&e.touches[0].clientX>C.width*.5){if(gs.act===3)releasePulse();else releaseAct5Pulse();}
   // Mobile dial for aim
   if(gs.act===3||gs.act===5){
     const t=[...e.touches].find(t=>t.clientX>C.width*.5);
@@ -2173,7 +2214,7 @@ function updateAct1(){
   P.trail.push({x:P.x,y:P.y});if(P.trail.length>24)P.trail.shift();
   if(P.inv&&!gs.shield){P.invTime--;if(P.invTime<=0)P.inv=false;}
   gs.shake.x*=.77;gs.shake.y*=.77;
-  if(gs.shield){gs.shieldTime--;if(gs.shieldTime<=0){gs.shield=false;P.inv=false;}}
+  if(gs.shield){gs.shieldTime--;if(gs.shieldTime<=0){gs.shield=false;}}
   if(gs.magnet){gs.magnetTime--;if(gs.magnetTime<=0)gs.magnet=false;}
   if(gs.epoch===5){gs.omegaTimer++;if(gs.omegaTimer>=1800)initDissolution();}
   // Record player path from Act 1 for Act 5 ghosts
@@ -2238,13 +2279,24 @@ function collideAct1(){
   }
   for(const pu of powerups){if(!pu.dead&&dist(P,pu)<P.r+pu.r+16){pu.dead=true;activatePU(pu.type);}}
 }
+function absorbHit(){
+  // If shield active, absorb the hit — returns true if absorbed
+  if(gs.shield&&(gs.shieldHits||1)>0){
+    gs.shieldHits--;burst(P.x,P.y,'#00ffff',12,1,5,2,4);sfx.hit();
+    if(navigator.vibrate)navigator.vibrate([30]);
+    if(gs.shieldHits<=0){gs.shield=false;gs.shieldTime=0;floatTexts.push(new FloatText(P.x,P.y-30,'SHIELD BROKEN','#00ffff',14));}
+    P.inv=true;P.invTime=60; // brief flash after absorb
+    return true;
+  }
+  return false;
+}
 function activatePU(type){
   sfx.powerup();gs.powerupsUsed++;
   if(type==='nova'){
     gs.novaRing={r:0,x:P.x,y:P.y,maxR:Math.max(C.width,C.height)*1.3};sfx.nova();
     obstacles.forEach(o=>{burst(Math.max(0,Math.min(C.width,o.x)),Math.max(0,Math.min(C.height,o.y)),E().obstacle,12,2,6,1.5,4,22,50);o.alive=false;});
     gs.score+=50;gs.flash=.4;gs.gridPulse=1.0;camZoom=.88;floatTexts.push(new FloatText(C.width/2,C.height*.38,'NOVA!','#ff6600',30));
-  }else if(type==='shield'){gs.shield=true;gs.shieldTime=480;P.inv=true;P.invTime=480;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SHIELD!','#00ffff',28));}
+  }else if(type==='shield'){gs.shield=true;gs.shieldTime=480;gs.shieldHits=1;floatTexts.push(new FloatText(C.width/2,C.height*.38,'SHIELD!','#00ffff',28));}
   else if(type==='life'){gs.lives=Math.min(5,gs.lives+1);sfx.milestone();gs.flash=.3;floatTexts.push(new FloatText(C.width/2,C.height*.38,`+1 LIFE  (${gs.lives})✦`,'#ff88ff',26));}
   else{gs.magnet=true;gs.magnetTime=380;floatTexts.push(new FloatText(C.width/2,C.height*.38,'MAGNET!','#ffaa00',28));}
 }
