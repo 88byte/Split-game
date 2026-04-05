@@ -305,14 +305,18 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="tb-logo" style="font-size:12px;letter-spacing:4px;">SPLIT<span style="opacity:.35;margin-left:4px;font-size:9px;letter-spacing:3px;">GAMES</span></div>
     <div class="tb-today">
       <div class="tb-stat">
-        <div style="display:flex;align-items:baseline;gap:5px;">
-          <div class="tb-val" id="tbGames">—</div>
-          <div style="font-size:9px;color:var(--dim2);" id="tbGamesDetail"></div>
+        <div style="display:flex;align-items:baseline;gap:6px;">
+          <div class="tb-val" id="tbTotalSessions">—</div>
         </div>
-        <div class="tb-lbl">Split sessions</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:1px;">
+          <span style="font-size:8px;color:var(--purple);letter-spacing:1px;" id="tbSplitSessions">—</span>
+          <span style="font-size:8px;color:var(--dim2);">·</span>
+          <span style="font-size:8px;color:rgba(0,220,255,.8);letter-spacing:1px;" id="tbEtherSessions">—</span>
+        </div>
+        <div class="tb-lbl">Total sessions</div>
       </div>
       <div class="tb-stat"><div class="tb-val purple" id="tbPlayers">—</div><div class="tb-lbl">New players</div></div>
-      <div class="tb-stat"><div class="tb-val" style="color:rgba(0,220,255,.9);" id="tbEtherPlays">—</div><div class="tb-lbl">Ether plays</div></div>
+      <div class="tb-stat"><div class="tb-val" id="tbVisits">—</div><div class="tb-lbl">Total visits</div></div>
       <div class="tb-stat"><div class="tb-val gold" id="tbDonations">—</div><div class="tb-lbl">Donations</div></div>
     </div>
     <div class="tb-right">
@@ -376,7 +380,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
       Sessions
     </div>
 
-    <div class="nav-sec">Revenue</div>
+    <div class="nav-sec">Support</div>
     <div class="nav-item" onclick="nav('donations',this)">
       <svg class="ni" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M7 2c-2.2 0-4 1.6-4 3.6 0 2.8 4 6.4 4 6.4s4-3.6 4-6.4C11 3.6 9.2 2 7 2z"/></svg>
       Donations
@@ -418,18 +422,23 @@ tr:hover td{background:rgba(255,255,255,.015);}
       </div>
       <div class="two-col">
         <div class="card">
-          <div class="card-title">Sessions — Last 14 Days</div>
+          <div class="card-title">Split Sessions — Last 14 Days</div>
           <div class="sparkline" id="revenueChart"></div>
           <div class="spark-labels" id="chartLabels"></div>
         </div>
         <div class="card">
-          <div class="card-hd">
-            <div class="card-title">Recent Players</div>
-            <div class="card-action" onclick="nav('players',document.getElementById('navLookup').nextElementSibling)">All →</div>
-          </div>
-          <table><thead><tr><th>Player</th><th>Tier</th><th>Joined</th></tr></thead>
-          <tbody id="recentBody"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody></table>
+          <div class="card-title">Ether Plays — Last 14 Days</div>
+          <div class="sparkline" id="etherChart"></div>
+          <div class="spark-labels" id="etherChartLabels"></div>
         </div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Recent Players</div>
+          <div class="card-action" onclick="nav('players',null)">All →</div>
+        </div>
+        <table><thead><tr><th>Player</th><th>Tier</th><th>Joined</th></tr></thead>
+        <tbody id="recentBody"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody></table>
       </div>
     </div>
 
@@ -540,18 +549,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
     </div>
 
     <!-- REVENUE -->
-    <div class="page" id="page-revenue">
-      <div class="pg-title">Revenue</div>
-      <div class="stats-row" id="revStats"></div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">All Purchases</div>
-          <div class="card-action" onclick="exportCSV('purchases')">Export CSV</div>
-        </div>
-        <table><thead><tr><th>Username</th><th>Email</th><th>Tier</th><th>Amount</th><th>Date</th></tr></thead>
-        <tbody id="purchBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
-      </div>
-    </div>
+
 
     <!-- SESSIONS -->
     <div class="page" id="page-sessions">
@@ -573,15 +571,15 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <div class="stats-row" id="splitStatsGrid"><div class="spinner"></div></div>
       <div class="two-col">
         <div class="card">
-          <div class="card-title">Revenue — Last 14 Days</div>
+          <div class="card-title">Sessions — Last 14 Days</div>
           <div class="sparkline" id="splitChart"></div>
           <div class="spark-labels" id="splitChartLabels"></div>
         </div>
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">Historical Purchases (Stripe)</div>
+            <div class="card-title">Recent Sessions</div>
           </div>
-          <table><thead><tr><th>User</th><th>Tier</th><th>Amount</th><th>When</th></tr></thead>
+          <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>When</th></tr></thead>
           <tbody id="splitRecentBody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table>
         </div>
       </div>
@@ -763,7 +761,7 @@ function nav(id,el){
   // Sessions tab — always reload fresh when navigating to it
   if(id==='sessions')loadSessions();
   if(id==='ether')loadEtherData();
-  if(id==='split')renderSplitPage(D.stats,D.revenue_by_day,D.recent_purchases);
+  if(id==='split')renderSplitPage(D.stats);
   if(id==='donations'){renderDonationLog();}
 }
 function mobNav(el){
@@ -795,29 +793,23 @@ function renderAll(d){
   renderLeaderboard(d.leaderboard);
   if(d.players&&d.players.length){renderPlayers(d.players);renderRecent();}
   renderSessions(d.recent_sessions||[]);
-  renderRevStats(d.stats,d.all_purchases||d.recent_purchases);
-  renderSplitPage(d.stats,d.revenue_by_day,d.recent_purchases);
+  renderSplitPage(d.stats);
   loadEtherData();
   renderDonationLog();
 }
 
 // ── TOPBAR ────────────────────────────────────────────────
 function renderTopbar(today,purchases,stats){
-  if(today){
-    set('tbGames',today.games||0);
-    set('tbPlayers',today.new_players||0);
-  }
-  // Guest vs named split from sessions
-  if(ALL_SESSIONS&&ALL_SESSIONS.length){
-    var gCount=ALL_SESSIONS.filter(function(s){return(s.username||'').toLowerCase()==='guest';}).length;
-    var nCount=ALL_SESSIONS.filter(function(s){return(s.username||'').toLowerCase()!=='guest'&&!!s.username;}).length;
-    var dtl=document.getElementById('tbGamesDetail');
-    if(dtl)dtl.textContent=nCount+' reg · '+gCount+' guest';
-  }
-  // Ether plays from localStorage cache (updated by loadEtherData)
+  if(today){set('tbPlayers',today.new_players||0);}
+  if(stats){set('tbVisits',num(stats.total_page_views||0));}
+  var splitTotal=stats?stats.total_games_played||0:0;
   var ep=parseInt(localStorage.getItem('etherPlaysCount')||'0');
-  set('tbEtherPlays',ep>0?ep:'—');
-  // Donation total from manual log
+  var etherTotal=ep>0?ep:0;
+  set('tbTotalSessions',num(splitTotal+etherTotal));
+  var sel=document.getElementById('tbSplitSessions');
+  var eel=document.getElementById('tbEtherSessions');
+  if(sel)sel.textContent=num(splitTotal)+' SPLIT';
+  if(eel)eel.textContent=(etherTotal>0?num(etherTotal):'—')+' ETHER';
   var donLog=getDonations();
   var donTotal=donLog.reduce(function(s,d){return s+(d.amount||0);},0);
   set('tbDonations',donTotal>0?'$'+donTotal.toFixed(2):'—');
@@ -827,13 +819,18 @@ function renderTopbar(today,purchases,stats){
 function renderStats(s,today){
   if(!s)return;
   var ep=parseInt(localStorage.getItem('etherPlaysCount')||'0');
+  // Compute total play time from sessions (runtime in seconds)
+  var totalSecs=ALL_SESSIONS.reduce(function(acc,s2){return acc+(s2.runtime||0);},0);
+  var totalHours=totalSecs>0?(totalSecs/3600).toFixed(1)+'h':'—';
   var items=[
     {v:s.total_games_played||0,l:'Split Sessions',sub:'All time',c:'purple'},
     {v:today?today.games||0:0,l:'Sessions Today',sub:'',c:''},
+    {v:s.total_page_views||0,l:'Total Visits',sub:'Landing page',c:''},
     {v:s.total_users||0,l:'Players',sub:'Registered',c:''},
-    {v:today?today.new_players||0:0,l:'New Today',sub:'',c:'green'},
     {v:ep>0?ep:'—',l:'Ether Plays',sub:'All time',c:''},
-    {v:AT_RISK_COUNT||0,l:'At-Risk',sub:'High engagement',c:'orange'},
+    {v:totalHours,l:'Play Time',sub:'Tracked sessions',c:'green'},
+    {v:AT_RISK_COUNT||0,l:'At-Risk',sub:'Highly engaged',c:'orange'},
+    {v:today?today.new_players||0:0,l:'New Today',sub:'',c:''},
   ];
   document.getElementById('statsGrid').innerHTML=items.map(function(i){
     return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div>'+(i.sub?'<div class="stat-sub">'+i.sub+'</div>':'')+'</div>';
@@ -1096,25 +1093,8 @@ function renderLeaderboard(rows){
 }
 
 // ── REVENUE ───────────────────────────────────────────────
-function renderRevStats(s,purchases){
-  ALL_PURCHASES=purchases||[];
-  if(!s)return;
-  var rev=(s.total_revenue_cents||0)/100;
-  document.getElementById('revStats').innerHTML=[
-    {v:'$'+rev.toFixed(2),l:'Total Revenue',c:'gold'},
-    {v:s.total_purchases||0,l:'Total Sales',c:''},
-    {v:s.origin_pass_sales||0,l:'Origin Pass Sold',c:'purple'},
-    {v:'$'+((s.origin_pass_sales||0)*7.99).toFixed(2),l:'Origin Revenue',c:'gold'},
-    {v:s.split_pass_sales||0,l:'Split Pass Sold',c:''},
-    {v:'$'+((s.split_pass_sales||0)*2.99).toFixed(2),l:'Split Revenue',c:'gold'},
-  ].map(function(i){return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div></div>';}).join('');
-  var tb=document.getElementById('purchBody');
-  if(!purchases||!purchases.length){tb.innerHTML='<tr><td colspan="5" class="empty">No purchases yet</td></tr>';return;}
-  tb.innerHTML=purchases.map(function(p){
-    var d=p.created_at?new Date(p.created_at).toLocaleDateString():'—';
-    return '<tr><td style="cursor:pointer;color:var(--purple);" onclick="goLookup(\''+esc(p.username||'')+'\')">'+ esc(p.username||'—')+'</td><td style="color:var(--dim);font-size:11px">'+esc(p.email||'—')+'</td><td>'+badge(p.tier||'free')+'</td><td>'+(p.amount_cents?'$'+(p.amount_cents/100).toFixed(2):'—')+'</td><td style="color:var(--dim)">'+d+'</td></tr>';
-  }).join('');
-}
+// renderRevStats removed
+
 
 // ── SESSIONS ──────────────────────────────────────────────
 var SESSION_FILTER='all';
@@ -1221,9 +1201,9 @@ function exportCSV(type){
     rows=ALL_PLAYERS.map(function(p){return[p.username||'',p.email||'',p.tier||'free',p.created_at?new Date(p.created_at).toLocaleDateString():''];});
     filename='split-players.csv';
   } else {
-    headers=['Username','Email','Tier','Amount','Date'];
-    rows=ALL_PURCHASES.map(function(p){return[p.username||'',p.email||'',p.tier||'',p.amount_cents?'$'+(p.amount_cents/100).toFixed(2):'',p.created_at?new Date(p.created_at).toLocaleDateString():''];});
-    filename='split-purchases.csv';
+    headers=['Player','Score','Level','When'];
+    rows=ALL_SESSIONS.map(function(s){return[s.username||'',s.score||0,s.level||'',s.created_at?new Date(s.created_at).toLocaleDateString():''];});
+    filename='split-sessions.csv';
   }
   var csv=[headers.join(',')].concat(rows.map(function(r){return r.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"';}).join(',');})).join('\n');
   var a=document.createElement('a');
@@ -1295,20 +1275,36 @@ function loadEtherData(){
       document.getElementById('etherLbBody').innerHTML='<tr><td colspan="4" class="empty">Could not load — check credentials or create the ether_leaderboard table</td></tr>';
       return;
     }
-    // Cache total play count for topbar
     localStorage.setItem('etherPlaysCount',data.length);
     set('tbEtherPlays',data.length>0?data.length:'—');
-    // Stats
     var topScore=data.length?data[0].score:0;
     var avg=data.length?Math.round(data.reduce(function(s,r){return s+r.score;},0)/data.length):0;
     var last7=new Date(Date.now()-7*24*60*60*1000);
     var recent=data.filter(function(r){return new Date(r.created_at)>last7;}).length;
+    // Unique pilots (distinct player_name)
+    var uniquePilots=new Set(data.map(function(r){return(r.player_name||'').toUpperCase().trim();}));
+    uniquePilots.delete('');uniquePilots.delete('PILOT');
     document.getElementById('etherStatsGrid').innerHTML=[
-      {v:data.length,l:'Total Plays',c:''},
+      {v:data.length,l:'Total Plays',c:'purple'},
+      {v:uniquePilots.size,l:'Unique Pilots',c:''},
       {v:num(topScore),l:'Top Score',c:'gold'},
       {v:num(avg),l:'Avg Score',c:''},
       {v:recent,l:'Last 7 Days',c:'green'},
     ].map(function(i){return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div></div>';}).join('');
+    // Ether plays per day chart (on Pulse page)
+    var ebins={};
+    var ecutoff=Date.now()-14*24*60*60*1000;
+    data.forEach(function(r){
+      var dt=new Date(r.created_at||0);
+      if(dt<ecutoff)return;
+      var key=(dt.getMonth()+1)+'/'+(dt.getDate());
+      ebins[key]=(ebins[key]||0)+1;
+    });
+    var edays=[];for(var ei=13;ei>=0;ei--){var ed=new Date(Date.now()-ei*24*60*60*1000);var ek=(ed.getMonth()+1)+'/'+(ed.getDate());edays.push({k:ek,v:ebins[ek]||0});}
+    var emx=Math.max.apply(null,edays.map(function(d){return d.v;}))||1;
+    var ec=document.getElementById('etherChart'),elb=document.getElementById('etherChartLabels');
+    if(ec){ec.innerHTML=edays.map(function(d){var h=Math.max(2,Math.round((d.v/emx)*42));return '<div class="spark-bar" style="height:'+h+'px;background:rgba(0,200,255,.35);" title="'+d.k+': '+d.v+' plays"></div>';}).join('');}
+    if(elb){elb.innerHTML='<div class="spark-labels">'+edays.map(function(d){return '<div>'+d.k+'</div>';}).join('')+'</div>';}
     // Leaderboard
     var medals=['','🥇','🥈','🥉'];
     document.getElementById('etherLbBody').innerHTML=data.map(function(r,i){
@@ -1323,30 +1319,39 @@ function loadEtherData(){
 }
 
 // ── SPLIT PAGE ────────────────────────────────────────────
-function renderSplitPage(s,days,purchases){
+function renderSplitPage(s){
   if(!s)return;
-  var rev=((s.total_revenue_cents||0)/100).toFixed(2);
-  var conv=s.total_page_views>0?((s.total_purchases/s.total_page_views)*100).toFixed(1)+'%':'—';
+  var totalSecs=ALL_SESSIONS.reduce(function(acc,s2){return acc+(s2.runtime||0);},0);
+  var avgSecs=ALL_SESSIONS.length?Math.round(totalSecs/ALL_SESSIONS.length):0;
+  var avgMin=avgSecs>0?(avgSecs/60).toFixed(1)+'m':'—';
+  var totalHours=totalSecs>0?(totalSecs/3600).toFixed(1)+'h':'—';
+  var guests=ALL_SESSIONS.filter(function(s2){return(s2.username||'').toLowerCase()==='guest';}).length;
+  var named=ALL_SESSIONS.length-guests;
   document.getElementById('splitStatsGrid').innerHTML=[
-    {v:'$'+rev,l:'Total Revenue',c:'gold'},
-    {v:s.total_purchases||0,l:'Total Sales',c:''},
-    {v:s.origin_pass_sales||0,l:'Origin Pass',c:'purple'},
-    {v:s.total_users||0,l:'Players',c:''},
-    {v:s.total_games_played||0,l:'Games Played',c:''},
-    {v:conv,l:'Visit→Play Rate',c:'green'},
+    {v:s.total_games_played||0,l:'Total Sessions',c:'purple'},
+    {v:s.total_users||0,l:'Registered Players',c:''},
+    {v:s.total_page_views||0,l:'Landing Visits',c:''},
+    {v:totalHours,l:'Total Play Time',c:'green'},
+    {v:avgMin,l:'Avg Session',c:''},
+    {v:named+' / '+guests,l:'Named / Guest',c:''},
   ].map(function(i){return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div></div>';}).join('');
-  // Chart
-  var c=document.getElementById('splitChart'),lb=document.getElementById('splitChartLabels');
-  if(days&&days.length){
-    var mx=Math.max.apply(null,days.map(function(d){return d.amount_cents||0;}));if(!mx)mx=1;
-    c.innerHTML=days.map(function(d){var h=Math.max(2,Math.round(((d.amount_cents||0)/mx)*42));return '<div class="spark-bar" style="height:'+h+'px"></div>';}).join('');
-    lb.innerHTML='<div class="spark-labels">'+days.map(function(d){var dt=new Date(d.day);return '<div>'+(dt.getMonth()+1)+'/'+(dt.getDate())+'</div>';}).join('')+'</div>';
-  }
-  // Purchases table
+  var bins={};var cutoff=Date.now()-14*24*60*60*1000;
+  ALL_SESSIONS.forEach(function(s2){
+    var dt=new Date(s2.created_at||s2.played_at||0);if(dt<cutoff)return;
+    var key=(dt.getMonth()+1)+'/'+(dt.getDate());bins[key]=(bins[key]||0)+1;
+  });
+  var days14=[];for(var i=13;i>=0;i--){var dd=new Date(Date.now()-i*24*60*60*1000);var kk=(dd.getMonth()+1)+'/'+(dd.getDate());days14.push({k:kk,v:bins[kk]||0});}
+  var mx2=Math.max.apply(null,days14.map(function(d){return d.v;}))||1;
+  var sc=document.getElementById('splitChart'),slb=document.getElementById('splitChartLabels');
+  if(sc)sc.innerHTML=days14.map(function(d){var h=Math.max(2,Math.round((d.v/mx2)*42));return '<div class="spark-bar" style="height:'+h+'px" title="'+d.k+': '+d.v+'"></div>';}).join('');
+  if(slb)slb.innerHTML='<div class="spark-labels">'+days14.map(function(d){return '<div>'+d.k+'</div>';}).join('')+'</div>';
   var tb=document.getElementById('splitRecentBody');
-  if(!purchases||!purchases.length){tb.innerHTML='<tr><td colspan="4" class="empty">No purchases yet</td></tr>';return;}
-  tb.innerHTML=purchases.slice(0,10).map(function(p){
-    return '<tr><td style="font-weight:700;cursor:pointer;color:var(--purple);" onclick="goLookup(\''+esc(p.username)+'\')">'+esc(p.username||'—')+'</td><td>'+badge(p.tier)+'</td><td>'+(p.amount_cents?'$'+(p.amount_cents/100).toFixed(2):'—')+'</td><td style="color:var(--dim)">'+ago(p.created_at)+'</td></tr>';
+  var rows=ALL_SESSIONS.slice(0,10);
+  if(!rows.length){tb.innerHTML='<tr><td colspan="4" class="empty">No sessions yet</td></tr>';return;}
+  tb.innerHTML=rows.map(function(s2){
+    var isGuest=(s2.username||'').toLowerCase()==='guest';
+    var nc=isGuest?'<td style="color:var(--dim2)">Guest</td>':'<td style="color:var(--purple);cursor:pointer;" onclick="goLookup(\''+esc(s2.username||'')+'\')">'+esc(s2.username||'—')+'</td>';
+    return '<tr>'+nc+'<td style="font-weight:900">'+num(s2.score)+'</td><td style="color:var(--dim)">'+esc(s2.level||'—')+'</td><td style="color:var(--dim)">'+ago(s2.created_at)+'</td></tr>';
   }).join('');
 }
 
