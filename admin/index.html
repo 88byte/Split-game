@@ -313,7 +313,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
           <span style="font-size:8px;color:var(--dim2);">·</span>
           <span style="font-size:8px;color:rgba(0,220,255,.8);letter-spacing:1px;" id="tbEtherSessions">—</span>
         </div>
-        <div class="tb-lbl">Total sessions</div>
+        <div class="tb-lbl">Today's sessions</div>
       </div>
       <div class="tb-stat"><div class="tb-val purple" id="tbPlayers">—</div><div class="tb-lbl">New players</div></div>
       <div class="tb-stat"><div class="tb-val" id="tbVisits">—</div><div class="tb-lbl">Total visits</div></div>
@@ -336,10 +336,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="5.5" height="5.5" rx="1.2"/><rect x="8.5" y="0" width="5.5" height="5.5" rx="1.2"/><rect x="0" y="8.5" width="5.5" height="5.5" rx="1.2"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.2"/></svg>
       Pulse
     </div>
-    <div class="nav-item" onclick="nav('activity',this)">
-      <svg class="ni" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="1,10 3,6 5,8 7,4 9,7 11,5 13,3"/></svg>
-      Activity
-    </div>
+
 
     <div class="nav-sec">Games</div>
     <div class="nav-item" onclick="nav('split',this)">
@@ -362,12 +359,12 @@ tr:hover td{background:rgba(255,255,255,.015);}
     </div>
     <div class="nav-item" onclick="nav('atrisk',this)" id="navAtRisk">
       <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1L13 12H1z"/><path d="M7 5v4M7 10.5v1" stroke="var(--bg)" stroke-width="1.2"/></svg>
-      At-Risk
+      Engaged
       <span class="nav-badge" id="atRiskBadge">0</span>
     </div>
     <div class="nav-item" onclick="nav('leaderboard',this)">
       <svg class="ni" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1l1.6 4h4.4l-3.6 2.6 1.4 4.4L7 9.4l-3.8 2.6 1.4-4.4L1 5h4.4z"/></svg>
-      Split LB
+      Leaderboard
     </div>
 
     <div class="nav-sec">Analytics</div>
@@ -393,32 +390,13 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="page active" id="page-pulse">
       <div class="pg-title">Pulse — Live Overview</div>
       <div class="stats-row" id="statsGrid"><div class="spinner"></div></div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Donation goal</div>
-          <div class="card-action" onclick="toggleGoalEdit()">Edit goal</div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 18px;">
+        <div>
+          <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Support</div>
+          <div style="font-size:13px;color:var(--gold);font-weight:700;" id="donTotalPulse">$0.00 logged</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:2px;">Manual log — go to Donations to add entries</div>
         </div>
-        <div id="goalDisplay">
-          <div style="display:flex;align-items:baseline;gap:8px;">
-            <span style="font-size:22px;font-weight:900;color:var(--gold);" id="goalCurrent">$0</span>
-            <span style="font-size:12px;color:var(--dim);">of</span>
-            <span style="font-size:14px;font-weight:700;color:var(--dim);" id="goalTarget">$500</span>
-            <span style="font-size:11px;color:var(--dim);" id="goalPeriod">this month</span>
-          </div>
-          <div class="goal-bar-wrap">
-            <div class="goal-bar"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
-            <div class="goal-pct" id="goalPct">0%</div>
-          </div>
-        </div>
-        <div class="goal-edit" id="goalEdit" style="display:none;">
-          <input type="number" id="goalInput" placeholder="500" min="1">
-          <select id="goalPeriodSel" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;color:#fff;padding:6px 10px;font-size:11px;font-family:'Georgia',serif;outline:none;">
-            <option value="month">This month</option>
-            <option value="week">This week</option>
-            <option value="alltime">All time</option>
-          </select>
-          <button onclick="saveGoal()">Save</button>
-        </div>
+        <a href="https://www.buymeacoffee.com/splitgames" target="_blank" style="padding:7px 16px;border-radius:8px;background:rgba(200,168,80,.14);border:1px solid rgba(200,168,80,.35);color:var(--gold);font-size:9px;letter-spacing:2px;text-decoration:none;text-transform:uppercase;white-space:nowrap;">☕ Open BMAC →</a>
       </div>
       <div class="two-col">
         <div class="card">
@@ -434,25 +412,24 @@ tr:hover td{background:rgba(255,255,255,.015);}
       </div>
       <div class="card">
         <div class="card-hd">
-          <div class="card-title">Recent Players</div>
-          <div class="card-action" onclick="nav('players',null)">All →</div>
+          <div class="card-title">Recent Sessions</div>
+          <div class="card-action" onclick="nav('sessions',null)">All →</div>
         </div>
-        <table><thead><tr><th>Player</th><th>Tier</th><th>Joined</th></tr></thead>
-        <tbody id="recentBody"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody></table>
+        <table><thead><tr><th>Player</th><th>Score</th><th>Level</th><th>When</th></tr></thead>
+        <tbody id="recentBody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table>
       </div>
     </div>
 
     <!-- FUNNEL -->
     <div class="page" id="page-funnel">
-      <div class="pg-title">Conversion Funnel</div>
+      <div class="pg-title">Player Journey</div>
       <div class="funnel" id="funnelRow">
         <div class="fn-step"><div class="fn-val" id="fv1">—</div><div class="fn-lbl">Landing Visits</div><div class="fn-conv" id="fc1"></div><div class="fn-arrow">→</div></div>
-        <div class="fn-step"><div class="fn-val" id="fv2">—</div><div class="fn-lbl">Started Playing</div><div class="fn-conv" id="fc2"></div><div class="fn-arrow">→</div></div>
-        <div class="fn-step"><div class="fn-val" id="fv3">—</div><div class="fn-lbl">Split Players</div><div class="fn-conv" id="fc3"></div><div class="fn-arrow">→</div></div>
-        <div class="fn-step"><div class="fn-val" id="fv4">—</div><div class="fn-lbl">Highly Engaged (5+ games)</div><div class="fn-conv" id="fc4"></div></div>
+        <div class="fn-step"><div class="fn-val" id="fv2">—</div><div class="fn-lbl">Total Sessions</div><div class="fn-conv" id="fc2"></div><div class="fn-arrow">→</div></div>
+        <div class="fn-step"><div class="fn-val" id="fv3">—</div><div class="fn-lbl">Registered Players</div><div class="fn-conv" id="fc3"></div></div>
       </div>
       <div class="card" style="margin-top:4px;">
-        <div class="card-title">What this means</div>
+        <div class="card-title">Insight</div>
         <div style="font-size:12px;color:var(--dim);line-height:2;margin-top:6px;" id="funnelInsight">Loading...</div>
       </div>
     </div>
@@ -490,7 +467,6 @@ tr:hover td{background:rgba(255,255,255,.015);}
         </div>
         <div class="pc-grid" id="pcGrid"></div>
         <div class="pc-actions" id="pcActions"></div>
-        <div class="confirm-box" id="confirmBox"></div>
         <div class="pc-scores-list" id="pcScores"></div>
         <div class="pc-notes">
           <label>Notes (private, saved locally)</label>
@@ -523,15 +499,15 @@ tr:hover td{background:rgba(255,255,255,.015);}
 
     <!-- AT-RISK -->
     <div class="page" id="page-atrisk">
-      <div class="pg-title">At-Risk Players — 5+ Games, No Purchase</div>
+      <div class="pg-title">Highly Engaged Players</div>
       <div class="card" style="background:var(--orangeD);border-color:rgba(255,160,60,.25);margin-bottom:16px;">
         <div style="font-size:12px;color:rgba(255,160,60,.9);line-height:1.9;">
-          These players are highly engaged but haven't donated yet. They're your best candidates for a personal outreach or a BMAC nudge. Granting a pass costs nothing and builds loyalty.
+These players have played 5+ games but haven't created an account. They're your most engaged anonymous users — worth a direct BMAC shoutout or personal message.
         </div>
       </div>
       <div class="card">
         <div class="card-hd">
-          <div class="card-title">At-Risk Players</div>
+          <div class="card-title">Engaged Guest Players</div>
           <div class="card-action" onclick="loadAtRisk()">Refresh</div>
         </div>
         <table><thead><tr><th>Username</th><th>Email</th><th>Games Played</th><th>Engagement</th><th></th></tr></thead>
@@ -542,18 +518,24 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <!-- LEADERBOARD -->
     <div class="page" id="page-leaderboard">
       <div class="pg-title">Global Leaderboard</div>
-      <div class="card">
+      <div style="display:flex;gap:4px;margin-bottom:14px;">
+        <button id="lbTabSplit" onclick="setLBTab('split')" style="padding:6px 16px;border-radius:7px;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:Georgia,serif;border:1px solid var(--purple);background:var(--purpleD);color:var(--purple);">Split Origin</button>
+        <button id="lbTabEther" onclick="setLBTab('ether')" style="padding:6px 16px;border-radius:7px;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:Georgia,serif;border:1px solid var(--border);background:none;color:var(--dim);">Ether</button>
+      </div>
+      <div class="card" id="lbSplitCard">
         <table><thead><tr><th>#</th><th>Player</th><th>Score</th><th>Level</th><th>Tier</th></tr></thead>
         <tbody id="lbBody"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
       </div>
+      <div class="card" id="lbEtherCard" style="display:none;">
+        <table><thead><tr><th>#</th><th>Pilot</th><th>Score</th><th>When</th></tr></thead>
+        <tbody id="lbEtherBody"><tr><td colspan="4"><div class="spinner"></div></td></tr></tbody></table>
+      </div>
     </div>
-
-    <!-- REVENUE -->
-
 
     <!-- SESSIONS -->
     <div class="page" id="page-sessions">
       <div class="pg-title">Game Sessions</div>
+      <div id="sessPlaytimeBar" style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;"></div>
       <div class="card">
         <div class="card-hd" style="margin-bottom:0;">
           <div class="card-title">Recent Sessions</div>
@@ -589,13 +571,18 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="page" id="page-ether">
       <div class="pg-title">Ether — Five Acts</div>
       <div class="stats-row" id="etherStatsGrid"><div class="spinner"></div></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:14px;">How Far Players Make It</div>
+        <div id="etherActsChart" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="font-size:9px;color:var(--dim2);margin-top:10px;letter-spacing:1px;">Based on score thresholds — score estimates current act reached</div>
+      </div>
       <div class="card">
         <div class="card-hd">
           <div class="card-title">Ether Leaderboard</div>
           <div class="card-action" onclick="loadEtherData()">Refresh</div>
         </div>
         <div id="etherStatus" style="font-size:11px;color:var(--dim);margin-bottom:10px;display:none;"></div>
-        <table><thead><tr><th>#</th><th>Player</th><th>Score</th><th>When</th></tr></thead>
+        <table><thead><tr><th>#</th><th>Pilot</th><th>Score</th><th>When</th></tr></thead>
         <tbody id="etherLbBody"><tr><td colspan="4"><div class="spinner"></div></td></tr></tbody></table>
       </div>
     </div>
@@ -659,7 +646,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
   </button>
   <button class="mob-nav-item" onclick="nav('atrisk',this);mobNav(this)" data-page="atrisk">
     <svg viewBox="0 0 14 14" fill="currentColor"><path d="M7 1L13 12H1z"/><path d="M7 5v3M7 9.5v1.2" stroke="var(--bg)" stroke-width="1.2"/></svg>
-    At-Risk
+    Engaged
     <div class="mob-badge" id="mobAtRiskBadge"></div>
   </button>
   <button class="mob-nav-item" onclick="nav('ether',this);mobNav(this);loadEtherData();" data-page="ether">
@@ -675,10 +662,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
 <!-- MORE DRAWER -->
 <div id="moreDrawer" style="display:none;position:fixed;bottom:56px;left:0;right:0;z-index:89;background:rgba(6,8,13,.98);border-top:1px solid var(--border);padding:12px 0;">
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
-    <button onclick="nav('activity',null);closeMobMoreAndHighlight('activity')" style="background:none;border:none;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--dim);cursor:pointer;">
-      <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="1,10 3,6 5,8 7,4 9,7 11,5 13,3"/></svg>
-      <span style="font-size:7px;letter-spacing:1.5px;text-transform:uppercase;">Activity</span>
-    </button>
+
     <button onclick="nav('funnel',null);closeMobMoreAndHighlight('funnel')" style="background:none;border:none;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--dim);cursor:pointer;">
       <svg width="16" height="16" viewBox="0 0 14 14" fill="currentColor"><path d="M1 2h12l-4 5v5l-4-2V7z"/></svg>
       <span style="font-size:7px;letter-spacing:1.5px;text-transform:uppercase;">Funnel</span>
@@ -788,7 +772,6 @@ function closeMobMoreAndHighlight(id){
 function renderAll(d){
   renderTopbar(d.today,d.recent_purchases,d.stats);
   renderStats(d.stats,d.today);
-  renderGoal();
   renderFunnel(d.funnel,d.stats);
   renderLeaderboard(d.leaderboard);
   if(d.players&&d.players.length){renderPlayers(d.players);renderRecent();}
@@ -802,14 +785,14 @@ function renderAll(d){
 function renderTopbar(today,purchases,stats){
   if(today){set('tbPlayers',today.new_players||0);}
   if(stats){set('tbVisits',num(stats.total_page_views||0));}
-  var splitTotal=stats?stats.total_games_played||0:0;
-  var ep=parseInt(localStorage.getItem('etherPlaysCount')||'0');
-  var etherTotal=ep>0?ep:0;
-  set('tbTotalSessions',num(splitTotal+etherTotal));
+  // Today's sessions — split from backend today.games, ether from recent Supabase
+  var splitToday=today?today.games||0:0;
+  var etherToday=parseInt(localStorage.getItem('etherPlaysToday')||'0');
+  set('tbTotalSessions',num(splitToday+etherToday));
   var sel=document.getElementById('tbSplitSessions');
   var eel=document.getElementById('tbEtherSessions');
-  if(sel)sel.textContent=num(splitTotal)+' SPLIT';
-  if(eel)eel.textContent=(etherTotal>0?num(etherTotal):'—')+' ETHER';
+  if(sel)sel.textContent=num(splitToday)+' SPLIT';
+  if(eel)eel.textContent=(etherToday>0?num(etherToday):'—')+' ETHER';
   var donLog=getDonations();
   var donTotal=donLog.reduce(function(s,d){return s+(d.amount||0);},0);
   set('tbDonations',donTotal>0?'$'+donTotal.toFixed(2):'—');
@@ -819,62 +802,24 @@ function renderTopbar(today,purchases,stats){
 function renderStats(s,today){
   if(!s)return;
   var ep=parseInt(localStorage.getItem('etherPlaysCount')||'0');
-  // Compute total play time from sessions (runtime in seconds)
-  var totalSecs=ALL_SESSIONS.reduce(function(acc,s2){return acc+(s2.runtime||0);},0);
-  var totalHours=totalSecs>0?(totalSecs/3600).toFixed(1)+'h':'—';
+  // Play time — Split from runtime field, Ether not tracked
+  var splitSecs=ALL_SESSIONS.reduce(function(acc,s2){return acc+(s2.runtime||0);},0);
+  var splitHours=splitSecs>3600?(splitSecs/3600).toFixed(1)+'h':splitSecs>60?Math.round(splitSecs/60)+'m':'—';
   var items=[
     {v:s.total_games_played||0,l:'Split Sessions',sub:'All time',c:'purple'},
-    {v:today?today.games||0:0,l:'Sessions Today',sub:'',c:''},
-    {v:s.total_page_views||0,l:'Total Visits',sub:'Landing page',c:''},
-    {v:s.total_users||0,l:'Players',sub:'Registered',c:''},
     {v:ep>0?ep:'—',l:'Ether Plays',sub:'All time',c:''},
-    {v:totalHours,l:'Play Time',sub:'Tracked sessions',c:'green'},
-    {v:AT_RISK_COUNT||0,l:'At-Risk',sub:'Highly engaged',c:'orange'},
-    {v:today?today.new_players||0:0,l:'New Today',sub:'',c:''},
+    {v:s.total_page_views||0,l:'Landing Visits',sub:'All time',c:''},
+    {v:s.total_users||0,l:'Registered Players',sub:'',c:''},
+    {v:splitHours,l:'Split Play Time',sub:'From session data',c:'green'},
+    {v:AT_RISK_COUNT||0,l:'Highly Engaged',sub:'5+ games, no signup',c:'orange'},
   ];
   document.getElementById('statsGrid').innerHTML=items.map(function(i){
     return '<div class="stat '+i.c+'"><div class="stat-val">'+i.v+'</div><div class="stat-lbl">'+i.l+'</div>'+(i.sub?'<div class="stat-sub">'+i.sub+'</div>':'')+'</div>';
   }).join('');
 }
 
-// ── GOAL ──────────────────────────────────────────────────
-var goalData={amount:500,period:'month'};
-function loadGoalSettings(){try{var g=localStorage.getItem('splitGoal');if(g)goalData=JSON.parse(g);}catch(e){}}
-function saveGoal(){
-  var v=parseInt(document.getElementById('goalInput').value)||500;
-  var p=document.getElementById('goalPeriodSel').value;
-  goalData={amount:v,period:p};
-  try{localStorage.setItem('splitGoal',JSON.stringify(goalData));}catch(e){}
-  document.getElementById('goalEdit').style.display='none';
-  document.getElementById('goalTarget').textContent='$'+v;
-  document.getElementById('goalPeriod').textContent=p==='month'?'this month':p==='week'?'this week':'all time';
-  renderGoal();
-}
-function toggleGoalEdit(){
-  var el=document.getElementById('goalEdit');
-  el.style.display=el.style.display==='none'?'flex':'none';
-  if(el.style.display==='flex'){document.getElementById('goalInput').value=goalData.amount;document.getElementById('goalPeriodSel').value=goalData.period;}
-}
-function renderGoal(){
-  loadGoalSettings();
-  // Donation goal — reads from manual BMAC log
-  var log=getDonations();
-  var now=new Date();
-  var current=0;
-  log.forEach(function(d){
-    if(goalData.period==='alltime'){current+=d.amount||0;return;}
-    var dt=new Date(d.at);
-    if(goalData.period==='month'&&dt.getFullYear()===now.getFullYear()&&dt.getMonth()===now.getMonth()){current+=d.amount||0;}
-    else if(goalData.period==='week'&&(now-dt)<=7*24*60*60*1000){current+=d.amount||0;}
-  });
-  var pct=Math.min(100,Math.round(current/goalData.amount*100));
-  set('goalCurrent','$'+current.toFixed(2));
-  set('goalTarget','$'+goalData.amount);
-  set('goalPeriod',goalData.period==='month'?'this month':goalData.period==='week'?'this week':'all time');
-  set('goalPct',pct+'%');
-  document.getElementById('goalFill').style.width=pct+'%';
-  document.getElementById('goalInput').value=goalData.amount;
-}
+// ── GOAL functions removed ──
+// renderGoal removed
 
 // ── CHART ─────────────────────────────────────────────────
 function renderChart(){
@@ -891,17 +836,22 @@ function renderChart(){
   // Build ordered 14-day array
   var days=[];for(var i=13;i>=0;i--){var d=new Date(Date.now()-i*24*60*60*1000);var k=(d.getMonth()+1)+'/'+(d.getDate());days.push({k:k,v:bins[k]||0});}
   var max=Math.max.apply(null,days.map(function(d){return d.v;}))||1;
-  c.innerHTML=days.map(function(d){var h=Math.max(2,Math.round((d.v/max)*42));return '<div class="spark-bar" style="height:'+h+'px" title="'+d.k+': '+d.v+' sessions"></div>';}).join('');
-  lb.innerHTML='<div class="spark-labels">'+days.map(function(d){return '<div>'+d.k+'</div>';}).join('')+'</div>';
+  // Today's total above chart
+  var todayTotal=days[days.length-1].v;
+  var chartTotal=days.reduce(function(a,d){return a+d.v;},0);
+  c.innerHTML=days.map(function(d){var h=Math.max(2,Math.round((d.v/max)*42));return '<div class="spark-bar" style="height:'+h+'px" title="'+d.k+': '+d.v+'"></div>';}).join('');
+  lb.innerHTML='<div style="font-size:9px;color:var(--dim);margin-bottom:4px;">'+chartTotal+' total · '+todayTotal+' today</div><div class="spark-labels">'+days.map(function(d){return '<div>'+d.k+'</div>';}).join('')+'</div>';
 }
 
 // ── RECENT PLAYERS ───────────────────────────────────────
 function renderRecent(){
   var tb=document.getElementById('recentBody');
-  var rows=ALL_PLAYERS.slice().sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);}).slice(0,8);
-  if(!rows.length){tb.innerHTML='<tr><td colspan="3" class="empty">No players yet</td></tr>';return;}
-  tb.innerHTML=rows.map(function(p){
-    return '<tr><td style="font-weight:700;cursor:pointer;color:var(--purple);" onclick="goLookup(\''+esc(p.username)+'\')">'+esc(p.username||'—')+'</td><td>'+badge(p.tier||'free')+'</td><td style="color:var(--dim)">'+ago(p.created_at)+'</td></tr>';
+  var rows=ALL_SESSIONS.slice(0,8);
+  if(!rows.length){tb.innerHTML='<tr><td colspan="4" class="empty">No sessions yet</td></tr>';return;}
+  tb.innerHTML=rows.map(function(s){
+    var isGuest=(s.username||'').toLowerCase()==='guest';
+    var nameCell=isGuest?'<td style="color:var(--dim2)">Guest</td>':'<td style="color:var(--purple);cursor:pointer;font-weight:700;" onclick="goLookup(\''+esc(s.username||'')+'\')">'+esc(s.username||'—')+'</td>';
+    return '<tr>'+nameCell+'<td style="font-weight:900">'+num(s.score)+'</td><td style="color:var(--dim)">'+esc(s.level||'—')+'</td><td style="color:var(--dim2)">'+ago(s.created_at)+'</td></tr>';
   }).join('');
 }
 
@@ -911,22 +861,18 @@ function renderFunnel(f,s){
   var visits=f?f.visits||s.total_page_views||0:s?s.total_page_views||0:0;
   var sessions=s?s.total_games_played||0:0;
   var players=s?s.total_users||0:0;
-  var atRisk=f?f.at_risk||0:0;
-  set('fv1',num(visits));set('fv2',num(sessions));set('fv3',num(players));set('fv4',num(atRisk));
+  set('fv1',num(visits));set('fv2',num(sessions));set('fv3',num(players));
   var r1=visits>0?Math.round(sessions/visits*100):0;
   var r2=sessions>0?Math.round(players/sessions*100):0;
   set('fc1',visits>0?r1+'% played':'—');
   var c2el=document.getElementById('fc2');if(c2el){c2el.textContent=sessions>0?r2+'% registered':'—';c2el.className='fn-conv '+(r2>=20?'good':r2>=8?'warn':'bad');}
-  var c3el=document.getElementById('fc3');if(c3el){c3el.textContent=players+' registered';c3el.className='fn-conv good';}
-  set('fc4',atRisk+' high-engagement');
+  var c3el=document.getElementById('fc3');if(c3el){c3el.textContent=players+' registered total';c3el.className='fn-conv good';}
   var insight='';
-  if(visits===0)insight='No visit data yet. Make sure your landing page is sending tracking events.';
-  else if(sessions===0)insight='Visits are tracked but no sessions yet. Check that the game session endpoint is firing correctly.';
-  else{
-    if(r2<10)insight='Most players are not registering ('+r2+'%). Consider making sign-in feel more rewarding — leaderboard placement, personal stats.';
-    else if(r2<30)insight='Registration is growing ('+r2+'%). '+atRisk+' high-engagement players are prime candidates for a personal BMAC nudge.';
-    else insight='Solid engagement at '+r2+'% registration. Focus on bringing new players to the top of the funnel.';
-  }
+  if(visits===0)insight='No visit data yet — make sure your landing page tracking is deployed.';
+  else if(sessions===0)insight='Visits recorded but no sessions yet. Check the game session endpoint.';
+  else if(r2<10)insight='Only '+r2+'% of players register. The leaderboard and personal stats are your best hooks to drive sign-ups.';
+  else if(r2<30)insight='Registration is growing ('+r2+'%). '+num(players)+' accounts so far.';
+  else insight='Strong at '+r2+'% registration. Focus on driving more traffic to the top.';
   document.getElementById('funnelInsight').textContent=insight;
 }
 
@@ -994,8 +940,6 @@ function renderPCard(data){
     {v:purchase?ago(purchase.created_at):'Never',l:'Purchased'},
   ].map(function(s){return '<div class="pc-stat"><div class="pc-sval">'+s.v+'</div><div class="pc-slbl">'+s.l+'</div></div>';}).join('');
   var actions='';
-  if(tier!=='origin')actions+='<button class="btn btn-origin btn-sm" onclick="initGrant(\''+esc(u.username)+'\',\'origin\')">Grant Origin Pass</button>';
-  if(tier!=='standard'&&tier!=='origin')actions+='<button class="btn btn-std btn-sm" onclick="initGrant(\''+esc(u.username)+'\',\'standard\')">Grant Split Pass</button>';
   document.getElementById('pcActions').innerHTML=actions;
   if(scores.length){
     document.getElementById('pcScores').innerHTML='<div style="font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;">Top Scores</div>'+
@@ -1004,19 +948,7 @@ function renderPCard(data){
   // Load saved note
   try{var note=localStorage.getItem('note_'+u.username);if(note)document.getElementById('pcNotesArea').value=note;}catch(e){}
 }
-function initGrant(username,tier){
-  var cb=document.getElementById('confirmBox');
-  cb.innerHTML='Grant <strong>'+(tier==='origin'?'Origin Pass':'Split Pass')+'</strong> to <strong>'+esc(username)+'</strong>?&nbsp;&nbsp;<button class="btn btn-purple btn-sm" onclick="doGrant(\''+esc(username)+'\',\''+tier+'\')">Confirm</button>&nbsp;<button class="btn btn-std btn-sm" onclick="document.getElementById(\'confirmBox\').classList.remove(\'on\')">Cancel</button>';
-  cb.classList.add('on');
-}
-function doGrant(username,tier){
-  document.getElementById('confirmBox').innerHTML='<span class="isp"></span>Granting…';
-  apiPost('/admin/grant-tier',{username:username,tier:tier,note:'admin_manual'},function(ok){
-    document.getElementById('confirmBox').classList.remove('on');
-    if(ok){showToast(tier.toUpperCase()+' granted · '+username);lookupUser(username);}
-    else showToast('Error — could not grant');
-  });
-}
+// initGrant / doGrant removed
 function saveNote(){
   var note=document.getElementById('pcNotesArea').value;
   try{if(note)localStorage.setItem('note_'+CURRENT_PLAYER,note);else localStorage.removeItem('note_'+CURRENT_PLAYER);}catch(e){}
@@ -1033,7 +965,7 @@ function renderPlayers(rows){
   ALL_PLAYERS=rows;
   set('playerCountLbl',rows.length+' players');
   filterPlayers();
-  renderRecent(); // refresh recent players on Pulse
+  // (renderRecent now uses ALL_SESSIONS, called from renderSessions)
 }
 function filterPlayers(){
   var q=document.getElementById('playerSearch').value.toLowerCase().trim();
@@ -1066,22 +998,40 @@ function loadAtRisk(){
     if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">No at-risk players — everyone is converting well</td></tr>';return;}
     tb.innerHTML=rows.map(function(r){
       var barPct=Math.min(100,Math.round(r.games_played/20*100));
-      return '<tr class="risk-row"><td style="font-weight:700;cursor:pointer;color:var(--purple);" onclick="goLookup(\''+esc(r.username)+'\')">'+esc(r.username||'—')+'</td><td style="color:var(--dim);font-size:11px">'+esc(r.email||'—')+'</td><td style="font-weight:700;color:var(--orange)">'+r.games_played+'</td><td><div class="risk-bar"><div class="risk-fill" style="width:'+barPct+'%"></div></div></td><td><button class="btn btn-origin btn-sm" onclick="initGrantFromTable(\''+esc(r.username)+'\',\'origin\',this)">Grant Origin</button></td></tr>';
+      return '<tr class="risk-row"><td style="font-weight:700;cursor:pointer;color:var(--purple);" onclick="goLookup(\''+esc(r.username)+'\')">'+esc(r.username||'—')+'</td><td style="color:var(--dim);font-size:11px">'+esc(r.email||'—')+'</td><td style="font-weight:700;color:var(--orange)">'+r.games_played+'</td><td><div class="risk-bar"><div class="risk-fill" style="width:'+barPct+'%"></div></div></td><td><span class="tbl-action" onclick="goLookup(\''+esc(r.username)+'\')">View →</span></td></tr>';
     }).join('');
   });
 }
-function initGrantFromTable(username,tier,btn){
-  btn.disabled=true;btn.textContent='Confirm?';
-  btn.onclick=function(){
-    btn.textContent='Granting…';
-    apiPost('/admin/grant-tier',{username:username,tier:tier,note:'at_risk_grant'},function(ok){
-      if(ok){showToast('Origin Pass granted · '+username);loadAtRisk();}
-      else{btn.textContent='Error';btn.disabled=false;}
-    });
-  };
-}
+// initGrantFromTable removed
 
 // ── LEADERBOARD ───────────────────────────────────────────
+var LB_TAB='split';
+function setLBTab(tab){
+  LB_TAB=tab;
+  var ss=document.getElementById('lbSplitCard'),se=document.getElementById('lbEtherCard');
+  var ts=document.getElementById('lbTabSplit'),te=document.getElementById('lbTabEther');
+  if(tab==='split'){
+    ss.style.display='';se.style.display='none';
+    ts.style.background='var(--purpleD)';ts.style.color='var(--purple)';ts.style.borderColor='var(--purple)';
+    te.style.background='none';te.style.color='var(--dim)';te.style.borderColor='var(--border)';
+  }else{
+    ss.style.display='none';se.style.display='';
+    te.style.background='rgba(0,200,255,.1)';te.style.color='rgba(0,220,255,.9)';te.style.borderColor='rgba(0,200,255,.4)';
+    ts.style.background='none';ts.style.color='var(--dim)';ts.style.borderColor='var(--border)';
+    // Populate ether LB from cached data
+    var lbEl=document.getElementById('lbEtherBody');
+    if(lbEl&&window._etherLBData){
+      var medals=['','🥇','🥈','🥉'];
+      lbEl.innerHTML=window._etherLBData.map(function(r,i){
+        var rk=i+1;
+        return '<tr><td style="font-size:12px;min-width:24px">'+(rk<=3?medals[rk]:rk)+'</td>'
+          +'<td style="font-weight:700">'+esc(r.player_name||'—')+'</td>'
+          +'<td style="font-weight:900">'+num(r.score)+'</td>'
+          +'<td style="color:var(--dim)">'+ago(r.created_at)+'</td></tr>';
+      }).join('');
+    }
+  }
+}
 function renderLeaderboard(rows){
   var tb=document.getElementById('lbBody');
   if(!rows||!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">No scores yet</td></tr>';return;}
@@ -1157,6 +1107,19 @@ function renderSessionsFiltered(){
       +'<button onclick="setSessFilter(\'named\')" style="'+filterBtnStyle(SESSION_FILTER==='named')+'">Named</button>'
       +'<button onclick="setSessFilter(\'guest\')" style="'+filterBtnStyle(SESSION_FILTER==='guest')+'">Guest</button>'
       +'</div></div>';
+  }
+  renderRecent(); // keep pulse up to date
+  // Play time summary
+  var ptBar=document.getElementById('sessPlaytimeBar');
+  if(ptBar&&ALL_SESSIONS.length){
+    var totalS=ALL_SESSIONS.reduce(function(a,s){return a+(s.runtime||0);},0);
+    var avgS=ALL_SESSIONS.length?Math.round(totalS/ALL_SESSIONS.length):0;
+    var items=[
+      {l:'Total Sessions',v:num(ALL_SESSIONS.length)},
+      {l:'Total Play Time',v:totalS>3600?(totalS/3600).toFixed(1)+'h':totalS>60?Math.round(totalS/60)+'m':'—'},
+      {l:'Avg Session',v:avgS>60?Math.round(avgS/60)+'m ':avgS>0?avgS+'s':'—'},
+    ];
+    ptBar.innerHTML=items.map(function(i){return '<div style="background:var(--s1);border:1px solid var(--border);border-radius:9px;padding:10px 14px;"><div style="font-size:18px;font-weight:900;">'+i.v+'</div><div style="font-size:8px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">'+i.l+'</div></div>';}).join('');
   }
   if(SESSION_FILTER==='named')rows=named;
   else if(SESSION_FILTER==='guest')rows=guests;
@@ -1315,6 +1278,38 @@ function loadEtherData(){
         +'<td style="color:var(--dim)">'+ago(r.created_at)+'</td></tr>';
     }).join('');
     document.getElementById('etherStatus').style.display='none';
+    // Cache for leaderboard tab
+    window._etherLBData=data;
+    // Today's ether plays
+    var todayStart=new Date();todayStart.setHours(0,0,0,0);
+    var todayCount=data.filter(function(r){return new Date(r.created_at)>=todayStart;}).length;
+    localStorage.setItem('etherPlaysToday',todayCount);
+    // Acts progress chart — score thresholds match ether SCORE_THRESHOLDS
+    var ACT_THRESHOLDS=[0,3200,7500,10000,14500,18000];
+    var ACT_NAMES=['Act I — The Void','Act II — Other Side','Act III — The Weight','Act IV — The Breath','Act V — The Beginning','OMEGA'];
+    var ACT_COLORS=['#00d4ff','#ffff88','#ff6600','#44ffaa','#cc88ff','#ffffff'];
+    var actCounts=[0,0,0,0,0,0];
+    data.forEach(function(r){
+      var sc=r.score||0;
+      for(var ai=ACT_THRESHOLDS.length-1;ai>=0;ai--){
+        if(sc>=ACT_THRESHOLDS[ai]){actCounts[ai]++;break;}
+      }
+    });
+    var maxAct=Math.max.apply(null,actCounts)||1;
+    var acEl=document.getElementById('etherActsChart');
+    if(acEl&&data.length){
+      acEl.innerHTML=ACT_NAMES.map(function(name,i){
+        var pct=Math.round(actCounts[i]/data.length*100);
+        var barW=Math.round(actCounts[i]/maxAct*100);
+        return '<div style="display:flex;align-items:center;gap:10px;">'
+          +'<div style="width:140px;font-size:9px;color:'+ACT_COLORS[i]+';letter-spacing:1px;text-align:right;white-space:nowrap;">'+name+'</div>'
+          +'<div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">'
+          +'<div style="width:'+barW+'%;height:100%;background:'+ACT_COLORS[i]+';border-radius:4px;transition:width .4s;"></div></div>'
+          +'<div style="font-size:10px;font-weight:700;color:'+ACT_COLORS[i]+';width:36px;">'+actCounts[i]+'</div>'
+          +'<div style="font-size:9px;color:var(--dim2);width:28px;">'+pct+'%</div>'
+          +'</div>';
+      }).join('');
+    }
   });
 }
 
@@ -1382,6 +1377,7 @@ function renderDonationLog(){
   var log=getDonations();
   var total=log.reduce(function(s,d){return s+(d.amount||0);},0);
   set('donTotal','$'+total.toFixed(2));
+  var dp=document.getElementById('donTotalPulse');if(dp)dp.textContent='$'+total.toFixed(2)+' logged';
   if(!log.length){document.getElementById('donationLog').innerHTML='<div class="empty">No donations logged yet</div>';return;}
   document.getElementById('donationLog').innerHTML=log.map(function(d){
     return '<div class="donation-row"><div><strong style="color:var(--gold)">$'+d.amount.toFixed(2)+'</strong>'+(d.note?' <span style="color:var(--dim);font-size:11px;">— '+esc(d.note)+'</span>':'')+'</div><div style="color:var(--dim2);font-size:10px;">'+ago(d.at)+'</div></div>';
